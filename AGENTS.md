@@ -19,7 +19,7 @@ This repository is part of the Tether WDK (Wallet Development Kit) ecosystem. It
 ## Coding Conventions
 - **File Naming:** PascalCase for Kotlin files (e.g., `WalletViewModel.kt`, `Screens.kt`).
 - **Class Naming:** PascalCase (e.g., `WalletViewModel`, `PendingTx`).
-- **Package:** All code lives under `to.tether.wdk.starter`.
+- **Package:** All code lives under `org.astianx.midori.one`.
 - **State:** UI state is modeled as immutable data classes (`WalletUiState`) exposed through `StateFlow`; mutations go through `MutableStateFlow.update`-style copy helpers in the ViewModel.
 - **Composables:** Screen-level composables live in `Screens.kt`; reusable UI pieces live in `Components.kt`. Follow this split when adding UI.
 - **Async:** Use `viewModelScope` coroutines for WDK calls; never block the main thread.

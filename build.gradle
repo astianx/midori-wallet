@@ -3,3 +3,42 @@ plugins {
     id 'com.android.library' version '8.2.2' apply false
     id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
 }
+
+project(':wdk-core-kotlin') {
+    afterEvaluate {
+        tasks.named('npmInstall', Exec) {
+            commandLine 'bash', '-lc', 'npm ci'
+            inputs.file('js/package-lock.json')
+            inputs.file(rootProject.file('scripts/patch-wdk-bundler.js'))
+            // npm ci deletes and recreates node_modules while it runs. Gradle
+            // cannot safely snapshot that directory as this task's output.
+            doNotTrackState('npm ci replaces its own output directory')
+        }
+        tasks.register('patchBundler', Exec) {
+            workingDir 'js'
+            commandLine 'node', 'patch-wdk-bundler.js'
+            dependsOn 'npmInstall'
+            inputs.file(rootProject.file('scripts/patch-wdk-bundler.js'))
+        }
+        tasks.named('generateBundle', Exec) {
+            dependsOn 'patchBundler'
+            inputs.file('js/package-lock.json')
+            inputs.file(rootProject.file('scripts/patch-wdk-bundler.js'))
+        }
+        tasks.named('copyAddons', Copy) {
+            // bare-worker loads this native addon at startup, but bundler beta.14
+            // does not include this indirect dependency in android-addons.
+            [
+                'android-arm64': 'arm64-v8a',
+                'android-arm': 'armeabi-v7a',
+                'android-ia32': 'x86',
+                'android-x64': 'x86_64'
+            ].each { target, abi ->
+                from("js/node_modules/bare-broadcast-channel/prebuilds/${target}/bare-broadcast-channel.bare") {
+                    into abi
+                    rename { 'libbare-broadcast-channel.0.2.1.so' }
+                }
+            }
+        }
+    }
+}

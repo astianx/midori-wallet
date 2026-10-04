@@ -4,15 +4,15 @@ plugins {
 }
 
 android {
-    namespace 'to.tether.wdk.starter'
+    namespace 'org.astianx.midori.one'
     compileSdk 35
 
     defaultConfig {
-        applicationId "to.tether.wdk.starter"
+        applicationId "org.astianx.midori.one"
         minSdk 33
         targetSdk 35
         versionCode 1
-        versionName "1.0"
+        versionName "0.1.0-dev"
     }
 
     buildTypes {

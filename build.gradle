@@ -25,20 +25,5 @@ project(':wdk-core-kotlin') {
             inputs.file('js/package-lock.json')
             inputs.file(rootProject.file('scripts/patch-wdk-bundler.js'))
         }
-        tasks.named('copyAddons', Copy) {
-            // bare-worker loads this native addon at startup, but bundler beta.14
-            // does not include this indirect dependency in android-addons.
-            [
-                'android-arm64': 'arm64-v8a',
-                'android-arm': 'armeabi-v7a',
-                'android-ia32': 'x86',
-                'android-x64': 'x86_64'
-            ].each { target, abi ->
-                from("js/node_modules/bare-broadcast-channel/prebuilds/${target}/bare-broadcast-channel.bare") {
-                    into abi
-                    rename { 'libbare-broadcast-channel.0.2.1.so' }
-                }
-            }
-        }
     }
 }

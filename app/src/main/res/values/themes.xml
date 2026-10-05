@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.WdkStarter" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#D1F2D3</item>
-        <item name="android:navigationBarColor">#D1F2D3</item>
+        <item name="android:statusBarColor">@color/brand_background</item>
+        <item name="android:navigationBarColor">@color/brand_background</item>
+        <item name="android:windowSplashScreenBackground">@color/brand_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/midori_mark</item>
     </style>
 </resources>

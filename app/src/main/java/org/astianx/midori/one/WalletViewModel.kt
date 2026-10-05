@@ -18,8 +18,13 @@ import java.util.UUID
 
 enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Sign }
 enum class Network { ETH, BTC }
+enum class Asset(val network: Network, val decimals: Int) {
+    USDC(Network.ETH, 6), ETH(Network.ETH, 18), BTC(Network.BTC, 8)
+}
 
-enum class TxStatus { PENDING, BROADCAST, UNKNOWN }
+const val USDC_SEPOLIA_CONTRACT = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"
+
+enum class TxStatus { PENDING, BROADCAST, UNKNOWN, FAILED_BEFORE_BROADCAST }
 
 internal fun isValidVerificationResult(result: Any): Boolean = result is Boolean && result
 
@@ -33,6 +38,7 @@ internal fun toSmallestUnit(amount: String, decimals: Int): String? = try {
 data class PendingTx(
     val id: String = UUID.randomUUID().toString(),
     val network: Network,
+    val asset: Asset = if (network == Network.ETH) Asset.ETH else Asset.BTC,
     val toAddress: String,
     val amount: String,
     val status: TxStatus = TxStatus.PENDING,
@@ -51,6 +57,7 @@ data class PendingTx(
             TxStatus.PENDING -> "Submitting to network..."
             TxStatus.BROADCAST -> "Broadcast · confirmation not checked"
             TxStatus.UNKNOWN -> "Submission uncertain · check network"
+            TxStatus.FAILED_BEFORE_BROADCAST -> "No se emitió · revisa saldo, gas y conexión"
         }
 }
 
@@ -66,16 +73,15 @@ data class WalletUiState(
     val restoreError: String? = null,
     val ethAddress: String = "",
     val ethBalance: String = "0",
+    val usdcBalance: String? = null,
     val btcAddress: String = "",
     val btcBalance: String = "0",
     val isWdkInitialized: Boolean = false,
-    val sendNetwork: Network = Network.ETH,
+    val sendAsset: Asset = Asset.USDC,
     val sendAddress: String = "",
     val sendAmount: String = "",
     val pendingTransactions: List<PendingTx> = emptyList(),
-    val quotedFeeEth: String? = null,
-    val quotedFeeBtc: String? = null,
-    val receiveNetwork: Network = Network.ETH,
+    val receiveAsset: Asset = Asset.USDC,
     val signNetwork: Network = Network.ETH,
     val signMessage: String = "Login to MyDApp\nTimestamp: 1711036800\nNonce: a3f8c2",
     val signResult: String? = null,
@@ -238,7 +244,6 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                 update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc,
                     seedPhrase = emptyList(), currentScreen = Screen.Home, isLoading = false, statusText = "") }
                 fetchBalance()
-                fetchFeeQuotes()
             } catch (e: Exception) {
                 discardClient()
                 update { copy(isLoading = false, statusText = "") }
@@ -285,7 +290,6 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                     importWords = List(12) { "" }, currentScreen = Screen.Home,
                     isLoading = false, statusText = "", restoreError = null) }
                 fetchBalance()
-                fetchFeeQuotes()
             } catch (e: Exception) {
                 discardClient()
                 update { copy(isLoading = false, statusText = "") }
@@ -306,6 +310,17 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                     android.util.Log.w("WDK", "ETH balance fetch failed: ${e.message}")
                 }
                 try {
+                    val tokenBalance = wdkCore!!.callMethod(
+                        methodName = "getTokenBalance", network = "sepolia", accountIndex = 0,
+                        args = JSONObject.quote(USDC_SEPOLIA_CONTRACT)
+                    ).toString()
+                    require(tokenBalance.matches(Regex("[0-9]+"))) { "Invalid USDC balance" }
+                    update { copy(usdcBalance = tokenBalance) }
+                } catch (e: Exception) {
+                    update { copy(usdcBalance = null) }
+                    android.util.Log.w("WDK", "USDC balance fetch failed: ${e.message}")
+                }
+                try {
                     val btcBal = wdkCore!!.getBalance(network = "bitcoin")
                     update { copy(btcBalance = btcBal) }
                 } catch (e: Exception) {
@@ -313,45 +328,6 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                 }
             } finally {
                 isRefreshingBalance = false
-            }
-        }
-    }
-
-    fun fetchFeeQuotes() {
-        if (!_state.value.isWdkInitialized || wdkCore == null) return
-        val wdk = wdkCore!!
-        val zeroPadAddress = "0x0000000000000000000000000000000000000000"
-        val btcAddr = _state.value.btcAddress.ifEmpty { "tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx" }
-
-        viewModelScope.launch {
-            try {
-                val ethArgs = """{"to":"$zeroPadAddress","value":"1000"}"""
-                val ethResult = wdk.callMethod(
-                    methodName = "quoteSendTransaction",
-                    network = "sepolia",
-                    accountIndex = 0,
-                    args = ethArgs
-                )
-                val fee = extractFee(ethResult)
-                update { copy(quotedFeeEth = fee) }
-            } catch (e: Exception) {
-                android.util.Log.w("WDK", "ETH fee quote failed: ${e.message}")
-            }
-        }
-
-        viewModelScope.launch {
-            try {
-                val btcArgs = """{"to":"$btcAddr","value":"1000","confirmationTarget":1}"""
-                val btcResult = wdk.callMethod(
-                    methodName = "quoteSendTransaction",
-                    network = "bitcoin",
-                    accountIndex = 0,
-                    args = btcArgs
-                )
-                val fee = extractFee(btcResult)
-                update { copy(quotedFeeBtc = fee) }
-            } catch (e: Exception) {
-                android.util.Log.w("WDK", "BTC fee quote failed: ${e.message}")
             }
         }
     }
@@ -378,8 +354,8 @@ class WalletViewModel(private val context: Context) : ViewModel() {
         return candidate
     }
 
-    fun updateSendNetwork(network: Network) {
-        update { copy(sendNetwork = network) }
+    fun updateSendAsset(asset: Asset) {
+        update { copy(sendAsset = asset, sendAmount = "", sendAddress = "") }
     }
 
     fun updateSendAddress(address: String) {
@@ -390,20 +366,22 @@ class WalletViewModel(private val context: Context) : ViewModel() {
         update { copy(sendAmount = amount) }
     }
 
-    fun updateReceiveNetwork(network: Network) {
-        update { copy(receiveNetwork = network) }
+    fun updateReceiveAsset(asset: Asset) {
+        update { copy(receiveAsset = asset) }
     }
 
     fun updateSignNetwork(network: Network) {
-        update { copy(signNetwork = network) }
+        update { copy(signNetwork = network, signResult = null, verifyResult = null) }
     }
 
     fun updateSignMessage(message: String) {
-        update { copy(signMessage = message) }
+        update { copy(signMessage = message, signResult = null, verifyResult = null) }
     }
 
     fun setSendMax() {
-        update { copy(sendAmount = maxSendAmount) }
+        if (_state.value.sendAsset == Asset.USDC) {
+            update { copy(sendAmount = maxSendAmount) }
+        }
     }
 
     fun doSend() {
@@ -420,25 +398,62 @@ class WalletViewModel(private val context: Context) : ViewModel() {
             return
         }
 
-        val decimals = if (s.sendNetwork == Network.ETH) 18 else 8
-        val valueInSmallestUnit = toSmallestUnit(amount, decimals) ?: run {
+        val asset = s.sendAsset
+        val valueInSmallestUnit = toSmallestUnit(amount, asset.decimals) ?: run {
             showToast("Invalid amount")
             return
         }
+        if (asset.network == Network.ETH && !address.matches(Regex("0x[a-fA-F0-9]{40}"))) {
+            showToast("Invalid Sepolia address")
+            return
+        }
+        if (asset.network == Network.ETH && address.equals("0x0000000000000000000000000000000000000000", ignoreCase = true)) {
+            showToast("La dirección cero no puede recibir este envío")
+            return
+        }
+        if (asset == Asset.USDC) {
+            val balance = s.usdcBalance?.toBigIntegerOrNull()
+            if (balance == null) {
+                showToast("USDC balance unavailable. Refresh and try again.")
+                return
+            }
+            if (valueInSmallestUnit.toBigInteger() > balance) {
+                showToast("Insufficient USDC balance")
+                return
+            }
+        }
 
-        val networkRpc = if (s.sendNetwork == Network.ETH) "sepolia" else "bitcoin"
-        val tx = PendingTx(network = s.sendNetwork, toAddress = address, amount = amount)
+        val networkRpc = if (asset.network == Network.ETH) "sepolia" else "bitcoin"
+        val tx = PendingTx(network = asset.network, asset = asset, toAddress = address, amount = amount)
         val txId = tx.id
 
         update { copy(pendingTransactions = pendingTransactions + tx,
             isLoading = true, statusText = "Submitting transaction...") }
 
         viewModelScope.launch {
+            var submissionStarted = false
             try {
-                val argsJson = JSONObject().put("to", address)
-                    .put("value", valueInSmallestUnit).toString()
+                val argsJson = if (asset == Asset.USDC) {
+                    JSONObject().put("token", USDC_SEPOLIA_CONTRACT)
+                        .put("recipient", address).put("amount", valueInSmallestUnit).toString()
+                } else {
+                    JSONObject().put("to", address)
+                        .put("value", valueInSmallestUnit).toString()
+                }
+                if (asset == Asset.USDC) {
+                    val quoted = wdkCore!!.callMethod(
+                        methodName = "quoteTransfer", network = "sepolia", accountIndex = 0,
+                        args = argsJson
+                    )
+                    val fee = extractFee(quoted).toBigIntegerOrNull()
+                    require(fee != null && fee > java.math.BigInteger.ZERO) { "Unable to quote USDC gas" }
+                    require(s.ethBalance.toBigIntegerOrNull()?.let { it >= fee } == true) {
+                        "Insufficient Sepolia ETH for gas"
+                    }
+                }
+                submissionStarted = true
                 val result = wdkCore!!.callMethod(
-                    methodName = "sendTransaction",
+                    methodName = if (asset == Asset.USDC) "transfer" else "sendTransaction",
                     network = networkRpc,
                     accountIndex = 0,
                     args = argsJson
@@ -449,8 +464,13 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                 showToast("Broadcast to network; confirmation not checked", success = true)
                 fetchBalance()
             } catch (e: Exception) {
-                updateTx(txId, TxStatus.UNKNOWN, error = e.message)
-                showToast("Submission uncertain. Check your address before retrying.")
+                if (submissionStarted) {
+                    updateTx(txId, TxStatus.UNKNOWN, error = e.message)
+                    showToast("Submission uncertain. Check your address before retrying.")
+                } else {
+                    updateTx(txId, TxStatus.FAILED_BEFORE_BROADCAST, error = e.message)
+                    showToast(e.message ?: "No se pudo preparar la transferencia")
+                }
             } finally {
                 update { copy(isLoading = false, statusText = "") }
             }
@@ -568,8 +588,11 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     }
 
     fun resetSend() {
-        update { copy(sendAddress = "", sendAmount = "", sendNetwork = Network.ETH) }
+        update { copy(sendAddress = "", sendAmount = "", sendAsset = Asset.USDC) }
     }
+
+    val formattedUsdcBalance: String
+        get() = _state.value.usdcBalance?.let { formatBalance(it, 6, "USDC") } ?: "— USDC"
 
     val formattedEthBalance: String
         get() = formatBalance(_state.value.ethBalance, 18, "ETH")
@@ -584,48 +607,33 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     }
 
     val receiveAddress: String
-        get() = if (_state.value.receiveNetwork == Network.ETH) _state.value.ethAddress else _state.value.btcAddress
+        get() = if (_state.value.receiveAsset.network == Network.ETH) _state.value.ethAddress else _state.value.btcAddress
 
     val receiveLabel: String
-        get() = if (_state.value.receiveNetwork == Network.ETH) "Your Ethereum Sepolia address" else "Your Bitcoin testnet4 address"
+        get() = when (_state.value.receiveAsset) {
+            Asset.USDC -> "USDC de prueba · Ethereum Sepolia"
+            Asset.ETH -> "Tu dirección de ETH · Ethereum Sepolia"
+            Asset.BTC -> "Tu dirección de BTC · Bitcoin testnet4"
+        }
 
     val sendFee: String
         get() {
             val s = _state.value
-            return if (s.sendNetwork == Network.ETH) {
-                val feeWei = s.quotedFeeEth?.let { BigDecimal(it) } ?: return "Estimating..."
-                val gwei = feeWei.divide(BigDecimal("1000000000"))
-                "~${gwei.toPlainString()} Gwei"
-            } else {
-                val feeSats = s.quotedFeeBtc?.let { BigDecimal(it) } ?: return "Estimating..."
-                "~${feeSats.toPlainString()} sats"
-            }
+            if (s.sendAsset == Asset.USDC) return "Gas en ETH Sepolia · se cotiza al enviar"
+            return "Variable · se calcula al enviar"
         }
 
     val sendNetworkLabel: String
-        get() = if (_state.value.sendNetwork == Network.ETH) "Ethereum Sepolia" else "Bitcoin testnet4"
+        get() = if (_state.value.sendAsset.network == Network.ETH) "Ethereum Sepolia" else "Bitcoin testnet4"
 
     val sendTokenLabel: String
-        get() = if (_state.value.sendNetwork == Network.ETH) "ETH" else "BTC"
+        get() = _state.value.sendAsset.name
 
     val maxSendAmount: String
         get() {
             val s = _state.value
-            return if (s.sendNetwork == Network.ETH) {
-                val balance = BigDecimal(s.ethBalance)
-                val fee = s.quotedFeeEth?.let { BigDecimal(it) } ?: return "0"
-                val feeWithMargin = fee.multiply(BigDecimal("1.2"))
-                val maxWei = balance.subtract(feeWithMargin)
-                if (maxWei <= BigDecimal.ZERO) "0"
-                else maxWei.divide(BigDecimal("1000000000000000000")).toPlainString()
-            } else {
-                val balance = BigDecimal(s.btcBalance)
-                val fee = s.quotedFeeBtc?.let { BigDecimal(it) } ?: return "0"
-                val feeWithMargin = fee.multiply(BigDecimal("1.2"))
-                val maxSats = balance.subtract(feeWithMargin)
-                if (maxSats <= BigDecimal.ZERO) "0"
-                else maxSats.divide(BigDecimal("100000000")).toPlainString()
-            }
+            if (s.sendAsset != Asset.USDC) return "0"
+            return s.usdcBalance?.let { BigDecimal(it).movePointLeft(6).stripTrailingZeros().toPlainString() } ?: "0"
         }
 
     override fun onCleared() {

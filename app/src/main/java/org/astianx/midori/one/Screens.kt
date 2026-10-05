@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -55,6 +57,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +69,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.delay
+
+@Composable
+fun BrandSplashScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFAFAF8)),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(R.drawable.midori_logo),
+            contentDescription = stringResource(R.string.app_name),
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .widthIn(max = 360.dp)
+        )
+    }
+}
 
 // ===== WELCOME SCREEN =====
 
@@ -81,7 +103,7 @@ fun WelcomeScreen(vm: WalletViewModel) {
 
         Text("\uD83D\uDEE1", fontSize = 64.sp)
         Spacer(Modifier.height(16.dp))
-        Text("Midori Wallet", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text("MiWallet", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         Spacer(Modifier.height(6.dp))
         Text(
             "Self custodial. Multi chain. Open source.",
@@ -290,7 +312,7 @@ fun HomeScreen(vm: WalletViewModel) {
         ) {
             Text("\uD83D\uDEE1", fontSize = 20.sp)
             Spacer(Modifier.width(8.dp))
-            Text("WDK Wallet", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text("MiWallet", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.weight(1f))
             TestnetBadge()
         }
@@ -302,10 +324,10 @@ fun HomeScreen(vm: WalletViewModel) {
                 .clickable { vm.fetchBalance() }
                 .padding(vertical = 24.dp)
         ) {
-            Text("Balances", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Dólares digitales de prueba · Sepolia", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(8.dp))
-            Text(vm.formattedEthBalance, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            Text(vm.formattedBtcBalance, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(vm.formattedUsdcBalance, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text("Tokens de testnet sin valor monetario", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
             if (s.ethAddress.isNotEmpty()) {
                 Text(
@@ -334,13 +356,12 @@ fun HomeScreen(vm: WalletViewModel) {
             Box(Modifier.weight(1f)) {
                 ActionCard(Icons.Default.ArrowUpward, "Send") {
                     vm.resetSend()
-                    vm.fetchFeeQuotes()
                     vm.navigate(Screen.Send)
                 }
             }
             Box(Modifier.weight(1f)) {
                 ActionCard(Icons.Default.ArrowDownward, "Receive") {
-                    vm.updateReceiveNetwork(Network.ETH)
+                    vm.updateReceiveAsset(Asset.USDC)
                     vm.navigate(Screen.Receive)
                 }
             }
@@ -355,7 +376,7 @@ fun HomeScreen(vm: WalletViewModel) {
         Spacer(Modifier.height(20.dp))
 
         Text(
-            "ASSETS",
+            "CRIPTO DE PRUEBA",
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -368,8 +389,14 @@ fun HomeScreen(vm: WalletViewModel) {
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            AssetRow("\u20BF", Color(0xFFF7931A), "Bitcoin", "testnet4", vm.formattedBtcBalance)
             AssetRow("\u039E", Color(0xFF627EEA), "Ethereum", "Sepolia", vm.formattedEthBalance)
+            AssetRow("\u20BF", Color(0xFFF7931A), "Bitcoin", "testnet4", vm.formattedBtcBalance)
+            Text(
+                "ETH Sepolia también paga las comisiones de USDC. Las compras e intercambios aún no están disponibles.",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            )
         }
 
         Row(
@@ -428,7 +455,7 @@ fun SendScreen(vm: WalletViewModel) {
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                "Select network and enter details.",
+                "Elige activo y red. USDC de Sepolia requiere ETH Sepolia para gas.",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
@@ -438,8 +465,9 @@ fun SendScreen(vm: WalletViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp)
             ) {
-                NetworkPill("Sepolia", "\u039E", s.sendNetwork == Network.ETH) { vm.updateSendNetwork(Network.ETH) }
-                NetworkPill("BTC testnet4", "\u20BF", s.sendNetwork == Network.BTC) { vm.updateSendNetwork(Network.BTC) }
+                NetworkPill("USDC", "$", s.sendAsset == Asset.USDC) { vm.updateSendAsset(Asset.USDC) }
+                NetworkPill("ETH", "\u039E", s.sendAsset == Asset.ETH) { vm.updateSendAsset(Asset.ETH) }
+                NetworkPill("BTC", "\u20BF", s.sendAsset == Asset.BTC) { vm.updateSendAsset(Asset.BTC) }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -503,19 +531,21 @@ fun SendScreen(vm: WalletViewModel) {
                 Row {
                     Text(vm.sendTokenLabel, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.weight(1f))
-                    Text(
-                        "Max",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { vm.setSendMax() }
-                    )
+                    if (s.sendAsset == Asset.USDC) {
+                        Text(
+                            "Max",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { vm.setSendMax() }
+                        )
+                    }
                 }
             }
 
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
                 Row(modifier = Modifier.padding(vertical = 8.dp)) {
-                    Text("Estimated fee", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Comisión", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.weight(1f))
                     Text(vm.sendFee, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -559,6 +589,7 @@ fun TxCard(tx: PendingTx, vm: WalletViewModel, context: Context) {
         TxStatus.PENDING -> Color(0xFFFF9800)
         TxStatus.BROADCAST -> Color(0xFF4FC3F7)
         TxStatus.UNKNOWN -> Color(0xFFFF9800)
+        TxStatus.FAILED_BEFORE_BROADCAST -> Color(0xFFEF5350)
     }
 
     Column(
@@ -584,7 +615,7 @@ fun TxCard(tx: PendingTx, vm: WalletViewModel, context: Context) {
             Spacer(Modifier.width(6.dp))
             Text(tx.statusLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = cardColor)
             Spacer(Modifier.weight(1f))
-            Text(if (tx.network == Network.ETH) "ETH" else "BTC", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(tx.asset.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         Spacer(Modifier.height(4.dp))
@@ -654,8 +685,9 @@ fun ReceiveScreen(vm: WalletViewModel) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
         ) {
-            NetworkPill("ETH", "\u039E", s.receiveNetwork == Network.ETH) { vm.updateReceiveNetwork(Network.ETH) }
-            NetworkPill("BTC testnet4", "\u20BF", s.receiveNetwork == Network.BTC) { vm.updateReceiveNetwork(Network.BTC) }
+            NetworkPill("USDC", "$", s.receiveAsset == Asset.USDC) { vm.updateReceiveAsset(Asset.USDC) }
+            NetworkPill("ETH", "\u039E", s.receiveAsset == Asset.ETH) { vm.updateReceiveAsset(Asset.ETH) }
+            NetworkPill("BTC", "\u20BF", s.receiveAsset == Asset.BTC) { vm.updateReceiveAsset(Asset.BTC) }
         }
 
         QrCodeImage(vm.receiveAddress)
@@ -663,11 +695,22 @@ fun ReceiveScreen(vm: WalletViewModel) {
 
         Text(vm.receiveLabel, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
+        if (s.receiveAsset == Asset.USDC) {
+            Text(
+                "Envía solo USDC en Sepolia a esta dirección. No envíes USDC de otra red.",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(Modifier.height(8.dp))
+        }
 
         Text(
             vm.receiveAddress,
             fontSize = 13.sp,
             fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .padding(horizontal = 20.dp)
@@ -684,6 +727,7 @@ fun ReceiveScreen(vm: WalletViewModel) {
             "Copy address",
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)

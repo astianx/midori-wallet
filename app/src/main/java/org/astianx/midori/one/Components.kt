@@ -120,6 +120,7 @@ fun PrimaryButton(title: String, enabled: Boolean = true, onClick: () -> Unit) {
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             disabledContainerColor = Color.Gray
         ),
         modifier = Modifier

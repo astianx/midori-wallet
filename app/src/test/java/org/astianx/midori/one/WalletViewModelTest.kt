@@ -27,6 +27,8 @@ class WalletViewModelTest {
         assertNull(toSmallestUnit("0.000000001", 8))
         assertNull(toSmallestUnit("0", 8))
         assertNull(toSmallestUnit("-1", 18))
+        assertEquals("1234567", toSmallestUnit("1.234567", Asset.USDC.decimals))
+        assertNull(toSmallestUnit("1.2345678", Asset.USDC.decimals))
     }
 
     @Test
@@ -40,5 +42,20 @@ class WalletViewModelTest {
         )
         assertTrue(tx.statusLabel.contains("confirmation not checked"))
         assertEquals("https://sepolia.etherscan.io/tx/${tx.hash}", tx.explorerUrl)
+    }
+
+    @Test
+    fun usdcUsesSepoliaExplorerAndDistinctAsset() {
+        val tx = PendingTx(
+            network = Asset.USDC.network,
+            asset = Asset.USDC,
+            toAddress = "0x0000000000000000000000000000000000000001",
+            amount = "1",
+            status = TxStatus.BROADCAST,
+            hash = "0x" + "b".repeat(64)
+        )
+        assertEquals(Asset.USDC, tx.asset)
+        assertEquals("https://sepolia.etherscan.io/tx/${tx.hash}", tx.explorerUrl)
+        assertTrue(tx.statusLabel.contains("confirmation not checked"))
     }
 }

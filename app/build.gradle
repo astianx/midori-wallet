@@ -3,6 +3,16 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def releaseStoreFile = System.getenv('MIDORI_RELEASE_STORE_FILE')
+def releaseStorePassword = System.getenv('MIDORI_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('MIDORI_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('MIDORI_RELEASE_KEY_PASSWORD')
+def releaseSigningValues = [releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword]
+def hasReleaseSigning = releaseSigningValues.every { it?.trim() }
+if (releaseSigningValues.any { it?.trim() } && !hasReleaseSigning) {
+    throw new GradleException('Set all four MIDORI_RELEASE_* variables to sign a release build.')
+}
+
 android {
     namespace 'org.astianx.midori.one'
     compileSdk 35
@@ -12,13 +22,38 @@ android {
         minSdk 33
         targetSdk 35
         versionCode 1
-        versionName "0.1.0-dev"
+        versionName "0.1.0"
+    }
+
+    flavorDimensions 'network'
+    productFlavors {
+        sandbox {
+            dimension 'network'
+            versionNameSuffix '-testnet'
+        }
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            midoriRelease {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            versionNameSuffix '-dev'
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.midoriRelease
+            }
         }
     }
 

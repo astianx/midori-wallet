@@ -78,11 +78,11 @@ To receive assets, select the asset in the app and copy its address or QR code. 
 
 ```bash
 ./scripts/setup-dev.sh
-./gradlew assembleDebug
-./gradlew installDebug
+./gradlew assembleSandboxDebug
+./gradlew installSandboxDebug
 ```
 
-Open this directory in Android Studio to work with Jetpack Compose. The first build may take longer and download several hundred megabytes. The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+Open this directory in Android Studio to work with Jetpack Compose. The first build may take longer and download several hundred megabytes. The debug APK is written to `app/build/outputs/apk/sandbox/debug/app-sandbox-debug.apk`.
 
 To launch the app on a connected device:
 
@@ -93,10 +93,30 @@ adb shell monkey -p org.astianx.midori.one -c android.intent.category.LAUNCHER 1
 To run the existing unit tests:
 
 ```bash
-./gradlew testDebugUnitTest
+./gradlew testSandboxDebugUnitTest
 ```
 
 The APK packages native libraries for compatibility with devices using 16 KB memory pages. Installation and runtime behavior on a 16 KB device still need a dedicated test before release.
+
+### Testnet release build
+
+The `sandbox` product flavor packages the app's current Sepolia and Bitcoin testnet4 configuration. The `release` build type produces the non-debuggable `sandboxRelease` variant, versioned as `0.1.0-testnet`. It remains a **testnet build**, not a mainnet wallet.
+
+```bash
+./gradlew assembleSandboxRelease
+./gradlew bundleSandboxRelease
+```
+
+Gradle signs these artifacts when all four environment variables are set:
+
+| Variable | Purpose |
+| --- | --- |
+| `MIDORI_RELEASE_STORE_FILE` | Absolute path to the release keystore, kept outside the repository. |
+| `MIDORI_RELEASE_STORE_PASSWORD` | Keystore password. |
+| `MIDORI_RELEASE_KEY_ALIAS` | Alias of the signing key. |
+| `MIDORI_RELEASE_KEY_PASSWORD` | Signing key password. |
+
+Without these variables, the release APK and bundle are **unsigned** and cannot be installed or uploaded as release artifacts. Keep the keystore and passwords in a secret manager; never commit them. Android also requires the same signing identity for updates, so an existing debug installation may need to be removed before installing a release build. The release manifest disables Android backups while local secret storage is being hardened.
 
 ## Architecture
 
@@ -106,7 +126,7 @@ The planned architecture separates use cases, encrypted local storage, and netwo
 
 ## Security and known limitations
 
-The current implementation stores the encryption key and encrypted seed together in `SharedPreferences`, and the manifest allows Android backups. This setup must be migrated before using the app with assets of real value or expanding it with social services. Do not store recovery phrases for valuable wallets or add more secrets to that storage.
+The current implementation stores the encryption key and encrypted seed together in `SharedPreferences`. The debug variant allows Android backups; the release variant disables them, but local secret storage still needs to be hardened before using the app with assets of real value or expanding it with social services. Do not store recovery phrases for valuable wallets or add more secrets to that storage.
 
 Transaction history is not yet persistent, and the status shown after a transfer does not verify confirmations. A lost connection after broadcast may leave an uncertain outcome; check the blockchain before trying again. Fee quotes and maximum spendable amounts still need transaction-specific and network-specific validation.
 

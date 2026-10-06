@@ -2,7 +2,7 @@
 module.exports = {
   transport: 'jsonrpc',
   networks: {
-    sepolia: { package: '@tetherto/wdk-wallet-evm' },
+    base: { package: '@tetherto/wdk-wallet-evm' },
     bitcoin: { package: '@tetherto/wdk-wallet-btc' }
   },
   protocols: {},

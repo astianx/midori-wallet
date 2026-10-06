@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="brand_background">#FAFAF8</color>
+    <color name="brand_mw_green">#54A48A</color>
+    <color name="brand_mw_ink">#262530</color>
+    <color name="brand_mw_silver">#C3CEDA</color>
+    <color name="brand_mw_slate">#424152</color>
+    <bool name="light_system_bars">true</bool>
 </resources>

@@ -1,9 +1,13 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import java.math.BigDecimal
+import java.util.UUID
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,14 +15,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.astianx.midori.one.AppEntryPreferences
+import org.astianx.midori.one.AppEntryStore
+import org.astianx.midori.one.AppFeature
+import org.astianx.midori.one.IntroSlide
+import org.astianx.midori.one.MemoryAppEntryStore
+import org.astianx.midori.one.R
+import org.astianx.midori.one.Screen
+import org.astianx.midori.one.UiText
 import org.json.JSONArray
 import org.json.JSONObject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import java.math.BigDecimal
-import java.util.UUID
 
-enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Sign, Messaging, Chats, Markets, More, Feature, MarketAsset, Help, Conversation, ChatSecurity, Licenses, GroupDetails }
 enum class TxStatus { PENDING, BROADCAST, UNKNOWN, FAILED_BEFORE_BROADCAST }
 
 internal fun isValidVerificationResult(result: Any): Boolean = result is Boolean && result
@@ -69,6 +76,7 @@ data class WalletUiState(
     val toastMessage: UiText? = null,
     val toastIsSuccess: Boolean = false,
     val isLoading: Boolean = false,
+    val refreshingBalances: Boolean = false,
     val statusText: UiText? = null,
     val restoreError: UiText? = null,
     val ethAddress: String = "",
@@ -312,6 +320,7 @@ class WalletViewModel internal constructor(
     fun fetchBalance() {
         if (!_state.value.isWdkInitialized || wdkCore == null || isRefreshingBalance) return
         isRefreshingBalance = true
+        update { copy(refreshingBalances = true) }
         viewModelScope.launch {
             try {
                 try {
@@ -340,6 +349,7 @@ class WalletViewModel internal constructor(
                 }
             } finally {
                 isRefreshingBalance = false
+                update { copy(refreshingBalances = false) }
             }
         }
     }

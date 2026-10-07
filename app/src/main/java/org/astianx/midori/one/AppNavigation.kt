@@ -3,6 +3,8 @@ package org.astianx.midori.one
 import android.content.Context
 import androidx.annotation.StringRes
 
+enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Sign, Messaging, Chats, Markets, More, Feature, MarketAsset, Help, Conversation, ChatSecurity, Licenses, GroupDetails, Personalization, ChatAppearance, ConversationAppearance, WalletAppearance, Profile }
+
 internal val mainScreens = setOf(Screen.Chats, Screen.Home, Screen.Markets, Screen.More)
 
 enum class AppFeature(@StringRes val title: Int, @StringRes val description: Int) {

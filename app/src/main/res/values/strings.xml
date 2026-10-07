@@ -479,5 +479,5 @@
     <string name="profile_working">Please wait…</string>
     <string name="style_botanical">Botanical</string>
     <string name="chat_group_protocol_unsupported">This group uses an unsupported encryption protocol. Update the app before joining.</string>
-    <string name="chat_group_device_capacity">This group exceeds the current limit of %1$d encrypted devices. No message was sent.</string>
+    <string name="chat_group_device_capacity">This group exceeds the current device limit (%1$d). No message was sent.</string>
 </resources>

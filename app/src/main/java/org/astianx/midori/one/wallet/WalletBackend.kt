@@ -1,4 +1,4 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
 
 import android.content.Context
 import to.tether.wdk.core.EntropyResult

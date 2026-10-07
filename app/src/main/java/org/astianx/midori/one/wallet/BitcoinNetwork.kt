@@ -1,10 +1,11 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.astianx.midori.one.R
+import org.json.JSONObject
 
 internal fun interface BitcoinNetworkVerifier {
     suspend fun verify()

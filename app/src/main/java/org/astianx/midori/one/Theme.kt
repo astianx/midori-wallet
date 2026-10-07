@@ -68,6 +68,9 @@ private val MidoriDarkColors = darkColorScheme(
 @Composable
 fun MidoriTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
-        MaterialTheme(colorScheme = if (darkTheme) MidoriDarkColors else MidoriLightColors, content = content)
+        MaterialTheme(colorScheme = if (darkTheme) MidoriDarkColors else MidoriLightColors) {
+            CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                content = content)
+        }
     }
 }

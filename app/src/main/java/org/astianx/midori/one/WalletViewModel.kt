@@ -18,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import java.math.BigDecimal
 import java.util.UUID
 
-enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Sign, Messaging, Chats, Markets, More, Feature, MarketAsset, Help }
+enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Sign, Messaging, Chats, Markets, More, Feature, MarketAsset, Help, Conversation, ChatSecurity, Licenses, GroupDetails }
 enum class TxStatus { PENDING, BROADCAST, UNKNOWN, FAILED_BEFORE_BROADCAST }
 
 internal fun isValidVerificationResult(result: Any): Boolean = result is Boolean && result

@@ -339,4 +339,5 @@
     <string name="chat_pause">Pause</string>
     <string name="chat_draft">Draft: %1$s</string>
     <string name="chat_group_security">Only approved devices receive group messages. Removing a member affects future messages, not copies already received.</string>
+    <string name="chat_group_leave_confirm">You will leave this conversation and it will no longer reopen automatically on this device. You will remain on the member list until an administrator removes your access.</string>
 </resources>

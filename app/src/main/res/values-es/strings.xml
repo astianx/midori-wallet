@@ -333,4 +333,31 @@
     <string name="chat_draft">Borrador: %1$s</string>
     <string name="chat_group_security">Solo los dispositivos aprobados reciben mensajes del grupo. Quitar un miembro afecta a los mensajes futuros, no a las copias ya recibidas.</string>
     <string name="chat_group_leave_confirm">Saldrás de esta conversación y no se volverá a abrir automáticamente en este dispositivo. Seguirás en la lista de miembros hasta que un administrador retire tu acceso.</string>
+
+    <!-- Chat playback, photo editing and conversation actions -->
+    <string name="chat_pin">Fijar</string>
+    <string name="chat_unpin">Desfijar</string>
+    <string name="chat_mute">Silenciar</string>
+    <string name="chat_unmute">Activar notificaciones</string>
+    <string name="chat_pinned">Chat fijado</string>
+    <string name="chat_muted">Notificaciones silenciadas</string>
+    <string name="chat_delete_local">Eliminar chat</string>
+    <string name="chat_delete_local_body">¿Eliminar el historial y el borrador de este dispositivo? Esto no borra los mensajes del servidor ni abandona el grupo. El chat volverá a aparecer cuando lleguen mensajes nuevos.</string>
+    <string name="chat_audio_seek">Posición de reproducción</string>
+    <string name="chat_view_image">Ver imagen</string>
+    <string name="chat_image_fit">Ajustar imagen</string>
+    <string name="chat_image_undo">Deshacer</string>
+    <string name="chat_image_redo">Rehacer</string>
+    <string name="chat_image_crop">Recortar</string>
+    <string name="chat_image_text">Texto</string>
+    <string name="chat_image_draw">Dibujar</string>
+    <string name="chat_image_crop_hint">Arrastra sobre la imagen para seleccionar el área que quieres conservar.</string>
+    <string name="chat_image_text_hint">Toca la imagen para colocar el texto.</string>
+    <string name="chat_image_draw_hint">Dibuja sobre la imagen. Deshacer elimina el último trazo.</string>
+    <string name="chat_image_reset_crop">Imagen completa</string>
+    <string name="chat_image_color">Color %1$d</string>
+    <string name="chat_image_done">Listo</string>
+    <string name="chat_image_add_text">Colocar texto</string>
+    <string name="chat_image_discard">Descartar cambios</string>
+    <string name="chat_image_original_kept">Se conservará la imagen original. Esta copia editada no se ha enviado.</string>
 </resources>

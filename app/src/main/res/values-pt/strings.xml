@@ -333,4 +333,31 @@
     <string name="chat_draft">Rascunho: %1$s</string>
     <string name="chat_group_security">Somente dispositivos aprovados recebem mensagens do grupo. Remover um membro afeta mensagens futuras, não cópias já recebidas.</string>
     <string name="chat_group_leave_confirm">Você sairá desta conversa e ela não será reaberta automaticamente neste dispositivo. Você continuará na lista de membros até que um administrador remova seu acesso.</string>
+
+    <!-- Chat playback, photo editing and conversation actions -->
+    <string name="chat_pin">Fixar</string>
+    <string name="chat_unpin">Desafixar</string>
+    <string name="chat_mute">Silenciar</string>
+    <string name="chat_unmute">Ativar notificações</string>
+    <string name="chat_pinned">Conversa fixada</string>
+    <string name="chat_muted">Notificações silenciadas</string>
+    <string name="chat_delete_local">Excluir conversa</string>
+    <string name="chat_delete_local_body">Excluir o histórico e o rascunho deste dispositivo? Isso não exclui mensagens do servidor nem sai do grupo. A conversa reaparecerá quando chegarem novas mensagens.</string>
+    <string name="chat_audio_seek">Posição da reprodução</string>
+    <string name="chat_view_image">Ver imagem</string>
+    <string name="chat_image_fit">Ajustar imagem</string>
+    <string name="chat_image_undo">Desfazer</string>
+    <string name="chat_image_redo">Refazer</string>
+    <string name="chat_image_crop">Recortar</string>
+    <string name="chat_image_text">Texto</string>
+    <string name="chat_image_draw">Desenhar</string>
+    <string name="chat_image_crop_hint">Arraste sobre a imagem para selecionar a área que deseja manter.</string>
+    <string name="chat_image_text_hint">Toque na imagem para posicionar o texto.</string>
+    <string name="chat_image_draw_hint">Desenhe sobre a imagem. Desfazer remove o último traço.</string>
+    <string name="chat_image_reset_crop">Imagem inteira</string>
+    <string name="chat_image_color">Cor %1$d</string>
+    <string name="chat_image_done">Concluir</string>
+    <string name="chat_image_add_text">Posicionar texto</string>
+    <string name="chat_image_discard">Descartar alterações</string>
+    <string name="chat_image_original_kept">A imagem original será mantida. Esta cópia editada não foi enviada.</string>
 </resources>

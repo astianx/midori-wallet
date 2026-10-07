@@ -1,15 +1,17 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import org.json.JSONObject
 import java.security.KeyStore
 import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import org.astianx.midori.one.R
+import org.astianx.midori.one.UiText
+import org.json.JSONObject
 
 /** Mainnet credentials never read or overwrite the old wdk_wallet testnet store. */
 internal class KeystoreWalletStore(context: Context) : WalletStore {

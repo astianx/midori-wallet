@@ -1,4 +1,6 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
+
+import org.astianx.midori.one.UiText
 
 enum class Network(val wdkName: String, val label: String, val explorer: String) {
     BASE("base", "Base", "https://basescan.org"),

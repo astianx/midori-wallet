@@ -3,6 +3,8 @@ package org.astianx.midori.one.chat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -30,9 +32,11 @@ class ChatViewModelTest {
     private class Transport : ChatTransport {
         lateinit var events: ChatEvents
         var sends = 0
+        var connects = 0
+        var disconnects = 0
         var error: Exception? = null
-        override fun connect(account: ChatAccount, events: ChatEvents) { this.events = events; error?.let { throw it }; events.connection(ChatConnection.ONLINE) }
-        override fun disconnect() {}
+        override fun connect(account: ChatAccount, events: ChatEvents) { connects++; this.events = events; error?.let { throw it }; events.connection(ChatConnection.ONLINE) }
+        override fun disconnect() { disconnects++ }
         override fun send(peer: String, body: String, id: String) { sends++; error?.let { throw it } }
         override fun devices(peer: String) = emptyList<ChatDevice>()
         override fun trust(device: ChatDevice, trusted: Boolean) {}
@@ -216,6 +220,129 @@ class ChatViewModelTest {
         assertEquals("retain", vm.state.value.messages.single().body)
         assertEquals("retain draft", vm.state.value.drafts["bob@example.org"])
         assertFalse(vm.state.value.conversationOptions.getValue("bob@example.org").hidden)
+    }
+
+    @Test fun backgroundReconnectUsesBackoffAndResetsAfterSuccess() = runTest(dispatcher) {
+        val client = Transport()
+        val vm = ChatViewModel(Records(), { client }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); runCurrent()
+        vm.setConnectionServiceRunning(true); vm.setForeground(false); runCurrent()
+        client.error = java.io.IOException("Disconnected")
+        client.events.connectionFailed(client.error!!); runCurrent()
+        advanceTimeBy(4_999); runCurrent(); assertEquals(1, client.connects)
+        advanceTimeBy(1); runCurrent(); assertEquals(2, client.connects)
+        client.error = null
+        advanceTimeBy(9_999); runCurrent(); assertEquals(2, client.connects)
+        advanceTimeBy(1); runCurrent(); assertEquals(3, client.connects)
+        assertEquals(ChatConnection.ONLINE, vm.state.value.connection)
+        vm.logout(); advanceUntilIdle()
+    }
+
+    @Test fun identityFailureDoesNotLoopOnResumeOrNetworkChangeAndKeepsSession() = runTest(dispatcher) {
+        val records = Records(); val client = Transport()
+        val vm = ChatViewModel(records, { client }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        val session = records.get("session")
+        client.error = javax.net.ssl.SSLHandshakeException("certificate")
+        client.events.connectionFailed(client.error!!)
+        vm.setForeground(false); vm.setForeground(true); vm.networkAvailable(); advanceUntilIdle()
+        assertEquals(1, client.connects)
+        assertEquals(R.string.chat_tls_error, vm.state.value.error?.resourceId)
+        assertEquals(session, records.get("session"))
+        client.error = null
+        vm.retry(); advanceUntilIdle()
+        assertEquals(ChatConnection.ONLINE, vm.state.value.connection)
+        vm.logout(); advanceUntilIdle()
+    }
+
+    @Test fun disabledBackgroundDisconnectsAndLogoutCancelsPendingRetry() = runTest(dispatcher) {
+        val client = Transport(); val vm = ChatViewModel(Records(), { client }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        vm.setBackgroundConnection(false); vm.setForeground(false); advanceUntilIdle()
+        assertEquals(ChatConnection.DISCONNECTED, vm.state.value.connection)
+        val connects = client.connects
+        vm.networkAvailable(); advanceUntilIdle(); assertEquals(connects, client.connects)
+        vm.setForeground(true); runCurrent()
+        client.events.connectionFailed(java.io.IOException())
+        vm.logout(); advanceUntilIdle()
+        assertEquals(connects + 1, client.connects)
+        assertEquals("", vm.state.value.account)
+    }
+
+    @Test fun socketClosureIsNotReportedAsUnverifiedServerIdentity() = runTest(dispatcher) {
+        val client = Transport(); val vm = ChatViewModel(Records(), { client }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        vm.setForeground(false); runCurrent()
+        client.events.connectionFailed(javax.net.ssl.SSLException("Socket closed")); advanceUntilIdle()
+        assertEquals(R.string.chat_connection_error, vm.state.value.error?.resourceId)
+        vm.logout(); advanceUntilIdle()
+    }
+
+    @Test fun lossOfDefaultNetworkClearsPresenceAndReconnectsWithSameSession() = runTest(dispatcher) {
+        val client = Transport(); val records = Records(); val vm = ChatViewModel(records, { client }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        client.events.contacts(listOf(ChatContact("bob@example.org", online = true))); advanceUntilIdle()
+        val session = records.get("session")
+        vm.setConnectionServiceRunning(true); vm.setForeground(false); runCurrent()
+        vm.networkLost(); runCurrent()
+        assertEquals(ChatConnection.DISCONNECTED, vm.state.value.connection)
+        assertFalse(vm.state.value.contacts.single().online)
+        vm.networkAvailable(); advanceUntilIdle()
+        assertEquals(ChatConnection.ONLINE, vm.state.value.connection)
+        assertEquals(2, client.connects)
+        assertEquals(session, records.get("session"))
+        vm.logout(); advanceUntilIdle()
+    }
+
+    @Test fun appearanceOverridesPersistAndResetToCurrentDefaultsWithoutChangingMessages() = runTest(dispatcher) {
+        val records = Records(); val client = Transport()
+        val vm = ChatViewModel(records, { client }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        client.events.message(ChatMessage("kept", "bob@example.org", "Keep me", false, 1), false); advanceUntilIdle()
+        vm.setAppearance(ChatAppearance(fontSize = 19)); advanceUntilIdle()
+        vm.setAppearance(ChatAppearance(fontSize = 22, wallpaper = ChatWallpaperStyle.GRID), "bob@example.org"); advanceUntilIdle()
+        vm.setConversationAlias("bob@example.org", "Robert"); advanceUntilIdle()
+        vm.setAppearance(ChatAppearance(fontSize = 17)); advanceUntilIdle()
+        val restored = ChatViewModel(records, { Transport() }, io = dispatcher); advanceUntilIdle()
+        assertEquals(22, restored.state.value.appearanceFor("bob@example.org").fontSize)
+        assertEquals(17, restored.state.value.appearanceFor("carol@example.org").fontSize)
+        assertEquals("Robert", restored.state.value.conversationOptions["bob@example.org"]?.alias)
+        restored.resetConversationAppearance("bob@example.org"); advanceUntilIdle()
+        assertEquals(17, restored.state.value.appearanceFor("bob@example.org").fontSize)
+        assertEquals("Keep me", restored.state.value.messages.single().body)
+    }
+    @Test fun localProfileIsAccountScopedAndFailedWritesKeepTheSavedProfile() = runTest(dispatcher) {
+        val records = Records(); val vm = ChatViewModel(records, { Transport() }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        vm.saveProfile("Alice", "Hello"); advanceUntilIdle()
+        records.writeError = java.io.IOException()
+        vm.saveProfile("Lost", "Lost"); advanceUntilIdle()
+        assertEquals("Alice", vm.state.value.profile.name)
+        records.writeError = null
+        vm.connect("second@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        assertEquals(ChatProfile(), vm.state.value.profile)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        assertEquals("Hello", vm.state.value.profile.bio)
+    }
+    @Test fun registrationIsExplicitOneShotAndNeverOverwritesAnExistingAccount() = runTest(dispatcher) {
+        var attempts = 0; val records = Records()
+        val vm = ChatViewModel(records, { Transport() }, io = dispatcher, registerAccount = {
+            attempts++; throw java.io.IOException("response lost")
+        })
+        vm.register("alice@example.org", "long-password", "example.org", "5222"); advanceUntilIdle()
+        assertEquals(1, attempts); assertNull(records.get("session")); assertFalse(vm.state.value.busy)
+        vm.connect("existing@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        val session = records.get("session")
+        vm.register("alice@example.org", "long-password", "example.org", "5222"); advanceUntilIdle()
+        assertEquals(1, attempts); assertEquals(session, records.get("session"))
+    }
+    @Test fun brokenOptionalAppearanceDoesNotPreventAuthenticatedSessionRestore() = runTest(dispatcher) {
+        val records = Records(); val vm = ChatViewModel(records, { Transport() }, io = dispatcher)
+        vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        records.put("settings/appearance", "damaged")
+        val restored = ChatViewModel(records, { Transport() }, io = dispatcher); advanceUntilIdle()
+        assertEquals(ChatConnection.ONLINE, restored.state.value.connection)
+        assertEquals("damaged", records.get("settings/appearance"))
     }
 
 }

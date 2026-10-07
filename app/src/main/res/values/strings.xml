@@ -367,4 +367,15 @@
     <string name="chat_image_add_text">Place text</string>
     <string name="chat_image_discard">Discard changes</string>
     <string name="chat_image_original_kept">The original image will be kept. This edited copy has not been sent.</string>
+
+    <!-- Midori visual identity and conversation filters -->
+    <string name="chat_filter_all">All</string>
+    <string name="chat_filter_unread">Unread</string>
+    <string name="chat_filter_groups">Groups</string>
+    <string name="chat_filter_empty">No conversations match this view. Try another filter or search.</string>
+    <string name="hide_balances">Hide balances</string>
+    <string name="show_balances">Show balances</string>
+    <string name="chat_notifications_title">Notifications</string>
+    <string name="chat_notifications_summary">Sound, vibration and message alerts</string>
+    <string name="chat_notification_count">%1$d new messages</string>
 </resources>

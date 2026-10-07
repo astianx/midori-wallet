@@ -360,4 +360,15 @@
     <string name="chat_image_add_text">Posicionar texto</string>
     <string name="chat_image_discard">Descartar alterações</string>
     <string name="chat_image_original_kept">A imagem original será mantida. Esta cópia editada não foi enviada.</string>
+
+    <!-- Midori visual identity and conversation filters -->
+    <string name="chat_filter_all">Todas</string>
+    <string name="chat_filter_unread">Não lidas</string>
+    <string name="chat_filter_groups">Grupos</string>
+    <string name="chat_filter_empty">Nenhuma conversa nesta visualização. Tente outro filtro ou busca.</string>
+    <string name="hide_balances">Ocultar saldos</string>
+    <string name="show_balances">Mostrar saldos</string>
+    <string name="chat_notifications_title">Notificações</string>
+    <string name="chat_notifications_summary">Som, vibração e alertas de mensagens</string>
+    <string name="chat_notification_count">%1$d novas mensagens</string>
 </resources>

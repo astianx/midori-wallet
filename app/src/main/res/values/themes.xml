@@ -5,5 +5,8 @@
         <item name="android:navigationBarColor">@color/brand_background</item>
         <item name="android:windowSplashScreenBackground">@color/brand_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/midori_mark</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
+        <item name="android:windowBackground">@color/brand_background</item>
     </style>
 </resources>

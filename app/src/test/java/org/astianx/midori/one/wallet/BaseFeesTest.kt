@@ -1,9 +1,9 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
 
+import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
-import java.math.BigInteger
 
 class BaseFeesTest {
     private val sender = "0x" + "1".repeat(40)

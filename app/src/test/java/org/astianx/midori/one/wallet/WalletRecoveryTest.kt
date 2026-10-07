@@ -1,19 +1,24 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
 
 import androidx.lifecycle.ViewModelStore
+import java.math.BigInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import org.astianx.midori.one.AppFeature
+import org.astianx.midori.one.MemoryAppEntryStore
+import org.astianx.midori.one.R
+import org.astianx.midori.one.Screen
+import org.astianx.midori.one.UiText
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.math.BigInteger
 import to.tether.wdk.core.EntropyResult
 import to.tether.wdk.core.SeedAndEntropyResult
 

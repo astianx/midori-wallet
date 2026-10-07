@@ -340,4 +340,31 @@
     <string name="chat_draft">Draft: %1$s</string>
     <string name="chat_group_security">Only approved devices receive group messages. Removing a member affects future messages, not copies already received.</string>
     <string name="chat_group_leave_confirm">You will leave this conversation and it will no longer reopen automatically on this device. You will remain on the member list until an administrator removes your access.</string>
+
+    <!-- Chat playback, photo editing and conversation actions -->
+    <string name="chat_pin">Pin</string>
+    <string name="chat_unpin">Unpin</string>
+    <string name="chat_mute">Mute</string>
+    <string name="chat_unmute">Unmute</string>
+    <string name="chat_pinned">Pinned chat</string>
+    <string name="chat_muted">Notifications muted</string>
+    <string name="chat_delete_local">Delete chat</string>
+    <string name="chat_delete_local_body">Delete the history and draft from this device? This does not delete messages on the server or leave the group. New messages will make the chat appear again.</string>
+    <string name="chat_audio_seek">Audio playback position</string>
+    <string name="chat_view_image">View image</string>
+    <string name="chat_image_fit">Fit image</string>
+    <string name="chat_image_undo">Undo</string>
+    <string name="chat_image_redo">Redo</string>
+    <string name="chat_image_crop">Crop</string>
+    <string name="chat_image_text">Text</string>
+    <string name="chat_image_draw">Draw</string>
+    <string name="chat_image_crop_hint">Drag across the image to select the area to keep.</string>
+    <string name="chat_image_text_hint">Tap the image to place your text.</string>
+    <string name="chat_image_draw_hint">Draw on the image. Undo removes the last stroke.</string>
+    <string name="chat_image_reset_crop">Full image</string>
+    <string name="chat_image_color">Color %1$d</string>
+    <string name="chat_image_done">Done</string>
+    <string name="chat_image_add_text">Place text</string>
+    <string name="chat_image_discard">Discard changes</string>
+    <string name="chat_image_original_kept">The original image will be kept. This edited copy has not been sent.</string>
 </resources>

@@ -1,9 +1,12 @@
 package org.astianx.midori.one
 
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,15 +16,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,26 +41,22 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 
-private val WdkDarkColors = darkColorScheme(
-    primary = Color(0xFF4CAF50),
-    onPrimary = Color.White,
-    secondary = Color(0xFF4CAF50),
-    background = Color(0xFF121212),
-    surface = Color(0xFF1E1E1E),
-    surfaceVariant = Color(0xFF2A2A2A),
-    onBackground = Color.White,
-    onSurface = Color.White,
-    onSurfaceVariant = Color(0xFFAAAAAA),
-    outline = Color(0xFF3A3A3A),
-    error = Color(0xFF2E8A17)
-)
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme(colorScheme = WdkDarkColors) {
+            val preferences = remember { ThemePreferences(applicationContext) }
+            var themeMode by remember { mutableStateOf(preferences.load()) }
+            val darkTheme = themeMode.isDark(isSystemInDarkTheme())
+            SideEffect {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,
+                        android.graphics.Color.TRANSPARENT) { darkTheme },
+                    navigationBarStyle = SystemBarStyle.auto(0xE6FAFAF8.toInt(), 0x80121612.toInt()) { darkTheme }
+                )
+            }
+            MidoriTheme(darkTheme) {
                 val vm: WalletViewModel = viewModel(
                     factory = WalletViewModel.Factory(applicationContext)
                 )
@@ -67,31 +67,48 @@ class MainActivity : ComponentActivity() {
                         showBrandSplash = false
                     }
                 }
-                if (showBrandSplash) BrandSplashScreen() else WdkApp(vm)
+                if (showBrandSplash) BrandSplashScreen() else WdkApp(vm, themeMode) { selected ->
+                    preferences.save(selected)
+                    themeMode = selected
+                }
             }
         }
     }
 }
 
 @Composable
-fun WdkApp(vm: WalletViewModel) {
+fun WdkApp(vm: WalletViewModel, themeMode: ThemeMode, onThemeChange: (ThemeMode) -> Unit) {
     val s by vm.state.collectAsState()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
-        when (s.currentScreen) {
-            Screen.Welcome -> WelcomeScreen(vm)
-            Screen.RestoreError -> RestoreErrorScreen(vm)
-            Screen.Create -> CreateWalletScreen(vm)
-            Screen.Import -> ImportWalletScreen(vm)
-            Screen.Home -> HomeScreen(vm)
-            Screen.Send -> SendScreen(vm)
-            Screen.Receive -> ReceiveScreen(vm)
-            Screen.Sign -> SignMessageScreen(vm)
+        val isMainScreen = s.currentScreen in mainScreens
+        BackHandler(enabled = isMainScreen && s.currentScreen != Screen.Chats) { vm.navigate(Screen.Chats) }
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f)) {
+                when (s.currentScreen) {
+                    Screen.Welcome -> WelcomeScreen(vm, themeMode, onThemeChange)
+                    Screen.RestoreError -> RestoreErrorScreen(vm)
+                    Screen.Create -> CreateWalletScreen(vm)
+                    Screen.Import -> ImportWalletScreen(vm)
+                    Screen.Home -> HomeScreen(vm)
+                    Screen.Send -> SendScreen(vm)
+                    Screen.Receive -> ReceiveScreen(vm)
+                    Screen.Sign -> SignMessageScreen(vm)
+                    Screen.Messaging -> MessagingScreen(vm)
+                    Screen.Chats -> ChatsScreen(vm)
+                    Screen.Markets -> MarketsScreen(vm)
+                    Screen.More -> MoreScreen(vm, themeMode, onThemeChange)
+                    Screen.Feature -> FeatureScreen(vm)
+                    Screen.MarketAsset -> MarketAssetScreen(vm)
+                    Screen.Help -> HelpScreen(vm)
+                }
+            }
+            if (isMainScreen) AppNavigation(s.currentScreen, vm::navigate)
         }
 
         if (s.isLoading) {
@@ -112,11 +129,11 @@ fun WdkApp(vm: WalletViewModel) {
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(48.dp)
                     )
-                    if (s.statusText.isNotEmpty()) {
+                    s.statusText?.let { status ->
                         Spacer(Modifier.size(16.dp))
                         Text(
-                            s.statusText,
-                            color = Color.White,
+                            status.asString(),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -133,14 +150,15 @@ fun WdkApp(vm: WalletViewModel) {
                     .align(Alignment.TopCenter)
             ) {
                 Text(
-                    text = msg,
-                    color = Color.White,
+                    text = msg.asString(),
+                    color = if (s.toastIsSuccess) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onErrorContainer,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (s.toastIsSuccess) Color(0xFF4CAF50) else MaterialTheme.colorScheme.primary)
+                        .background(if (s.toastIsSuccess) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer)
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 )
             }

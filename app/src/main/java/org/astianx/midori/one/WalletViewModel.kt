@@ -8,22 +8,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import to.tether.wdk.core.WdkCore
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import java.math.BigDecimal
 import java.util.UUID
 
-enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Sign }
-enum class Network { ETH, BTC }
-enum class Asset(val network: Network, val decimals: Int) {
-    USDC(Network.ETH, 6), ETH(Network.ETH, 18), BTC(Network.BTC, 8)
-}
-
-const val USDC_SEPOLIA_CONTRACT = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"
-
+enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Sign, Messaging, Chats, Markets, More, Feature, MarketAsset, Help }
 enum class TxStatus { PENDING, BROADCAST, UNKNOWN, FAILED_BEFORE_BROADCAST }
 
 internal fun isValidVerificationResult(result: Any): Boolean = result is Boolean && result
@@ -38,168 +33,179 @@ internal fun toSmallestUnit(amount: String, decimals: Int): String? = try {
 data class PendingTx(
     val id: String = UUID.randomUUID().toString(),
     val network: Network,
-    val asset: Asset = if (network == Network.ETH) Asset.ETH else Asset.BTC,
+    val asset: Asset = if (network == Network.BASE) Asset.ETH else Asset.BTC,
     val toAddress: String,
     val amount: String,
     val status: TxStatus = TxStatus.PENDING,
     val hash: String? = null,
-    val error: String? = null
+    val error: UiText? = null
 ) {
     val explorerUrl: String?
         get() = when {
             hash == null -> null
-            network == Network.ETH -> "https://sepolia.etherscan.io/tx/$hash"
-            else -> "https://blockbook.tbtc-1.zelcore.io/tx/$hash"
+            else -> "${network.explorer}/tx/$hash"
         }
 
-    val statusLabel: String
+    val statusLabel: UiText
         get() = when (status) {
-            TxStatus.PENDING -> "Submitting to network..."
-            TxStatus.BROADCAST -> "Broadcast · confirmation not checked"
-            TxStatus.UNKNOWN -> "Submission uncertain · check network"
-            TxStatus.FAILED_BEFORE_BROADCAST -> "No se emitió · revisa saldo, gas y conexión"
+            TxStatus.PENDING -> UiText(R.string.tx_submitting)
+            TxStatus.BROADCAST -> UiText(R.string.tx_broadcast)
+            TxStatus.UNKNOWN -> UiText(R.string.tx_unknown)
+            TxStatus.FAILED_BEFORE_BROADCAST -> UiText(R.string.tx_failed)
         }
 }
 
 data class WalletUiState(
     val currentScreen: Screen = Screen.Welcome,
+    val introductionPage: Int = 0,
+    val hasEnteredApp: Boolean = false,
+    val feature: AppFeature = AppFeature.CONTACTS,
+    val detailReturnScreen: Screen = Screen.Chats,
+    val marketAsset: Asset = Asset.USDC,
+    val messagingReturnScreen: Screen = Screen.Welcome,
     val seedPhrase: List<String> = emptyList(),
     val importWords: List<String> = List(12) { "" },
     val importError: Boolean = false,
-    val toastMessage: String? = null,
+    val toastMessage: UiText? = null,
     val toastIsSuccess: Boolean = false,
     val isLoading: Boolean = false,
-    val statusText: String = "",
-    val restoreError: String? = null,
+    val statusText: UiText? = null,
+    val restoreError: UiText? = null,
     val ethAddress: String = "",
-    val ethBalance: String = "0",
-    val usdcBalance: String? = null,
+    val ethBalance: String? = null,
+    val tokenBalances: Map<Asset, String> = emptyMap(),
     val btcAddress: String = "",
-    val btcBalance: String = "0",
+    val btcBalance: String? = null,
     val isWdkInitialized: Boolean = false,
     val sendAsset: Asset = Asset.USDC,
     val sendAddress: String = "",
     val sendAmount: String = "",
     val pendingTransactions: List<PendingTx> = emptyList(),
     val receiveAsset: Asset = Asset.USDC,
-    val signNetwork: Network = Network.ETH,
-    val signMessage: String = "Login to MyDApp\nTimestamp: 1711036800\nNonce: a3f8c2",
+    val signNetwork: Network = Network.BASE,
+    val signMessage: String = "",
     val signResult: String? = null,
     val verifyResult: Boolean? = null
-)
+) {
+    val usdcBalance: String? get() = tokenBalances[Asset.USDC]
+    val usdtBalance: String? get() = tokenBalances[Asset.USDT]
+}
 
-class WalletViewModel(private val context: Context) : ViewModel() {
-    private val _state = MutableStateFlow(WalletUiState())
+class WalletViewModel internal constructor(
+    private val walletStore: WalletStore,
+    private val clientFactory: () -> WalletClient,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val baseFeeProvider: BaseFeeProvider = HttpBaseFeeProvider(),
+    private val bitcoinNetworkVerifier: BitcoinNetworkVerifier = HttpBitcoinNetworkVerifier(),
+    private val appEntryStore: AppEntryStore = MemoryAppEntryStore()
+) : ViewModel() {
+    constructor(context: Context) : this(KeystoreWalletStore(context), { WdkWalletClient(context) },
+        appEntryStore = AppEntryPreferences(context))
+
+    private val _state = MutableStateFlow(WalletUiState(
+        currentScreen = if (appEntryStore.hasEntered()) Screen.Chats else Screen.Welcome,
+        hasEnteredApp = appEntryStore.hasEntered()
+    ))
     val state: StateFlow<WalletUiState> = _state.asStateFlow()
 
-    private val prefs = context.getSharedPreferences("wdk_wallet", Context.MODE_PRIVATE)
-    private var wdkCore: WdkCore? = null
+    private var wdkCore: WalletClient? = null
     private var encryptionKey = ""
     private var encryptedSeed = ""
     private var isRefreshingBalance = false
 
-    // NOTE: must be declared before the init block below — Kotlin runs property
-    // initializers and init blocks in declaration order, and the restore coroutine
-    // (launched on Dispatchers.Main.immediate) reads this synchronously during
-    // construction. Declared after init, it would still be null at that point.
-    private val wdkConfig = """
-    {
-      "networks": {
-        "sepolia": {
-            "blockchain": "sepolia",
-            "config": {
-            "chainId": 11155111,
-              "provider": "https://ethereum-sepolia.publicnode.com"
-            }
-        },
-        "bitcoin": {
-          "blockchain": "bitcoin",
-          "config": {
-          "client": {
-            "type": "blockbook-http",
-            "clientConfig": {
-              "url": "https://blockbook.tbtc-1.zelcore.io/api"
-            }
-          },
-          "network": "testnet"
-          }
-        }
-      }
-    }
-    """.trimIndent()
-
     init {
-        val savedKey = prefs.getString("encryptionKey", null)
-        val savedSeed = prefs.getString("encryptedSeed", null)
-        if (!savedKey.isNullOrEmpty() && !savedSeed.isNullOrEmpty()) restoreWallet()
+        if (walletStore.hasCredentials()) restoreWallet()
     }
 
     private suspend fun initializeWallet(key: String, seed: String): Pair<String, String> {
         val wdk = getOrCreateClient()
-        wdk.initializeWDK(encryptionKey = key, encryptedSeed = seed, config = wdkConfig)
-        val ethAddress = wdk.getAddress(network = "sepolia")
+        wdk.initializeWDK(encryptionKey = key, encryptedSeed = seed, config = BaseMainnet.wdkConfig)
+        val ethAddress = wdk.getAddress(network = Network.BASE.wdkName)
         val btcAddress = wdk.getAddress(network = "bitcoin")
-        require(ethAddress.isNotBlank() && btcAddress.isNotBlank()) { "Wallet addresses are unavailable" }
+        walletRequire(ethAddress.isNotBlank() && btcAddress.isNotBlank(), R.string.address_unavailable)
         return ethAddress to btcAddress
     }
 
     fun restoreWallet() {
-        val key = prefs.getString("encryptionKey", null)
-        val seed = prefs.getString("encryptedSeed", null)
-        if (key.isNullOrEmpty() || seed.isNullOrEmpty()) return
         if (_state.value.isLoading) return
         viewModelScope.launch {
-            update { copy(isLoading = true, statusText = "Restoring wallet...", restoreError = null) }
+            update { copy(isLoading = true, statusText = UiText(R.string.status_restoring), restoreError = null) }
             try {
+                val (key, seed) = withContext(ioDispatcher) { walletStore.load() }
+                    ?: throw WalletException(UiText(R.string.error_local_backup))
                 val (eth, btc) = initializeWallet(key, seed)
                 encryptionKey = key
                 encryptedSeed = seed
                 update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc,
-                    currentScreen = Screen.Home, isLoading = false, statusText = "") }
+                    currentScreen = Screen.Chats, hasEnteredApp = true, isLoading = false, statusText = null) }
+                appEntryStore.markEntered()
                 fetchBalance()
             } catch (e: Exception) {
                 discardClient()
                 update { copy(currentScreen = Screen.RestoreError, isWdkInitialized = false,
-                    isLoading = false, statusText = "", restoreError = e.message ?: "Unknown error") }
+                    isLoading = false, statusText = null, restoreError = e.toUiText(R.string.error_restore)) }
             }
         }
     }
 
     private suspend fun saveCredentials(key: String, seed: String) {
-        val saved = withContext(kotlinx.coroutines.Dispatchers.IO) {
-            prefs.edit().putString("encryptionKey", key).putString("encryptedSeed", seed).commit()
+        val saved = withContext(ioDispatcher) {
+            walletStore.save(key, seed)
         }
-        check(saved) { "Could not save the wallet on this device" }
+        walletRequire(saved, R.string.error_save_wallet)
     }
 
     private fun clearCredentials() {
-        prefs.edit().clear().apply()
+        walletStore.clear()
     }
 
-    private fun getOrCreateClient(): WdkCore {
-        return wdkCore ?: WdkCore(context).also { wdkCore = it }
+    private fun getOrCreateClient(): WalletClient {
+        return wdkCore ?: clientFactory().also { wdkCore = it }
     }
 
     private suspend fun discardClient() {
         val old = wdkCore
         wdkCore = null
-        withContext(kotlinx.coroutines.Dispatchers.IO) {
+        withContext(ioDispatcher) {
             try { old?.close() } catch (_: Exception) {}
         }
     }
 
     private fun update(transform: WalletUiState.() -> WalletUiState) {
-        _state.value = _state.value.transform()
+        _state.update { it.transform() }
     }
 
     fun navigate(screen: Screen) {
-        val destination = if (screen == Screen.Welcome &&
-            prefs.contains("encryptionKey") && prefs.contains("encryptedSeed") &&
-            !_state.value.isWdkInitialized) Screen.RestoreError else screen
-        update { copy(currentScreen = destination) }
+        val destination = when {
+            screen in setOf(Screen.Home, Screen.Send, Screen.Receive, Screen.Sign) &&
+                !_state.value.isWdkInitialized && walletStore.hasCredentials() -> Screen.RestoreError
+            screen in setOf(Screen.Send, Screen.Receive, Screen.Sign) && !_state.value.isWdkInitialized -> Screen.Home
+            else -> screen
+        }
+        update { copy(currentScreen = destination,
+            messagingReturnScreen = if (destination == Screen.Messaging && currentScreen != Screen.Messaging)
+                currentScreen else messagingReturnScreen,
+            detailReturnScreen = if (destination == Screen.Help) currentScreen else detailReturnScreen) }
     }
 
-    fun showToast(message: String, success: Boolean = false) {
+    fun enterApp() {
+        appEntryStore.markEntered()
+        update { copy(currentScreen = Screen.Chats, hasEnteredApp = true) }
+    }
+
+    fun openFeature(feature: AppFeature) {
+        update { copy(feature = feature, detailReturnScreen = currentScreen, currentScreen = Screen.Feature) }
+    }
+
+    fun openMarketAsset(asset: Asset) {
+        update { copy(marketAsset = asset, currentScreen = Screen.MarketAsset) }
+    }
+
+    fun updateIntroductionPage(page: Int) {
+        if (page in IntroSlide.entries.indices) update { copy(introductionPage = page) }
+    }
+
+    fun showToast(message: UiText, success: Boolean = false) {
         update { copy(toastMessage = message, toastIsSuccess = success) }
         viewModelScope.launch {
             delay(2500)
@@ -210,12 +216,13 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     }
 
     fun createWallet() {
-        if (prefs.contains("encryptionKey") || prefs.contains("encryptedSeed")) {
+        if (_state.value.isLoading) return
+        if (walletStore.hasCredentials()) {
             navigate(Screen.RestoreError)
             return
         }
         viewModelScope.launch {
-            update { copy(isLoading = true, statusText = "Generating seed phrase...") }
+            update { copy(isLoading = true, statusText = UiText(R.string.status_generating)) }
             try {
                 val wdk = getOrCreateClient()
                 val entropy = wdk.generateEntropyAndEncrypt(wordCount = 12)
@@ -227,27 +234,29 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                     encryptionKey = entropy.encryptionKey
                 )
                 val words = mnemonic.trim().split(" ")
-                update { copy(seedPhrase = words, currentScreen = Screen.Create, isLoading = false, statusText = "") }
+                update { copy(seedPhrase = words, currentScreen = Screen.Create, isLoading = false, statusText = null) }
             } catch (e: Exception) {
-                update { copy(isLoading = false, statusText = "") }
-                showToast("Error: ${e.message}")
+                update { copy(isLoading = false, statusText = null) }
+                showToast(e.toUiText(R.string.error_generate))
             }
         }
     }
 
     fun confirmSeedAndInitialize() {
+        if (_state.value.isLoading) return
         viewModelScope.launch {
-            update { copy(isLoading = true, statusText = "Initializing wallet...") }
+            update { copy(isLoading = true, statusText = UiText(R.string.status_initializing)) }
             try {
                 val (eth, btc) = initializeWallet(encryptionKey, encryptedSeed)
                 saveCredentials(encryptionKey, encryptedSeed)
                 update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc,
-                    seedPhrase = emptyList(), currentScreen = Screen.Home, isLoading = false, statusText = "") }
+                    seedPhrase = emptyList(), currentScreen = Screen.Chats, hasEnteredApp = true, isLoading = false, statusText = null) }
+                appEntryStore.markEntered()
                 fetchBalance()
             } catch (e: Exception) {
                 discardClient()
-                update { copy(isLoading = false, statusText = "") }
-                showToast("WDK init failed: ${e.message}")
+                update { copy(isLoading = false, statusText = null) }
+                showToast(e.toUiText(R.string.error_initialize))
             }
         }
     }
@@ -268,6 +277,7 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     }
 
     fun doImport() {
+        if (_state.value.isLoading) return
         val words = _state.value.importWords.map { it.trim().lowercase() }
         val filled = words.filter { it.isNotEmpty() }
         if (filled.size < 12) {
@@ -278,7 +288,7 @@ class WalletViewModel(private val context: Context) : ViewModel() {
 
         val mnemonic = words.joinToString(" ")
         viewModelScope.launch {
-            update { copy(isLoading = true, statusText = "Importing wallet...") }
+            update { copy(isLoading = true, statusText = UiText(R.string.status_importing)) }
             try {
                 val wdk = getOrCreateClient()
                 val result = wdk.getSeedAndEntropyFromMnemonic(mnemonic = mnemonic)
@@ -287,13 +297,14 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                 encryptionKey = result.encryptionKey
                 encryptedSeed = result.encryptedSeedBuffer
                 update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc,
-                    importWords = List(12) { "" }, currentScreen = Screen.Home,
-                    isLoading = false, statusText = "", restoreError = null) }
+                    importWords = List(12) { "" }, currentScreen = Screen.Chats, hasEnteredApp = true,
+                    isLoading = false, statusText = null, restoreError = null) }
+                appEntryStore.markEntered()
                 fetchBalance()
             } catch (e: Exception) {
                 discardClient()
-                update { copy(isLoading = false, statusText = "") }
-                showToast("Import failed: ${e.message}")
+                update { copy(isLoading = false, statusText = null) }
+                showToast(e.toUiText(R.string.error_import))
             }
         }
     }
@@ -304,27 +315,28 @@ class WalletViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 try {
-                    val ethBal = wdkCore!!.getBalance(network = "sepolia")
+                    val ethBal = wdkCore!!.getBalance(network = Network.BASE.wdkName)
                     update { copy(ethBalance = ethBal) }
                 } catch (e: Exception) {
-                    android.util.Log.w("WDK", "ETH balance fetch failed: ${e.message}")
+                    update { copy(ethBalance = null) }
                 }
-                try {
-                    val tokenBalance = wdkCore!!.callMethod(
-                        methodName = "getTokenBalance", network = "sepolia", accountIndex = 0,
-                        args = JSONObject.quote(USDC_SEPOLIA_CONTRACT)
-                    ).toString()
-                    require(tokenBalance.matches(Regex("[0-9]+"))) { "Invalid USDC balance" }
-                    update { copy(usdcBalance = tokenBalance) }
-                } catch (e: Exception) {
-                    update { copy(usdcBalance = null) }
-                    android.util.Log.w("WDK", "USDC balance fetch failed: ${e.message}")
+                Asset.entries.filter { it.isToken && it.isAvailable }.forEach { asset ->
+                    try {
+                        val tokenBalance = wdkCore!!.callMethod(
+                            methodName = "getTokenBalance", network = asset.network.wdkName, accountIndex = 0,
+                            args = JSONObject.quote(requireNotNull(asset.contract))
+                        ).toString()
+                        require(tokenBalance.matches(Regex("[0-9]+"))) { "Invalid token balance" }
+                        update { copy(tokenBalances = tokenBalances + (asset to tokenBalance)) }
+                    } catch (e: Exception) {
+                        update { copy(tokenBalances = tokenBalances - asset) }
+                    }
                 }
                 try {
                     val btcBal = wdkCore!!.getBalance(network = "bitcoin")
                     update { copy(btcBalance = btcBal) }
                 } catch (e: Exception) {
-                    android.util.Log.w("WDK", "BTC balance fetch failed: ${e.message}")
+                    update { copy(btcBalance = null) }
                 }
             } finally {
                 isRefreshingBalance = false
@@ -379,7 +391,7 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     }
 
     fun setSendMax() {
-        if (_state.value.sendAsset == Asset.USDC) {
+        if (_state.value.sendAsset.isToken && _state.value.sendAsset.isAvailable) {
             update { copy(sendAmount = maxSendAmount) }
         }
     }
@@ -390,70 +402,86 @@ class WalletViewModel(private val context: Context) : ViewModel() {
         val address = s.sendAddress.trim()
         val amount = s.sendAmount.trim()
         if (address.isEmpty() || amount.isEmpty()) {
-            showToast("Please fill in address and amount")
+            showToast(UiText(R.string.error_send_fields))
             return
         }
         if (!s.isWdkInitialized || wdkCore == null) {
-            showToast("Wallet not initialized")
+            showToast(UiText(R.string.error_not_initialized))
             return
         }
 
         val asset = s.sendAsset
+        if (!asset.isAvailable) {
+            showToast(asset.unavailableReason ?: UiText(R.string.error_asset_unavailable))
+            return
+        }
         val valueInSmallestUnit = toSmallestUnit(amount, asset.decimals) ?: run {
-            showToast("Invalid amount")
+            showToast(UiText(R.string.error_amount))
             return
         }
-        if (asset.network == Network.ETH && !address.matches(Regex("0x[a-fA-F0-9]{40}"))) {
-            showToast("Invalid Sepolia address")
+        if (asset.network == Network.BASE && !address.matches(Regex("0x[a-fA-F0-9]{40}"))) {
+            showToast(UiText(R.string.error_base_address))
             return
         }
-        if (asset.network == Network.ETH && address.equals("0x0000000000000000000000000000000000000000", ignoreCase = true)) {
-            showToast("La dirección cero no puede recibir este envío")
+        if (asset.network == Network.BASE && address.equals("0x0000000000000000000000000000000000000000", ignoreCase = true)) {
+            showToast(UiText(R.string.error_zero_address))
             return
         }
-        if (asset == Asset.USDC) {
-            val balance = s.usdcBalance?.toBigIntegerOrNull()
+        if (asset.network == Network.BTC && !isBitcoinMainnetAddress(address)) {
+            showToast(UiText(R.string.error_btc_address))
+            return
+        }
+        if (asset.isToken) {
+            val balance = s.tokenBalances[asset]?.toBigIntegerOrNull()
             if (balance == null) {
-                showToast("USDC balance unavailable. Refresh and try again.")
+                showToast(UiText(R.string.error_balance_unavailable, listOf(asset.name)))
                 return
             }
             if (valueInSmallestUnit.toBigInteger() > balance) {
-                showToast("Insufficient USDC balance")
+                showToast(UiText(R.string.error_balance_insufficient, listOf(asset.name)))
                 return
             }
         }
 
-        val networkRpc = if (asset.network == Network.ETH) "sepolia" else "bitcoin"
+        val networkRpc = if (asset.network == Network.BASE) Network.BASE.wdkName else Network.BTC.wdkName
         val tx = PendingTx(network = asset.network, asset = asset, toAddress = address, amount = amount)
         val txId = tx.id
 
         update { copy(pendingTransactions = pendingTransactions + tx,
-            isLoading = true, statusText = "Submitting transaction...") }
+            isLoading = true, statusText = UiText(R.string.status_submitting)) }
 
         viewModelScope.launch {
             var submissionStarted = false
             try {
-                val argsJson = if (asset == Asset.USDC) {
-                    JSONObject().put("token", USDC_SEPOLIA_CONTRACT)
+                val argsJson = if (asset.isToken) {
+                    JSONObject().put("token", requireNotNull(asset.contract))
                         .put("recipient", address).put("amount", valueInSmallestUnit).toString()
                 } else {
                     JSONObject().put("to", address)
                         .put("value", valueInSmallestUnit).toString()
                 }
-                if (asset == Asset.USDC) {
+                if (asset.network == Network.BASE) {
                     val quoted = wdkCore!!.callMethod(
-                        methodName = "quoteTransfer", network = "sepolia", accountIndex = 0,
-                        args = argsJson
+                        methodName = if (asset.isToken) "quoteTransfer" else "quoteSendTransaction",
+                        network = Network.BASE.wdkName, accountIndex = 0, args = argsJson
                     )
-                    val fee = extractFee(quoted).toBigIntegerOrNull()
-                    require(fee != null && fee > java.math.BigInteger.ZERO) { "Unable to quote USDC gas" }
-                    require(s.ethBalance.toBigIntegerOrNull()?.let { it >= fee } == true) {
-                        "Insufficient Sepolia ETH for gas"
-                    }
+                    val executionFee = extractFee(quoted).toBigIntegerOrNull()
+                        ?: throw WalletException(UiText(R.string.error_gas_quote))
+                    val transaction = baseTransaction(asset, s.ethAddress, address, valueInSmallestUnit.toBigInteger())
+                    val fee = quoteBaseTotalFee(transaction, executionFee, baseFeeProvider)
+                    val gasBalance = wdkCore!!.getBalance(network = Network.BASE.wdkName)
+                    update { copy(ethBalance = gasBalance) }
+                    walletRequire(gasBalance.toBigIntegerOrNull()?.let { it >= fee + transaction.value } == true,
+                        R.string.error_insufficient_gas)
+                } else {
+                    bitcoinNetworkVerifier.verify()
+                    // WDK validates the checksum/network and available UTXOs during quotation.
+                    wdkCore!!.callMethod(methodName = "quoteSendTransaction", network = Network.BTC.wdkName,
+                        accountIndex = 0, args = argsJson)
                 }
                 submissionStarted = true
                 val result = wdkCore!!.callMethod(
-                    methodName = if (asset == Asset.USDC) "transfer" else "sendTransaction",
+                    methodName = if (asset.isToken) "transfer" else "sendTransaction",
                     network = networkRpc,
                     accountIndex = 0,
                     args = argsJson
@@ -461,23 +489,23 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                 val hash = extractTxHash(result)
                 updateTx(txId, TxStatus.BROADCAST, hash = hash)
                 update { copy(sendAddress = "", sendAmount = "") }
-                showToast("Broadcast to network; confirmation not checked", success = true)
+                showToast(UiText(R.string.broadcast_notice), success = true)
                 fetchBalance()
             } catch (e: Exception) {
                 if (submissionStarted) {
-                    updateTx(txId, TxStatus.UNKNOWN, error = e.message)
-                    showToast("Submission uncertain. Check your address before retrying.")
+                    updateTx(txId, TxStatus.UNKNOWN, error = UiText(R.string.unknown_submission_notice))
+                    showToast(UiText(R.string.unknown_submission_notice))
                 } else {
-                    updateTx(txId, TxStatus.FAILED_BEFORE_BROADCAST, error = e.message)
-                    showToast(e.message ?: "No se pudo preparar la transferencia")
+                    updateTx(txId, TxStatus.FAILED_BEFORE_BROADCAST, error = e.toUiText(R.string.error_prepare_transfer))
+                    showToast(e.toUiText(R.string.error_prepare_transfer))
                 }
             } finally {
-                update { copy(isLoading = false, statusText = "") }
+                update { copy(isLoading = false, statusText = null) }
             }
         }
     }
 
-    private fun updateTx(id: String, status: TxStatus, hash: String? = null, error: String? = null) {
+    private fun updateTx(id: String, status: TxStatus, hash: String? = null, error: UiText? = null) {
         val txList = _state.value.pendingTransactions.toMutableList()
         val index = txList.indexOfFirst { it.id == id }
         if (index >= 0) {
@@ -500,14 +528,14 @@ class WalletViewModel(private val context: Context) : ViewModel() {
         val message = _state.value.signMessage.trim()
         if (message.isEmpty()) return
         if (!_state.value.isWdkInitialized || wdkCore == null) {
-            showToast("Wallet not initialized")
+            showToast(UiText(R.string.error_not_initialized))
             return
         }
         update { copy(verifyResult = null) }
 
-        val network = if (_state.value.signNetwork == Network.ETH) "sepolia" else "bitcoin"
+        val network = if (_state.value.signNetwork == Network.BASE) Network.BASE.wdkName else Network.BTC.wdkName
         viewModelScope.launch {
-            update { copy(isLoading = true, statusText = "Signing message...") }
+            update { copy(isLoading = true, statusText = UiText(R.string.status_signing)) }
             try {
                 val result = wdkCore!!.callMethod(
                     methodName = "sign",
@@ -515,11 +543,11 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                     accountIndex = 0,
                     args = jsonEncodeString(message)
                 )
-                update { copy(signResult = result.toString(), currentScreen = Screen.Sign, isLoading = false, statusText = "") }
-                showToast("Message signed successfully", success = true)
+                update { copy(signResult = result.toString(), currentScreen = Screen.Sign, isLoading = false, statusText = null) }
+                showToast(UiText(R.string.message_signed), success = true)
             } catch (e: Exception) {
-                update { copy(isLoading = false, statusText = "") }
-                showToast("Sign failed: ${e.message}")
+                update { copy(isLoading = false, statusText = null) }
+                showToast(e.toUiText(R.string.error_sign))
             }
         }
     }
@@ -529,13 +557,13 @@ class WalletViewModel(private val context: Context) : ViewModel() {
         val message = _state.value.signMessage.trim()
         if (message.isEmpty()) return
         if (!_state.value.isWdkInitialized || wdkCore == null) {
-            showToast("Wallet not initialized")
+            showToast(UiText(R.string.error_not_initialized))
             return
         }
 
-        val network = if (_state.value.signNetwork == Network.ETH) "sepolia" else "bitcoin"
+        val network = if (_state.value.signNetwork == Network.BASE) Network.BASE.wdkName else Network.BTC.wdkName
         viewModelScope.launch {
-            update { copy(isLoading = true, statusText = "Verifying signature...") }
+            update { copy(isLoading = true, statusText = UiText(R.string.status_verifying)) }
             try {
                 val argsArray = JSONArray().apply {
                     put(message)
@@ -548,28 +576,33 @@ class WalletViewModel(private val context: Context) : ViewModel() {
                     args = argsArray.toString()
                 )
                 val valid = isValidVerificationResult(result)
-                update { copy(verifyResult = valid, isLoading = false, statusText = "") }
-                showToast(if (valid) "Signature is valid" else "Signature is invalid", success = valid)
+                update { copy(verifyResult = valid, isLoading = false, statusText = null) }
+                showToast(UiText(if (valid) R.string.signature_valid else R.string.signature_invalid), success = valid)
             } catch (e: Exception) {
-                update { copy(verifyResult = false, isLoading = false, statusText = "") }
-                showToast("Verify failed: ${e.message}")
+                update { copy(verifyResult = false, isLoading = false, statusText = null) }
+                showToast(e.toUiText(R.string.error_verify))
             }
         }
     }
 
     fun deleteWallet() {
         viewModelScope.launch {
+            try {
+                withContext(ioDispatcher) { clearCredentials() }
+            } catch (e: Exception) {
+                showToast(e.toUiText(R.string.error_delete_wallet))
+                return@launch
+            }
             try { wdkCore?.dispose() } catch (_: Exception) {}
             val old = wdkCore
             wdkCore = null
             encryptionKey = ""
             encryptedSeed = ""
-            clearCredentials()
             update {
-                WalletUiState()
+                WalletUiState(currentScreen = Screen.Chats, hasEnteredApp = true)
             }
-            showToast("Wallet deleted")
-            withContext(kotlinx.coroutines.Dispatchers.IO) {
+            showToast(UiText(R.string.wallet_deleted))
+            withContext(ioDispatcher) {
                 try { old?.close() } catch (_: Exception) {}
             }
         }
@@ -581,7 +614,7 @@ class WalletViewModel(private val context: Context) : ViewModel() {
 
     fun resetSign() {
         update { copy(
-            signMessage = "Login to MyDApp\nTimestamp: 1711036800\nNonce: a3f8c2",
+            signMessage = "",
             signResult = null,
             verifyResult = null
         ) }
@@ -590,6 +623,9 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     fun resetSend() {
         update { copy(sendAddress = "", sendAmount = "", sendAsset = Asset.USDC) }
     }
+
+    val formattedUsdtBalance: String
+        get() = _state.value.usdtBalance?.let { formatBalance(it, 6, "USDT") } ?: "— USDT"
 
     val formattedUsdcBalance: String
         get() = _state.value.usdcBalance?.let { formatBalance(it, 6, "USDC") } ?: "— USDC"
@@ -600,31 +636,35 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     val formattedBtcBalance: String
         get() = formatBalance(_state.value.btcBalance, 8, "BTC")
 
-    private fun formatBalance(raw: String, decimals: Int, symbol: String): String = try {
-        "${BigDecimal(raw).movePointLeft(decimals).stripTrailingZeros().toPlainString()} $symbol"
-    } catch (_: NumberFormatException) {
+    private fun formatBalance(raw: String?, decimals: Int, symbol: String): String = try {
+        "${BigDecimal(requireNotNull(raw)).movePointLeft(decimals).stripTrailingZeros().toPlainString()} $symbol"
+    } catch (_: IllegalArgumentException) {
         "— $symbol"
     }
 
-    val receiveAddress: String
-        get() = if (_state.value.receiveAsset.network == Network.ETH) _state.value.ethAddress else _state.value.btcAddress
+    val receiveQrContent: String?
+        get() = receiveRequest(_state.value.receiveAsset, receiveAddress)
 
-    val receiveLabel: String
+    val receiveAddress: String
+        get() = if (!_state.value.receiveAsset.isAvailable) "" else if (_state.value.receiveAsset.network == Network.BASE) _state.value.ethAddress else _state.value.btcAddress
+
+    val receiveLabel: UiText
         get() = when (_state.value.receiveAsset) {
-            Asset.USDC -> "USDC de prueba · Ethereum Sepolia"
-            Asset.ETH -> "Tu dirección de ETH · Ethereum Sepolia"
-            Asset.BTC -> "Tu dirección de BTC · Bitcoin testnet4"
+            Asset.USDC -> UiText(R.string.receive_usdc)
+            Asset.USDT -> UiText(R.string.receive_usdt)
+            Asset.ETH -> UiText(R.string.receive_eth)
+            Asset.BTC -> UiText(R.string.receive_btc)
         }
 
-    val sendFee: String
+    val sendFee: UiText
         get() {
             val s = _state.value
-            if (s.sendAsset == Asset.USDC) return "Gas en ETH Sepolia · se cotiza al enviar"
-            return "Variable · se calcula al enviar"
+            if (s.sendAsset.network == Network.BASE) return UiText(R.string.base_fee_hint)
+            return UiText(R.string.btc_fee_hint)
         }
 
     val sendNetworkLabel: String
-        get() = if (_state.value.sendAsset.network == Network.ETH) "Ethereum Sepolia" else "Bitcoin testnet4"
+        get() = _state.value.sendAsset.network.label
 
     val sendTokenLabel: String
         get() = _state.value.sendAsset.name
@@ -632,8 +672,8 @@ class WalletViewModel(private val context: Context) : ViewModel() {
     val maxSendAmount: String
         get() {
             val s = _state.value
-            if (s.sendAsset != Asset.USDC) return "0"
-            return s.usdcBalance?.let { BigDecimal(it).movePointLeft(6).stripTrailingZeros().toPlainString() } ?: "0"
+            if (!s.sendAsset.isToken || !s.sendAsset.isAvailable) return "0"
+            return s.tokenBalances[s.sendAsset]?.let { BigDecimal(it).movePointLeft(s.sendAsset.decimals).stripTrailingZeros().toPlainString() } ?: "0"
         }
 
     override fun onCleared() {

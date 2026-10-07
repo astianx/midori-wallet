@@ -332,4 +332,5 @@
     <string name="chat_pause">Pausar</string>
     <string name="chat_draft">Rascunho: %1$s</string>
     <string name="chat_group_security">Somente dispositivos aprovados recebem mensagens do grupo. Remover um membro afeta mensagens futuras, não cópias já recebidas.</string>
+    <string name="chat_group_leave_confirm">Você sairá desta conversa e ela não será reaberta automaticamente neste dispositivo. Você continuará na lista de membros até que um administrador remova seu acesso.</string>
 </resources>

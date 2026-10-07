@@ -1,10 +1,10 @@
-package org.astianx.midori.one
+package org.astianx.midori.one.wallet
 
-import org.junit.Assert.*
-import org.junit.Test
 import java.util.Base64
 import javax.crypto.AEADBadTagException
 import javax.crypto.KeyGenerator
+import org.junit.Assert.*
+import org.junit.Test
 
 class WalletSecretCipherTest {
     private fun key() = KeyGenerator.getInstance("AES").apply { init(256) }.generateKey()

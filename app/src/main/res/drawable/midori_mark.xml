@@ -10,16 +10,16 @@
         android:translateX="139"
         android:translateY="254">
         <path
-            android:fillColor="#54A48A"
+            android:fillColor="@color/brand_mw_green"
             android:pathData="M130,0 L234,240 L183,313 L130,191 L80,313 L0,313 Z" />
         <path
-            android:fillColor="#262530"
+            android:fillColor="@color/brand_mw_ink"
             android:pathData="M254,0 L202,79 L310,313 L397,313 Z" />
         <path
-            android:fillColor="#C3CEDA"
+            android:fillColor="@color/brand_mw_silver"
             android:pathData="M300,0 L384,0 L494,265 L443,313 Z" />
         <path
-            android:fillColor="#424152"
+            android:fillColor="@color/brand_mw_slate"
             android:pathData="M512,0 L565,122 L617,0 L696,0 L565,313 L462,87 Z" />
     </group>
 </vector>

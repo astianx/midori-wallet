@@ -61,7 +61,7 @@
     <string name="explorer">Explorer</string>
     <string name="usdt_bridge_description">USDT bridged from Ethereum · Base Standard Bridge</string>
     <string name="receive_btc_warning">Receive only BTC on Bitcoin mainnet. Check the network in the sending wallet.</string>
-    <string name="receive_base_warning">Receive only %1$s on Base. The QR identifies the asset and network; check both in the sending wallet.</string>
+    <string name="receive_base_warning">Receive only %1$s on Base. Select the Base network in the sending app; the QR contains only your wallet address.</string>
     <string name="copy_address">Copy address</string>
     <string name="address_copied">Address copied · %1$s</string>
     <string name="address_unavailable">Address unavailable. Try restoring your wallet again.</string>
@@ -238,7 +238,7 @@
     <string name="chat_encrypted">End-to-end encryption</string>
     <string name="chat_encryption_body">Encryption is required for every message. Verify devices with your contact before you trust them.</string>
     <string name="chat_read_receipts">Share read receipts</string>
-    <string name="chat_read_receipts_body">Let contacts know when you open their messages. Off by default.</string>
+    <string name="chat_read_receipts_body">Let contacts know when you open their messages. Enabled by default; you can turn it off here.</string>
     <string name="chat_devices">Verify devices</string>
     <string name="chat_devices_body">Compare these fingerprints with your contact through another trusted channel. Approving a device allows it to receive your encrypted messages.</string>
     <string name="chat_own_key">This device</string>

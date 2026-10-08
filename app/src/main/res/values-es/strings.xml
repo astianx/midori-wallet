@@ -473,4 +473,20 @@
     <string name="style_botanical">Botánico</string>
     <string name="chat_group_protocol_unsupported">Este grupo usa un protocolo de cifrado no compatible. Actualiza la app antes de unirte.</string>
     <string name="chat_group_device_capacity">El grupo supera el límite actual de %1$d dispositivos cifrados. No se envió ningún mensaje.</string>
+    <string name="sell">Vender</string>
+    <string name="fiat_title">Comprar y vender</string>
+    <string name="fiat_intro">Recarga tu wallet o vende cripto con Transak.</string>
+    <string name="fiat_asset">Criptomoneda</string>
+    <string name="fiat_currency">Moneda local</string>
+    <string name="fiat_amount">Importe (%1$s)</string>
+    <string name="fiat_network">Red: %1$s</string>
+    <string name="fiat_destination">Recibir en esta wallet</string>
+    <string name="fiat_sell_body">Transak mostrará las instrucciones de depósito para tu venta. Revisa el activo, la red y el importe antes de enviar desde tu wallet.</string>
+    <string name="fiat_provider_notice">Transak se abrirá en tu navegador. Revisa la cotización, las comisiones y los métodos de pago antes de confirmar. Puede solicitar verificar tu identidad según tu país.</string>
+    <string name="fiat_continue">Continuar con Transak</string>
+    <string name="fiat_retry">Reintentar</string>
+    <string name="fiat_unavailable">La compra y venta no están disponibles por ahora. Puedes seguir recibiendo cripto con tu dirección.</string>
+    <string name="fiat_no_assets">No hay activos disponibles en las redes de tu wallet para esta operación por ahora.</string>
+    <string name="fiat_checkout_failed">No se pudo abrir Transak. Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="fiat_browser_failed">Instala o activa un navegador e inténtalo de nuevo.</string>
 </resources>

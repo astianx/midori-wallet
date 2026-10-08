@@ -122,7 +122,9 @@ internal class SmackGroups(private val connection: XMPPConnection, private val o
         protocols.requireLegacy(room)
         val before = recipientSnapshot(room)
         val peers = (before.members - account).map { JidCreate.bareFrom(it) }.toSet()
-        val encrypted = omemo.encrypt(peers, body)
+        // Smack serializes encrypt/decrypt on this manager. Persist every recipient's ratchet
+        // together before releasing that lock or allowing the ciphertext onto the connection.
+        val encrypted = synchronized(omemo) { records.durableBatch { omemo.encrypt(peers, body) } }
         GroupSendGuard.verifyComplete(before, encrypted.intendedDevices.map { GroupDevice(it.jid.toString(), it.deviceId) }.toSet(), encrypted.isMissingRecipients)
         GroupSendGuard.verifyUnchanged(before, recipientSnapshot(room))
         val builder = StanzaBuilder.buildMessage(id).to(muc.room).ofType(Message.Type.groupchat).addExtension(encrypted.element)

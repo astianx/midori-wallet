@@ -29,6 +29,14 @@ class GroupPhoneProbeTest {
 
     @Test fun fullGroupFromAndroidWithDurableRatchets() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+        // A killed instrumentation process cannot run finally. Remove only this probe's old vaults.
+        val testVault = Regex("group-phone-[0-9a-f-]{36}\\.enc(?:\\.new|\\.bak)?")
+        val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        context.noBackupFilesDir.listFiles()?.filter { testVault.matches(it.name) }?.forEach { stale ->
+            val storageName = stale.name.substringBefore(".enc")
+            stale.delete()
+            keys.deleteEntry("midori.${storageName.replace('-', '.')}")
+        }
         fun file(suffix: String) = File(context.filesDir, "group-phone-$suffix")
         assumeTrue(file("fixture.json").exists())
         val config = JSONObject(file("fixture.json").readText())

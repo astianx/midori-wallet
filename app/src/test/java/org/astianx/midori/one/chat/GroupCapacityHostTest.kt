@@ -1,9 +1,11 @@
 package org.astianx.midori.one.chat
 
 import java.io.File
+import java.security.Security
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import org.jivesoftware.smack.java7.Java7SmackInitializer
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
@@ -12,10 +14,14 @@ import org.junit.Test
 /** Opt-in real-server test; the runner alone provides temporary credentials and phone serials. */
 class GroupCapacityHostTest {
     @Test fun fullCapacityWithAndroidSenders() {
-        val fixture = File(requireNotNull(System.getProperty("midori.group.fixture")))
+        val fixture = File(requireNotNull(System.getProperty("midori.group.fixture"))).absoluteFile
         val config = JSONObject(fixture.readText())
+        val directory = requireNotNull(fixture.parentFile)
+        val progress = File(directory, "progress.log")
+        Security.insertProviderAt(BouncyCastleProvider(), 1)
         Java7SmackInitializer().initialize()
-        GroupCapacityScenario(config, fixture.parentFile, "127.0.0.1", ::println,
+        Class.forName("org.jivesoftware.smackx.omemo.internal.OmemoAesCipher") // Fail before connecting if JCE is unsuitable.
+        GroupCapacityScenario(config, directory, "127.0.0.1", { line -> println(line); progress.appendText(line + "\n") },
             { (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 }, "jvm_heap_used_kib",
             { room, owner, members, approve, received, reply ->
                 val reports = JSONArray()
@@ -49,7 +55,7 @@ class GroupCapacityHostTest {
         val data = JSONObject().put("account", owner.address).put("password", owner.password).put("pin", pin)
             .put("room", room).put("members", JSONArray(members.toList())).put("reply_id", replyId)
         write("fixture.json", data.toString())
-        val log = File(System.getProperty("midori.group.fixture")).parentFile.resolve("phone-$serial.log")
+        val log = File(requireNotNull(File(requireNotNull(System.getProperty("midori.group.fixture"))).absoluteFile.parentFile), "phone-$serial.log")
         val process = ProcessBuilder("adb", "-s", serial, "shell", "am", "instrument", "-w", "-r", "-e", "class",
             "org.astianx.midori.one.chat.GroupPhoneProbeTest",
             "org.astianx.midori.one.test/androidx.test.runner.AndroidJUnitRunner").redirectErrorStream(true).redirectOutput(log).start()

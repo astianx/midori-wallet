@@ -13,6 +13,82 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ChatVaultTest {
+    private fun withVault(test: (ChatVault, File, () -> ChatVault) -> Unit) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val name = "batch-test-${UUID.randomUUID()}"
+        val file = File(context.noBackupFilesDir, "$name.enc")
+        try { test(ChatVault(context, name), file) { ChatVault(context, name) } }
+        finally {
+            file.delete()
+            KeyStore.getInstance("AndroidKeyStore").apply { load(null); deleteEntry("midori.${name.replace('-', '.')}") }
+        }
+    }
+
+    @Test fun batchedRatchetsAreDurableBeforeReturnIncludingFailedEncryptionAdvances() = withVault { vault, file, reopen ->
+        vault.put("session/first", "original")
+        val original = file.readBytes()
+        vault.durableBatch {
+            vault.put("session/first", "advanced")
+            vault.durableBatch { vault.put("session/second", "advanced") }
+            assertEquals("advanced", vault.get("session/first"))
+            assertEquals(setOf("session/first", "session/second"), vault.keys("session/"))
+            assertArrayEquals(original, file.readBytes())
+        }
+        assertEquals("advanced", reopen().get("session/first"))
+        assertEquals("advanced", reopen().get("session/second"))
+        val failure = java.io.IOException("Synthetic encryption failure")
+        assertSame(failure, assertThrows(java.io.IOException::class.java) {
+            vault.durableBatch { vault.put("session/first", "advanced again"); throw failure }
+        })
+        assertEquals("advanced again", reopen().get("session/first"))
+    }
+
+    @Test fun batchesPreserveConcurrentIndependentWritesAndRejectConflictingState() = withVault { vault, _, reopen ->
+        fun concurrent(key: String, value: String) {
+            val thread = Thread { vault.put(key, value) }.apply { start() }
+            thread.join(3_000)
+            assertFalse("A batch held the vault lock during work", thread.isAlive)
+        }
+        vault.put("ratchet", "initial")
+        vault.durableBatch { vault.put("ratchet", "next"); concurrent("history", "arrived") }
+        assertEquals("arrived", reopen().get("history"))
+        assertEquals("next", reopen().get("ratchet"))
+        assertThrows(IllegalStateException::class.java) {
+            vault.durableBatch {
+                assertEquals("next", vault.get("ratchet"))
+                concurrent("ratchet", "newer")
+                vault.put("ratchet", "stale")
+                vault.put("not-committed", "stale")
+            }
+        }
+        assertEquals("newer", reopen().get("ratchet"))
+        assertNull(reopen().get("not-committed"))
+        vault.put("after-conflict", "works")
+        assertEquals("works", reopen().get("after-conflict"))
+    }
+
+    @Test fun failedPersistenceCannotReturnCiphertext() = withVault { vault, file, reopen ->
+        vault.put("ratchet", "durable")
+        val original = file.readBytes()
+        val blockedWrite = File(file.path + ".new")
+        val blocker = File(blockedWrite, "blocker")
+        try {
+            assertThrows(java.io.IOException::class.java) {
+                vault.durableBatch {
+                    vault.put("ratchet", "uncommitted")
+                    assertTrue(blockedWrite.mkdir())
+                    blocker.writeText("Prevent AtomicFile from creating its temporary file")
+                    "ciphertext that must not escape"
+                }
+            }
+        } finally {
+            blocker.delete()
+            blockedWrite.delete()
+        }
+        assertArrayEquals(original, file.readBytes())
+        assertEquals("durable", reopen().get("ratchet"))
+    }
+
     @Test fun deviceListRefreshPersistsRevocationAndAvoidsRewritingUnchangedCiphertext() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val name = "group-directory-test-${UUID.randomUUID()}"

@@ -6,10 +6,12 @@ import android.security.keystore.KeyProperties
 import android.util.AtomicFile
 import java.io.File
 import java.security.KeyStore
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import org.json.JSONObject
 
 internal interface ChatRecords {
@@ -33,7 +35,12 @@ internal class ChatVault(context: Context, storageName: String = "messenger-v1")
     private val file = AtomicFile(File(context.noBackupFilesDir, "$storageName.enc"))
     private val alias = "midori.${storageName.replace('-', '.')}"
     private val aad = "midori:${storageName.replace('-', ':')}".toByteArray()
+    private val wrappingAad = aad + ":data-key:v2".toByteArray()
+    private class Envelope(val dataKey: SecretKey, val header: ByteArray)
+    private var envelope: Envelope? = null
     private var records: Map<String, String>? = null
+    private class EncodedRecord(val value: String, val json: String)
+    private var encodedRecords = emptyMap<String, EncodedRecord>()
     private class Batch(val snapshot: Map<String, String>) {
         val changes = mutableMapOf<String, String?>()
         val reads = mutableSetOf<String>()
@@ -57,14 +64,33 @@ internal class ChatVault(context: Context, storageName: String = "messenger-v1")
         records?.let { return it }
         val result = if (!file.baseFile.exists()) emptyMap() else {
             val bytes = file.readFully()
-            check(bytes.size > 29 && bytes[0] == 1.toByte())
+            check(bytes.size > 29)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
-            cipher.updateAAD(aad)
-            val plain = cipher.doFinal(bytes.copyOfRange(13, bytes.size))
+            var loadedEnvelope: Envelope? = null
+            val offset = when (bytes[0].toInt()) {
+                1 -> {
+                    cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
+                    cipher.updateAAD(aad)
+                    13
+                }
+                2 -> {
+                    check(bytes.size > 89)
+                    val unwrap = Cipher.getInstance("AES/GCM/NoPadding")
+                    unwrap.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
+                    unwrap.updateAAD(wrappingAad)
+                    val raw = unwrap.doFinal(bytes.copyOfRange(13, 61))
+                    val dataKey = try { check(raw.size == 32); SecretKeySpec(raw, "AES") } finally { raw.fill(0) }
+                    loadedEnvelope = Envelope(dataKey, bytes.copyOfRange(0, 61))
+                    cipher.init(Cipher.DECRYPT_MODE, dataKey, GCMParameterSpec(128, bytes.copyOfRange(61, 73)))
+                    cipher.updateAAD(aad + loadedEnvelope.header)
+                    73
+                }
+                else -> error("Unknown chat vault format")
+            }
+            val plain = cipher.doFinal(bytes.copyOfRange(offset, bytes.size))
             try {
                 val json = JSONObject(String(plain, Charsets.UTF_8))
-                json.keys().asSequence().associateWith { json.getString(it) }
+                json.keys().asSequence().associateWith { json.getString(it) }.also { envelope = loadedEnvelope }
             } finally { plain.fill(0) }
         }
         records = result
@@ -119,19 +145,43 @@ internal class ChatVault(context: Context, storageName: String = "messenger-v1")
     }
 
     private fun persist(updated: Map<String, String>) {
+        // Standard envelope encryption: Keystore protects a random, chat-only AES-256 data key.
+        // Avoid routing the whole history through Keystore IPC on every incoming ratchet update.
+        val wrappingKey = key(!file.baseFile.exists()) // A missing Keystore key still blocks writes.
+        val currentEnvelope = envelope ?: newEnvelope(wrappingKey)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, key(!file.baseFile.exists()))
-        cipher.updateAAD(aad)
-        val plain = JSONObject(updated).toString().toByteArray(Charsets.UTF_8)
+        cipher.init(Cipher.ENCRYPT_MODE, currentEnvelope.dataKey)
+        check(cipher.iv.size == 12)
+        cipher.updateAAD(aad + currentEnvelope.header)
+        // Incoming session confirmations change one record at a time. Reuse JSON escaping
+        // for unchanged entries instead of scanning every character of the entire history.
+        val encoded = updated.mapValues { (name, value) ->
+            encodedRecords[name]?.takeIf { it.value == value }
+                ?: EncodedRecord(value, JSONObject.quote(name) + ":" + JSONObject.quote(value))
+        }
+        val plain = encoded.values.joinToString(",", "{", "}") { it.json }.toByteArray(Charsets.UTF_8)
         val encrypted = try { cipher.doFinal(plain) } finally { plain.fill(0) }
         val stream = file.startWrite()
         try {
-            stream.write(byteArrayOf(1) + cipher.iv + encrypted)
+            stream.write(currentEnvelope.header + cipher.iv + encrypted)
             file.finishWrite(stream)
             records = updated
+            envelope = currentEnvelope
+            encodedRecords = encoded
         } catch (e: Exception) {
             file.failWrite(stream)
             throw e
         }
+    }
+
+    private fun newEnvelope(wrappingKey: SecretKey): Envelope {
+        val raw = ByteArray(32).also { SecureRandom().nextBytes(it) }
+        try {
+            val wrap = Cipher.getInstance("AES/GCM/NoPadding")
+            wrap.init(Cipher.ENCRYPT_MODE, wrappingKey)
+            check(wrap.iv.size == 12)
+            wrap.updateAAD(wrappingAad)
+            return Envelope(SecretKeySpec(raw, "AES"), byteArrayOf(2) + wrap.iv + wrap.doFinal(raw))
+        } finally { raw.fill(0) }
     }
 }

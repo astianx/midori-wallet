@@ -24,6 +24,50 @@ class ChatVaultTest {
         }
     }
 
+    @Test fun recordUpdatesPreserveEscapedTextAndRemoveDeletedEntries() = withVault { vault, _, reopen ->
+        val name = "history/\"\\\n\u0000"
+        val original = "Español, português, 日本語: \"texto\" / \\ \n\t\r\u0000"
+        vault.put(name, original)
+        vault.put("session", "first")
+        vault.put("session", "next")
+        assertEquals(original, reopen().get(name))
+        vault.put(name, "$original updated")
+        vault.put("session", null)
+        assertEquals("$original updated", reopen().get(name))
+        assertNull(reopen().get("session"))
+        vault.put(name, null)
+        assertTrue(reopen().keys("").isEmpty())
+    }
+
+    @Test fun fullGroupSessionUpdatesSurviveReopen() = withVault { vault, file, reopen ->
+        val session = "Synthetic session / ".repeat(64)
+        vault.durableBatch {
+            repeat(200) { member ->
+                val prefix = "synthetic-group/member-$member/"
+                vault.put(prefix + "session", session)
+                vault.put(prefix + "identity", "Synthetic identity $member")
+                vault.put(prefix + "received", "0")
+                vault.put(prefix + "counter", "0")
+            }
+        }
+        val start = System.nanoTime()
+        repeat(200) { member ->
+            val prefix = "synthetic-group/member-$member/"
+            vault.put(prefix + "session", "$session advanced $member")
+            vault.put(prefix + "received", "1")
+            vault.put(prefix + "counter", "1")
+        }
+        val elapsed = (System.nanoTime() - start) / 1_000_000.0
+        android.util.Log.i("MidoriVaultTest", "group_updates=600 elapsed_ms=$elapsed encrypted_bytes=${file.length()}")
+        val restored = reopen()
+        repeat(200) { member ->
+            val prefix = "synthetic-group/member-$member/"
+            assertEquals("$session advanced $member", restored.get(prefix + "session"))
+            assertEquals("1", restored.get(prefix + "received"))
+            assertEquals("1", restored.get(prefix + "counter"))
+        }
+    }
+
     @Test fun batchedRatchetsAreDurableBeforeReturnIncludingFailedEncryptionAdvances() = withVault { vault, file, reopen ->
         vault.put("session/first", "original")
         val original = file.readBytes()
@@ -87,6 +131,34 @@ class ChatVaultTest {
         }
         assertArrayEquals(original, file.readBytes())
         assertEquals("durable", reopen().get("ratchet"))
+    }
+
+    @Test fun legacyVaultReadsWithoutChangesAndMigratesOnlyAfterSuccessfulWrite() = withVault { vault, file, reopen ->
+        vault.put("ratchet", "initial") // Creates only this test's Keystore alias.
+        val name = file.nameWithoutExtension
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val secret = store.getKey("midori.${name.replace('-', '.')}", null) as javax.crypto.SecretKey
+        val cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, secret)
+        cipher.updateAAD("midori:${name.replace('-', ':')}".toByteArray())
+        val legacy = byteArrayOf(1) + cipher.iv + cipher.doFinal("{\"ratchet\":\"legacy\"}".toByteArray())
+        file.writeBytes(legacy)
+        val restored = reopen()
+        assertEquals("legacy", restored.get("ratchet"))
+        assertArrayEquals(legacy, file.readBytes())
+        val blocked = File(file.path + ".new").apply { mkdir() }
+        val blocker = File(blocked, "blocker").apply { writeText("block") }
+        try { assertThrows(java.io.IOException::class.java) { restored.put("ratchet", "must not survive") } }
+        finally { blocker.delete(); blocked.delete() }
+        assertArrayEquals(legacy, file.readBytes())
+        assertEquals("legacy", restored.get("ratchet"))
+        restored.put("ratchet", "migrated")
+        assertEquals(2, file.readBytes()[0].toInt())
+        assertEquals("migrated", reopen().get("ratchet"))
+        val valid = file.readBytes()
+        file.writeBytes(valid.clone().also { it[20] = (it[20].toInt() xor 1).toByte() })
+        assertThrows(javax.crypto.AEADBadTagException::class.java) { reopen().get("ratchet") }
+        assertEquals(2, file.readBytes()[0].toInt()) // Never downgraded or replaced after authentication failure.
     }
 
     @Test fun deviceListRefreshPersistsRevocationAndAvoidsRewritingUnchangedCiphertext() {

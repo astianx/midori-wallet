@@ -54,7 +54,7 @@
     <string name="explorer">Explorador</string>
     <string name="usdt_bridge_description">USDT transferido via ponte da Ethereum · Base Standard Bridge</string>
     <string name="receive_btc_warning">Receba apenas BTC na rede principal do Bitcoin. Confira a rede na carteira de origem.</string>
-    <string name="receive_base_warning">Receba apenas %1$s na Base. O QR identifica o ativo e a rede; confira ambos na carteira de origem.</string>
+    <string name="receive_base_warning">Receba apenas %1$s na Base. Selecione a rede Base no aplicativo de origem; o QR contém apenas o endereço da sua carteira.</string>
     <string name="copy_address">Copiar endereço</string>
     <string name="address_copied">Endereço copiado · %1$s</string>
     <string name="address_unavailable">Endereço indisponível. Tente restaurar sua carteira novamente.</string>
@@ -231,7 +231,7 @@
     <string name="chat_encrypted">Criptografia de ponta a ponta</string>
     <string name="chat_encryption_body">A criptografia é obrigatória em cada mensagem. Verifique os dispositivos com seu contato antes de aprová-los.</string>
     <string name="chat_read_receipts">Compartilhar confirmações de leitura</string>
-    <string name="chat_read_receipts_body">Permita que seus contatos saibam quando você abre as mensagens. Desativado por padrão.</string>
+    <string name="chat_read_receipts_body">Permita que seus contatos saibam quando você abre as mensagens. Ativado por padrão; você pode desativar aqui.</string>
     <string name="chat_devices">Verificar dispositivos</string>
     <string name="chat_devices_body">Compare estas impressões digitais com seu contato por outro canal confiável. Aprovar um dispositivo permite que ele receba suas mensagens criptografadas.</string>
     <string name="chat_own_key">Este dispositivo</string>

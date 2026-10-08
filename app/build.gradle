@@ -104,6 +104,10 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.8'
     }
+    sourceSets {
+        test.java.srcDir 'src/groupTest/java'
+        androidTest.java.srcDir 'src/groupTest/java'
+    }
 }
 
 dependencies {
@@ -135,6 +139,7 @@ dependencies {
     implementation "org.igniterealtime.smack:smack-extensions:$smackVersion"
     implementation "org.igniterealtime.smack:smack-experimental:$smackVersion"
     implementation "org.igniterealtime.smack:smack-omemo-signal:$smackVersion"
+    testImplementation "org.igniterealtime.smack:smack-java11:$smackVersion"
     implementation 'org.whispersystems:signal-protocol-java:2.8.1'
 }
 
@@ -142,4 +147,16 @@ dependencies {
 // Keep the maintained org.codelibs implementation already supplied by smack-xmlparser-xpp3.
 configurations.configureEach {
     exclude group: 'xpp3', module: 'xpp3_min'
+}
+
+// The network laboratory is explicitly opt-in; ordinary unit tests never create connections.
+tasks.withType(Test).configureEach {
+    def groupFixture = project.findProperty('midoriGroupFixture')?.toString()
+    if (groupFixture) {
+        systemProperty 'midori.group.fixture', groupFixture
+        outputs.upToDateWhen { false }
+        maxHeapSize = '1536m' // Hosts 200 independent synthetic clients, not the Android app.
+    } else {
+        exclude '**/GroupCapacityHostTest*'
+    }
 }

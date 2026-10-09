@@ -114,7 +114,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
-                LaunchedEffect(chatStatus.account, chatStatus.backgroundConnection, lifecycleOwner) {
+                LaunchedEffect(chatStatus.account, chatStatus.backgroundConnection, chatStatus.restoringSession, lifecycleOwner) {
+                    if (chatStatus.restoringSession) return@LaunchedEffect
                     lifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                         if (chatStatus.account.isNotBlank() && chatStatus.backgroundConnection) {
                             org.astianx.midori.one.chat.ChatConnectionService.start(applicationContext)
@@ -122,6 +123,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+                    chat.setForeground(lifecycleOwner.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED))
                     val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
                         if (event == androidx.lifecycle.Lifecycle.Event.ON_START) chat.setForeground(true)
                         if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) chat.setForeground(false)
@@ -171,6 +173,10 @@ fun WdkApp(vm: WalletViewModel, chat: ChatViewModel, themeMode: ThemeMode, onSty
                     Screen.Home -> HomeScreen(vm)
                     Screen.Send -> SendScreen(vm)
                     Screen.Receive -> ReceiveScreen(vm)
+                    Screen.Funding -> org.astianx.midori.one.wallet.FundingScreen(vm)
+                    Screen.Fiat -> org.astianx.midori.one.wallet.fiat.FiatScreen(vm)
+                    Screen.P2p -> org.astianx.midori.one.wallet.p2p.P2pScreen(vm)
+                    Screen.Invest -> org.astianx.midori.one.wallet.swap.InvestmentScreen(vm)
                     Screen.Sign -> SignMessageScreen(vm)
                     Screen.Messaging -> MessagingScreen(chat, vm::navigate, s.messagingReturnScreen)
                     Screen.Chats -> ChatsScreen(chat, vm::navigate, { vm.openFeature(AppFeature.SCANNER) })

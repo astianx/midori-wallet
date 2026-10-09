@@ -30,7 +30,7 @@ internal interface BaseFeeProvider {
     suspend fun operatorFee(gas: BigInteger): BigInteger
 }
 
-/** Only for this app's simple ETH / ERC-20 transactions (no access list or authorization list). */
+/** For legacy/type-2 ETH, ERC-20 and contract transactions (no access list or authorization list). */
 internal suspend fun quoteBaseTotalFee(
     transaction: BaseTransaction,
     executionFee: BigInteger,

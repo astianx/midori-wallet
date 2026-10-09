@@ -290,25 +290,6 @@ internal fun ChatEmojiTray(onSelect: (String) -> Unit) {
 }
 
 @Composable
-internal fun ConnectionStatus(state: ChatUiState, onClick: () -> Unit) {
-    val online = state.connection == ChatConnection.ONLINE
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).background(MaterialTheme.colorScheme.background)
-        .padding(horizontal = 22.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (state.connection in setOf(ChatConnection.CONNECTING, ChatConnection.SECURING)) {
-            androidx.compose.material3.CircularProgressIndicator(Modifier.size(12.dp), strokeWidth = 1.5.dp)
-        } else Box(Modifier.size(7.dp).clip(androidx.compose.foundation.shape.CircleShape)
-            .background(if (online) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error))
-        Spacer(Modifier.width(9.dp))
-        Text(stringResource(state.connection.label()), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium,
-            color = if (online) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.width(12.dp))
-        Text(stringResource(if (online && state.connectionServiceRunning) R.string.chat_background_short else R.string.chat_connection_settings),
-            style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Icon(Icons.Outlined.ChevronRight, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
 internal fun ChatFileContent(file: ChatAttachment, path: String?, audio: ChatAudioController,
     onImage: (String) -> Unit, onDownload: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current

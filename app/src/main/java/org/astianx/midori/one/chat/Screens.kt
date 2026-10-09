@@ -107,7 +107,6 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer))
             }
         }
-        if (s.account.isNotBlank()) ConnectionStatus(s) { onNavigate(Screen.Messaging) }
         ChatError(s.error, chat::clearError)
         Column(Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState())) {
             s.invitations.forEach { invitation ->
@@ -220,6 +219,7 @@ private fun NewChatDialog(chat: ChatViewModel, onDismiss: () -> Unit, onOpen: ()
 @Composable
 fun MessagingScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, returnScreen: Screen) {
     val backgroundLabel = stringResource(R.string.chat_background_title)
+    val receiptsLabel = stringResource(R.string.chat_read_receipts)
     val s by chat.state.collectAsState()
     val context = LocalContext.current
     val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -315,7 +315,8 @@ fun MessagingScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, returnScr
                     Column(Modifier.weight(1f)) { Text(stringResource(R.string.chat_read_receipts), fontWeight = FontWeight.Medium)
                         Spacer(Modifier.height(6.dp))
                         Text(stringResource(R.string.chat_read_receipts_body), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    androidx.compose.material3.Switch(checked = s.readReceipts, onCheckedChange = { chat.setReadReceipts(it) })
+                    androidx.compose.material3.Switch(checked = s.readReceipts, onCheckedChange = { chat.setReadReceipts(it) },
+                        modifier = Modifier.semantics { contentDescription = receiptsLabel })
                 }
                 Spacer(Modifier.height(22.dp))
                 Text(stringResource(R.string.chat_notifications_body), fontSize = 13.sp, lineHeight = 20.sp,

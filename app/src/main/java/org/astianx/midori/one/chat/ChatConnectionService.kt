@@ -31,7 +31,9 @@ class ChatConnectionService : Service() {
     private var networkRegistered = false
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) { chat.networkAvailable() }
-        override fun onLost(network: Network) { chat.networkLost() }
+        override fun onLost(network: Network) {
+            if (getSystemService(ConnectivityManager::class.java).activeNetwork == null) chat.networkLost()
+        }
     }
 
     override fun onCreate() {
@@ -47,7 +49,9 @@ class ChatConnectionService : Service() {
         getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(networkCallback)
         networkRegistered = true
         scope.launch {
-            chat.state.map { Triple(it.account, it.backgroundConnection, it.connection) }.distinctUntilChanged().collect { (account, enabled, connection) ->
+            chat.state.map { ConnectionState(it.account, it.backgroundConnection, it.connection, it.restoringSession) }
+                .distinctUntilChanged().collect { (account, enabled, connection, restoring) ->
+                if (restoring) return@collect // A system restart must wait for encrypted session restoration.
                 if (account.isBlank() || !enabled) {
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
@@ -56,7 +60,7 @@ class ChatConnectionService : Service() {
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -93,4 +97,7 @@ class ChatConnectionService : Service() {
         }.isSuccess
         fun stop(context: Context) { context.stopService(Intent(context, ChatConnectionService::class.java)) }
     }
+
+    private data class ConnectionState(val account: String, val enabled: Boolean,
+        val connection: ChatConnection, val restoring: Boolean)
 }

@@ -15,6 +15,20 @@ def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withInputStream { localChatProperties.load(it) }
 }
+// Public Node/Cloudflare Workers origin only. Partner credentials must never be compiled into Android.
+def fiatBackendUrl = project.findProperty('midoriFiatBackendUrl')?.toString() ?:
+    System.getenv('MIDORI_FIAT_BACKEND_URL') ?: localChatProperties.getProperty('midori.fiat.backendUrl', '')
+if (fiatBackendUrl) {
+    def uri = new URI(fiatBackendUrl)
+    if (uri.scheme != 'https' || !uri.host || uri.userInfo || uri.query || uri.fragment ||
+        !(uri.path in ['', '/'])) throw new GradleException('Fiat backend must be an HTTPS origin.')
+}
+if (!fiatBackendUrl) {
+    if (project.findProperty('midoriRequireFiatBackend')?.toString() == 'true') {
+        throw new GradleException('Funding services require midori.fiat.backendUrl in local.properties or MIDORI_FIAT_BACKEND_URL. See docs/cloudflare-workers.md.')
+    }
+    logger.warn('Remote fiat/P2P funding services disabled: no HTTPS backend URL configured. See docs/cloudflare-workers.md.')
+}
 // Optional smaller debug APK for a specific test device; release remains universal.
 def debugAbi = project.findProperty('midoriDebugAbi')?.toString()
 if (debugAbi && !(debugAbi in ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'])) {
@@ -35,6 +49,7 @@ android {
         versionCode 2
         versionName "0.1.0"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        buildConfigField 'String', 'FIAT_BACKEND_URL', groovy.json.JsonOutput.toJson(fiatBackendUrl)
     }
 
     flavorDimensions 'network'
@@ -119,6 +134,8 @@ dependencies {
     testImplementation 'org.bouncycastle:bcprov-jdk18on:1.80.2'
     androidTestImplementation 'androidx.test:runner:1.5.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4:1.6.2'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest:1.6.2'
 
     implementation platform('androidx.compose:compose-bom:2024.02.00')
     implementation 'androidx.core:core-ktx:1.12.0'
@@ -132,6 +149,8 @@ dependencies {
     implementation 'androidx.compose.material:material-icons-extended'
 
     implementation 'com.google.zxing:core:3.5.3'
+    // Pure secp256k1/Keccak primitives for the P2P.me relay protocol; no global provider replacement.
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.80.2'
 
     // Signal OMEMO is GPLv3; see THIRD_PARTY_NOTICES.md before distributing the APK.
     def smackVersion = '4.5.0'

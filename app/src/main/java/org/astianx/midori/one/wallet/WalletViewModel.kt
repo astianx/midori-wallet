@@ -25,17 +25,31 @@ import org.astianx.midori.one.Screen
 import org.astianx.midori.one.UiText
 import org.json.JSONArray
 import org.json.JSONObject
+import org.astianx.midori.one.BuildConfig
+import org.astianx.midori.one.wallet.fiat.*
+import org.astianx.midori.one.wallet.p2p.*
 
 enum class TxStatus { PENDING, BROADCAST, UNKNOWN, FAILED_BEFORE_BROADCAST }
 
 internal fun isValidVerificationResult(result: Any): Boolean = result is Boolean && result
 
 internal fun toSmallestUnit(amount: String, decimals: Int): String? = try {
+    require(decimals in 0..18 && amount.matches(Regex("[0-9]{1,78}(\\.[0-9]{0,$decimals})?")))
     val units = BigDecimal(amount).movePointRight(decimals).toBigIntegerExact()
-    units.takeIf { it > java.math.BigInteger.ZERO }?.toString()
+    units.takeIf { it > java.math.BigInteger.ZERO && it.bitLength() <= 256 }?.toString()
 } catch (_: Exception) {
     null
 }
+
+/** WDK bridges can return a JSON object or its serialized representation. */
+internal fun quotedFee(result: Any): String? = try {
+    val fee = when (result) {
+        is JSONObject -> result.opt("fee")?.toString()
+        is String -> if (result.trim().startsWith("{")) JSONObject(result).opt("fee")?.toString() else result
+        else -> null
+    }
+    fee?.takeIf { it.matches(Regex("[0-9]{1,78}")) && it.toBigInteger().bitLength() <= 256 }
+} catch (_: Exception) { null }
 
 data class PendingTx(
     val id: String = UUID.randomUUID().toString(),
@@ -88,8 +102,12 @@ data class WalletUiState(
     val sendAsset: Asset = Asset.USDC,
     val sendAddress: String = "",
     val sendAmount: String = "",
+    val sendReview: SendReview? = null,
     val pendingTransactions: List<PendingTx> = emptyList(),
     val receiveAsset: Asset = Asset.USDC,
+    val receiveReturnScreen: Screen = Screen.Home,
+    val fiatReturnScreen: Screen = Screen.Home,
+    val fiatOperation: FiatOperation = FiatOperation.BUY,
     val signNetwork: Network = Network.BASE,
     val signMessage: String = "",
     val signResult: String? = null,
@@ -105,7 +123,8 @@ class WalletViewModel internal constructor(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val baseFeeProvider: BaseFeeProvider = HttpBaseFeeProvider(),
     private val bitcoinNetworkVerifier: BitcoinNetworkVerifier = HttpBitcoinNetworkVerifier(),
-    private val appEntryStore: AppEntryStore = MemoryAppEntryStore()
+    private val appEntryStore: AppEntryStore = MemoryAppEntryStore(),
+    private val clock: () -> Long = System::currentTimeMillis
 ) : ViewModel() {
     constructor(context: Context) : this(KeystoreWalletStore(context), { WdkWalletClient(context) },
         appEntryStore = AppEntryPreferences(context))
@@ -120,6 +139,7 @@ class WalletViewModel internal constructor(
     private var encryptionKey = ""
     private var encryptedSeed = ""
     private var isRefreshingBalance = false
+    private var sendRevision = 0L
 
     init {
         if (walletStore.hasCredentials()) restoreWallet()
@@ -184,10 +204,11 @@ class WalletViewModel internal constructor(
     }
 
     fun navigate(screen: Screen) {
+        if (screen != Screen.Send) dismissSendReview()
         val destination = when {
-            screen in setOf(Screen.Home, Screen.Send, Screen.Receive, Screen.Sign) &&
+            screen in setOf(Screen.Home, Screen.Send, Screen.Receive, Screen.Funding, Screen.Sign, Screen.Fiat, Screen.P2p, Screen.Invest) &&
                 !_state.value.isWdkInitialized && walletStore.hasCredentials() -> Screen.RestoreError
-            screen in setOf(Screen.Send, Screen.Receive, Screen.Sign) && !_state.value.isWdkInitialized -> Screen.Home
+            screen in setOf(Screen.Send, Screen.Receive, Screen.Funding, Screen.Sign, Screen.Fiat, Screen.P2p, Screen.Invest) && !_state.value.isWdkInitialized -> Screen.Home
             else -> screen
         }
         update { copy(currentScreen = destination,
@@ -202,7 +223,87 @@ class WalletViewModel internal constructor(
     }
 
     fun openFeature(feature: AppFeature) {
+        if (feature == AppFeature.BUY) { openFunding(FiatOperation.BUY); return }
+        if (feature == AppFeature.TRADE) { navigate(Screen.Invest); return }
         update { copy(feature = feature, detailReturnScreen = currentScreen, currentScreen = Screen.Feature) }
+    }
+
+    fun openFiat(operation: FiatOperation) {
+        update { copy(fiatOperation = operation, fiatReturnScreen = if (currentScreen == Screen.Funding) Screen.Funding else Screen.Home) }
+        navigate(Screen.Fiat)
+    }
+
+    fun openFunding(operation: FiatOperation) {
+        update { copy(fiatOperation = operation) }
+        navigate(Screen.Funding)
+    }
+
+    fun openReceive(asset: Asset, returnTo: Screen = Screen.Home) {
+        require(returnTo == Screen.Home || returnTo == Screen.Funding)
+        update { copy(receiveAsset = asset, receiveReturnScreen = returnTo) }
+        navigate(Screen.Receive)
+    }
+
+    /** WDK remains the sole signer. Journal callback is durable before this adapter broadcasts. */
+    internal fun p2pWalletPort(): P2pWalletPort = object : P2pWalletPort {
+        override fun isCurrent(owner: String) = state.value.isWdkInitialized && wdkCore != null &&
+            state.value.ethAddress.equals(owner, true)
+        private suspend fun estimate(owner: String, to: String, data: String, requiredUsdc: String): String {
+            p2pRequire(isCurrent(owner), "wallet_changed")
+            p2pRequire(to.equals(P2P_DIAMOND, true) || to.equals(BaseMainnet.USDC_CONTRACT, true))
+            p2pRequire(data.matches(Regex("0x[a-fA-F0-9]{8,20000}")) && data.length % 2 == 0 && p2pInteger(requiredUsdc))
+            val client = checkNotNull(wdkCore)
+            val args = JSONObject().put("to", to).put("value", "0").put("data", data).toString()
+            val execution = quotedFee(client.callMethod("quoteSendTransaction", Network.BASE.wdkName, 0, args))
+                ?.toBigIntegerOrNull() ?: throw P2pOrderFailure("gas_unavailable")
+            p2pRequire(execution.signum() > 0, "gas_unavailable")
+            val fee = quoteBaseTotalFee(BaseTransaction(owner, to, java.math.BigInteger.ZERO, data), execution, baseFeeProvider)
+            val balance = client.getBalance(Network.BASE.wdkName).toBigIntegerOrNull()
+            p2pRequire(balance != null && balance >= fee, "insufficient_gas")
+            if (requiredUsdc != "0") {
+                val usdc = client.callMethod("getTokenBalance", Network.BASE.wdkName, 0,
+                    JSONObject.quote(BaseMainnet.USDC_CONTRACT)).toString().toBigIntegerOrNull()
+                p2pRequire(usdc != null && usdc >= requiredUsdc.toBigInteger(), "insufficient_usdc")
+            }
+            p2pRequire(isCurrent(owner) && client === wdkCore, "wallet_changed")
+            return fee.toString()
+        }
+        override suspend fun quote(owner: String, to: String, data: String, requiredUsdc: String) =
+            withContext(Dispatchers.Main.immediate) { estimate(owner, to, data, requiredUsdc) }
+        override suspend fun submit(owner: String, to: String, data: String, maxGas: String, requiredUsdc: String,
+            beforeBroadcast: suspend () -> Unit): String = withContext(Dispatchers.Main.immediate) {
+            p2pRequire(!state.value.isLoading, "wallet_busy")
+            update { copy(isLoading = true) }
+            try {
+                val client = checkNotNull(wdkCore)
+                val fee = estimate(owner, to, data, requiredUsdc)
+                p2pRequire(p2pInteger(maxGas, true) && fee.toBigInteger() <= maxGas.toBigInteger(), "quote_changed")
+                beforeBroadcast()
+                p2pRequire(isCurrent(owner) && client === wdkCore, "wallet_changed")
+                val args = JSONObject().put("to", to).put("value", "0").put("data", data).toString()
+                val hash = extractTxHash(client.callMethod("sendTransaction", Network.BASE.wdkName, 0, args))
+                p2pRequire(isCurrent(owner) && client === wdkCore, "wallet_changed")
+                fetchBalance()
+                if (hash.startsWith("0x")) hash else "0x$hash"
+            } finally { update { copy(isLoading = false) } }
+        }
+    }
+
+    internal suspend fun signFiatChallenge(request: FiatRequest, challenge: FiatChallenge, origin: String): String {
+        check(origin == fiatBackendOrigin(BuildConfig.FIAT_BACKEND_URL))
+        val client = checkNotNull(wdkCore)
+        fun checkAccount() {
+            val current = state.value
+            check(current.isWdkInitialized && client === wdkCore &&
+                current.ethAddress.equals(request.identityAddress, ignoreCase = true) &&
+                request.address == if (request.asset == Asset.BTC) current.btcAddress else current.ethAddress)
+        }
+        checkAccount()
+        val message = fiatChallengeMessage(origin, challenge, request)
+        val signature = client.callMethod("sign", Network.BASE.wdkName, 0, JSONObject.quote(message)).toString()
+        checkAccount()
+        check(signature.matches(Regex("0x[a-fA-F0-9]{130}")))
+        return signature
     }
 
     fun openMarketAsset(asset: Asset) {
@@ -329,6 +430,7 @@ class WalletViewModel internal constructor(
                 } catch (e: Exception) {
                     update { copy(ethBalance = null) }
                 }
+                val tokenSnapshot = mutableMapOf<Asset, String>()
                 Asset.entries.filter { it.isToken && it.isAvailable }.forEach { asset ->
                     try {
                         val tokenBalance = wdkCore!!.callMethod(
@@ -336,11 +438,12 @@ class WalletViewModel internal constructor(
                             args = JSONObject.quote(requireNotNull(asset.contract))
                         ).toString()
                         require(tokenBalance.matches(Regex("[0-9]+"))) { "Invalid token balance" }
-                        update { copy(tokenBalances = tokenBalances + (asset to tokenBalance)) }
+                        tokenSnapshot[asset] = tokenBalance
                     } catch (e: Exception) {
-                        update { copy(tokenBalances = tokenBalances - asset) }
+                        // An unavailable holding cannot silently count as zero in the account total.
                     }
                 }
+                update { copy(tokenBalances = tokenSnapshot.toMap()) }
                 try {
                     val btcBal = wdkCore!!.getBalance(network = "bitcoin")
                     update { copy(btcBalance = btcBal) }
@@ -352,14 +455,6 @@ class WalletViewModel internal constructor(
                 update { copy(refreshingBalances = false) }
             }
         }
-    }
-
-    private fun extractFee(result: Any): String {
-        if (result is JSONObject) {
-            val fee = result.opt("fee")
-            if (fee != null) return fee.toString()
-        }
-        return result.toString()
     }
 
     private fun extractTxHash(result: Any): String {
@@ -377,14 +472,17 @@ class WalletViewModel internal constructor(
     }
 
     fun updateSendAsset(asset: Asset) {
+        dismissSendReview()
         update { copy(sendAsset = asset, sendAmount = "", sendAddress = "") }
     }
 
     fun updateSendAddress(address: String) {
+        dismissSendReview()
         update { copy(sendAddress = address) }
     }
 
     fun updateSendAmount(amount: String) {
+        dismissSendReview()
         update { copy(sendAmount = amount) }
     }
 
@@ -402,56 +500,131 @@ class WalletViewModel internal constructor(
 
     fun setSendMax() {
         if (_state.value.sendAsset.isToken && _state.value.sendAsset.isAvailable) {
+            dismissSendReview()
             update { copy(sendAmount = maxSendAmount) }
+        }
+    }
+
+    private fun validateSend(s: WalletUiState): String? {
+        val address = s.sendAddress.trim()
+        val amount = s.sendAmount.trim()
+        if (address.isEmpty() || amount.isEmpty()) {
+            showToast(UiText(R.string.error_send_fields))
+            return null
+        }
+        if (!s.isWdkInitialized || wdkCore == null) {
+            showToast(UiText(R.string.error_not_initialized))
+            return null
+        }
+
+        val asset = s.sendAsset
+        if (!asset.isAvailable) {
+            showToast(asset.unavailableReason ?: UiText(R.string.error_asset_unavailable))
+            return null
+        }
+        val valueInSmallestUnit = toSmallestUnit(amount, asset.decimals) ?: run {
+            showToast(UiText(R.string.error_amount))
+            return null
+        }
+        if (address.startsWith("@")) {
+            showToast(UiText(R.string.dollars_tag_pending))
+            return null
+        }
+        if (asset.network == Network.BASE && !address.matches(Regex("0x[a-fA-F0-9]{40}"))) {
+            showToast(UiText(R.string.error_base_address))
+            return null
+        }
+        if (asset.network == Network.BASE && address.equals("0x0000000000000000000000000000000000000000", ignoreCase = true)) {
+            showToast(UiText(R.string.error_zero_address))
+            return null
+        }
+        if (asset.network == Network.BTC && !isBitcoinMainnetAddress(address)) {
+            showToast(UiText(R.string.error_btc_address))
+            return null
+        }
+        if (asset.isToken) {
+            val balance = s.tokenBalances[asset]?.toBigIntegerOrNull()
+            if (balance == null) {
+                showToast(UiText(R.string.error_balance_unavailable, listOf(asset.name)))
+                return null
+            }
+            if (valueInSmallestUnit.toBigInteger() > balance) {
+                val conversion = asset in DigitalDollarAccount.assets && DigitalDollarAccount.funding(
+                    valueInSmallestUnit.toBigInteger(), asset, s.tokenBalances) == DollarFunding.CONVERSION_REQUIRED
+                showToast(if (conversion) UiText(R.string.dollars_conversion_required)
+                    else UiText(R.string.error_balance_insufficient, listOf(asset.name)))
+                return null
+            }
+        }
+        return valueInSmallestUnit
+    }
+
+    private fun sendArgs(asset: Asset, address: String, units: String): String = if (asset.isToken) {
+        JSONObject().put("token", requireNotNull(asset.contract)).put("recipient", address).put("amount", units).toString()
+    } else JSONObject().put("to", address).put("value", units).toString()
+
+    private suspend fun quoteSend(s: WalletUiState, units: String): String {
+        val asset = s.sendAsset
+        val client = requireNotNull(wdkCore)
+        if (asset.isToken) {
+            val fresh = client.callMethod("getTokenBalance", asset.network.wdkName, 0,
+                JSONObject.quote(requireNotNull(asset.contract))).toString().toBigIntegerOrNull()
+            if (fresh == null || fresh < units.toBigInteger()) throw WalletException(
+                UiText(R.string.error_balance_insufficient, listOf(asset.name)))
+        }
+        if (asset.network == Network.BTC) bitcoinNetworkVerifier.verify()
+        val quoted = client.callMethod(if (asset.isToken) "quoteTransfer" else "quoteSendTransaction",
+            asset.network.wdkName, 0, sendArgs(asset, s.sendAddress.trim(), units))
+        val executionFee = quotedFee(quoted)?.toBigIntegerOrNull()
+            ?: throw WalletException(UiText(R.string.error_gas_quote))
+        walletRequire(executionFee.signum() > 0, R.string.error_gas_quote)
+        if (asset.network == Network.BTC) return executionFee.toString()
+        val transaction = baseTransaction(asset, s.ethAddress, s.sendAddress.trim(), units.toBigInteger())
+        val fee = quoteBaseTotalFee(transaction, executionFee, baseFeeProvider)
+        val gasBalance = client.getBalance(Network.BASE.wdkName)
+        update { copy(ethBalance = gasBalance) }
+        walletRequire(gasBalance.toBigIntegerOrNull()?.let { it >= fee + transaction.value } == true,
+            R.string.error_insufficient_gas)
+        return fee.toString()
+    }
+
+    fun dismissSendReview() {
+        sendRevision++
+        update { copy(sendReview = null) }
+    }
+
+    fun prepareSend() {
+        val s = _state.value
+        if (s.isLoading) return
+        dismissSendReview()
+        val units = validateSend(s) ?: return
+        val revision = sendRevision
+        update { copy(isLoading = true) }
+        viewModelScope.launch {
+            try {
+                val fee = quoteSend(s, units)
+                if (sendRevision == revision) update { copy(sendReview = SendReview(
+                    s.sendAsset, s.sendAddress.trim(), s.sendAmount.trim(), units, fee, clock() + 60_000)) }
+            } catch (e: Exception) {
+                showToast(e.toUiText(R.string.error_prepare_transfer))
+            } finally { update { copy(isLoading = false) } }
         }
     }
 
     fun doSend() {
         val s = _state.value
         if (s.isLoading) return
-        val address = s.sendAddress.trim()
-        val amount = s.sendAmount.trim()
-        if (address.isEmpty() || amount.isEmpty()) {
-            showToast(UiText(R.string.error_send_fields))
+        val review = s.sendReview
+        if (review == null || !review.matches(s.sendAsset, s.sendAddress, s.sendAmount, clock())) {
+            dismissSendReview()
+            showToast(UiText(R.string.send_review_expired))
             return
         }
-        if (!s.isWdkInitialized || wdkCore == null) {
-            showToast(UiText(R.string.error_not_initialized))
-            return
-        }
-
+        val valueInSmallestUnit = validateSend(s) ?: run { dismissSendReview(); return }
         val asset = s.sendAsset
-        if (!asset.isAvailable) {
-            showToast(asset.unavailableReason ?: UiText(R.string.error_asset_unavailable))
-            return
-        }
-        val valueInSmallestUnit = toSmallestUnit(amount, asset.decimals) ?: run {
-            showToast(UiText(R.string.error_amount))
-            return
-        }
-        if (asset.network == Network.BASE && !address.matches(Regex("0x[a-fA-F0-9]{40}"))) {
-            showToast(UiText(R.string.error_base_address))
-            return
-        }
-        if (asset.network == Network.BASE && address.equals("0x0000000000000000000000000000000000000000", ignoreCase = true)) {
-            showToast(UiText(R.string.error_zero_address))
-            return
-        }
-        if (asset.network == Network.BTC && !isBitcoinMainnetAddress(address)) {
-            showToast(UiText(R.string.error_btc_address))
-            return
-        }
-        if (asset.isToken) {
-            val balance = s.tokenBalances[asset]?.toBigIntegerOrNull()
-            if (balance == null) {
-                showToast(UiText(R.string.error_balance_unavailable, listOf(asset.name)))
-                return
-            }
-            if (valueInSmallestUnit.toBigInteger() > balance) {
-                showToast(UiText(R.string.error_balance_insufficient, listOf(asset.name)))
-                return
-            }
-        }
+        val address = review.address
+        val amount = review.amount
+        val revision = sendRevision
 
         val networkRpc = if (asset.network == Network.BASE) Network.BASE.wdkName else Network.BTC.wdkName
         val tx = PendingTx(network = asset.network, asset = asset, toAddress = address, amount = amount)
@@ -463,32 +636,12 @@ class WalletViewModel internal constructor(
         viewModelScope.launch {
             var submissionStarted = false
             try {
-                val argsJson = if (asset.isToken) {
-                    JSONObject().put("token", requireNotNull(asset.contract))
-                        .put("recipient", address).put("amount", valueInSmallestUnit).toString()
-                } else {
-                    JSONObject().put("to", address)
-                        .put("value", valueInSmallestUnit).toString()
-                }
-                if (asset.network == Network.BASE) {
-                    val quoted = wdkCore!!.callMethod(
-                        methodName = if (asset.isToken) "quoteTransfer" else "quoteSendTransaction",
-                        network = Network.BASE.wdkName, accountIndex = 0, args = argsJson
-                    )
-                    val executionFee = extractFee(quoted).toBigIntegerOrNull()
-                        ?: throw WalletException(UiText(R.string.error_gas_quote))
-                    val transaction = baseTransaction(asset, s.ethAddress, address, valueInSmallestUnit.toBigInteger())
-                    val fee = quoteBaseTotalFee(transaction, executionFee, baseFeeProvider)
-                    val gasBalance = wdkCore!!.getBalance(network = Network.BASE.wdkName)
-                    update { copy(ethBalance = gasBalance) }
-                    walletRequire(gasBalance.toBigIntegerOrNull()?.let { it >= fee + transaction.value } == true,
-                        R.string.error_insufficient_gas)
-                } else {
-                    bitcoinNetworkVerifier.verify()
-                    // WDK validates the checksum/network and available UTXOs during quotation.
-                    wdkCore!!.callMethod(methodName = "quoteSendTransaction", network = Network.BTC.wdkName,
-                        accountIndex = 0, args = argsJson)
-                }
+                val argsJson = sendArgs(asset, address, valueInSmallestUnit)
+                val fee = quoteSend(s, valueInSmallestUnit)
+                walletRequire(sendRevision == revision && review.matches(s.sendAsset, s.sendAddress, s.sendAmount, clock()),
+                    R.string.send_review_expired)
+                walletRequire(fee.toBigInteger() <= review.estimatedFee.toBigInteger(), R.string.send_fee_changed)
+                dismissSendReview()
                 submissionStarted = true
                 val result = wdkCore!!.callMethod(
                     methodName = if (asset.isToken) "transfer" else "sendTransaction",
@@ -510,7 +663,7 @@ class WalletViewModel internal constructor(
                     showToast(e.toUiText(R.string.error_prepare_transfer))
                 }
             } finally {
-                update { copy(isLoading = false, statusText = null) }
+                update { copy(isLoading = false, statusText = null, sendReview = null) }
             }
         }
     }
@@ -596,6 +749,7 @@ class WalletViewModel internal constructor(
     }
 
     fun deleteWallet() {
+        if (state.value.isLoading) return
         viewModelScope.launch {
             try {
                 withContext(ioDispatcher) { clearCredentials() }
@@ -631,8 +785,12 @@ class WalletViewModel internal constructor(
     }
 
     fun resetSend() {
+        dismissSendReview()
         update { copy(sendAddress = "", sendAmount = "", sendAsset = Asset.USDC) }
     }
+
+    val formattedDollarBalance: String
+        get() = DigitalDollarAccount.displayBalance(_state.value.tokenBalances) ?: "—"
 
     val formattedUsdtBalance: String
         get() = _state.value.usdtBalance?.let { formatBalance(it, 6, "USDT") } ?: "— USDT"

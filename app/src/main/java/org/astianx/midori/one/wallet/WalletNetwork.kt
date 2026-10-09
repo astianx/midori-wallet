@@ -50,20 +50,16 @@ enum class Asset(
     val isAvailable: Boolean get() = unavailableReason == null && (!isToken || contract != null)
 }
 
-/** ERC-681 carries the chain and token, unlike a bare EVM address. */
+/** Exchanges may paste a payment URI literally. Receive QR codes contain only the wallet address. */
 internal fun receiveRequest(asset: Asset, address: String): String? {
     if (!asset.isAvailable || address.isBlank()) return null
     return when (asset.network) {
         Network.BASE -> {
             if (!address.matches(Regex("0x[a-fA-F0-9]{40}"))) return null
-            if (asset.isToken) {
-                "ethereum:${asset.contract}@${BaseMainnet.CHAIN_ID}/transfer?address=$address"
-            } else {
-                "ethereum:$address@${BaseMainnet.CHAIN_ID}"
-            }
+            address
         }
         // The mainnet address encodes the Bitcoin network. WDK validates its checksum on send.
-        Network.BTC -> if (isBitcoinMainnetAddress(address)) "bitcoin:$address" else null
+        Network.BTC -> if (isBitcoinMainnetAddress(address)) address else null
     }
 }
 

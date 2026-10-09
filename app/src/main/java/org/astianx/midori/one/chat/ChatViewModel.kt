@@ -31,32 +31,40 @@ class ChatViewModel internal constructor(
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val media: ChatMedia? = null,
     private val artwork: ChatArtwork? = null,
-    private val registerAccount: (ChatAccount) -> Unit = ChatRegistration::create
+    private val registerAccount: (ChatAccount) -> Unit = ChatRegistration::create,
+    initialForeground: Boolean = true
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(ChatUiState())
+    private val mutableState = MutableStateFlow(ChatUiState(restoringSession = true))
     val state: StateFlow<ChatUiState> = mutableState
     private val mutex = Mutex()
     private var transport: ChatTransport? = null
     private var credentials: ChatAccount? = null
     @Volatile private var generation = 0L
     private var draftSave: kotlinx.coroutines.Job? = null
-    @Volatile private var foreground = true
+    @Volatile private var foreground = initialForeground
     @Volatile private var autoRetryBlocked = false
     private var retryJob: kotlinx.coroutines.Job? = null
     private var retryAttempt = 0
 
     init {
         task {
-            mutableState.update { it.copy(backgroundConnection = records.get("settings/background") != "false",
-                wallpaper = records.get("settings/wallpaper") != "false") }
-            val appearance = records.get("settings/appearance")?.let { runCatching { ChatAppearance.fromJson(JSONObject(it)) }.getOrNull() }
-                ?: ChatAppearance(wallpaper = if (state.value.wallpaper) ChatWallpaperStyle.BOTANICAL else ChatWallpaperStyle.PLAIN)
-            mutableState.update { it.copy(appearance = appearance, wallpaper = appearance.wallpaper != ChatWallpaperStyle.PLAIN) }
-            records.get("session")?.let { saved ->
-                val json = JSONObject(saved)
-                connectAccount(ChatAccount(json.getString("address"), json.getString("password"),
-                    json.getString("host"), json.getInt("port")))
-            }
+            try {
+                mutableState.update { it.copy(backgroundConnection = records.get("settings/background") != "false",
+                    wallpaper = records.get("settings/wallpaper") != "false") }
+                val appearance = records.get("settings/appearance")?.let { runCatching { ChatAppearance.fromJson(JSONObject(it)) }.getOrNull() }
+                    ?: ChatAppearance(wallpaper = if (state.value.wallpaper) ChatWallpaperStyle.BOTANICAL else ChatWallpaperStyle.PLAIN)
+                mutableState.update { it.copy(appearance = appearance, wallpaper = appearance.wallpaper != ChatWallpaperStyle.PLAIN) }
+                records.get("session")?.let { saved ->
+                    val json = JSONObject(saved)
+                    val account = ChatAccount(json.getString("address"), json.getString("password"),
+                        json.getString("host"), json.getInt("port"))
+                    if (foreground || state.value.backgroundConnection) connectAccount(account)
+                    else {
+                        credentials = account
+                        restoreAccountState(account, ChatConnection.DISCONNECTED)
+                    }
+                }
+            } finally { mutableState.update { it.copy(restoringSession = false) } }
         }
     }
 
@@ -116,12 +124,7 @@ class ChatViewModel internal constructor(
         val token = ++generation
         transport?.disconnect()
         credentials = account
-        val saved = records.get("history/${account.address}")
-        val restored = saved?.let(::readHistory) ?: ChatUiState()
-        mutableState.value = restored.copy(account = account.address, connection = ChatConnection.CONNECTING,
-            backgroundConnection = state.value.backgroundConnection, connectionServiceRunning = state.value.connectionServiceRunning,
-            wallpaper = state.value.wallpaper, appearance = state.value.appearance,
-            selectedPeer = state.value.selectedPeer.takeIf { state.value.account == account.address }, error = null)
+        restoreAccountState(account, ChatConnection.CONNECTING)
         val client = transportFactory()
         transport = client
         try {
@@ -232,6 +235,15 @@ class ChatViewModel internal constructor(
                 }
             }
         }
+    }
+
+    private fun restoreAccountState(account: ChatAccount, connection: ChatConnection) {
+        val restored = records.get("history/${account.address}")?.let(::readHistory) ?: ChatUiState()
+        mutableState.value = restored.copy(account = account.address, connection = connection,
+            restoringSession = state.value.restoringSession,
+            backgroundConnection = state.value.backgroundConnection, connectionServiceRunning = state.value.connectionServiceRunning,
+            wallpaper = state.value.wallpaper, appearance = state.value.appearance,
+            selectedPeer = state.value.selectedPeer.takeIf { state.value.account == account.address }, error = null)
     }
 
     private fun canConnectInBackground() = foreground ||
@@ -539,7 +551,7 @@ class ChatViewModel internal constructor(
         val requests = json.optJSONArray("requests") ?: JSONArray()
         val options = json.optJSONObject("conversationOptions") ?: JSONObject()
         val files = json.optJSONObject("mediaFiles") ?: JSONObject()
-        return ChatUiState(readReceipts = json.optBoolean("readReceipts"),
+        return ChatUiState(readReceipts = json.optBoolean("readReceipts", true),
             profile = json.optJSONObject("profile")?.let(ChatProfile::fromJson) ?: ChatProfile(),
             mediaFiles = files.keys().asSequence().associateWith { files.getString(it) }.filterValues { media?.hasPreview(it) == true },
             conversationOptions = options.keys().asSequence().associateWith { key -> options.getJSONObject(key).let {
@@ -584,7 +596,8 @@ class ChatViewModel internal constructor(
             AndroidSmackInitializer.initialize(context)
             val vault = ChatVault.forApp(context)
             val notifications = ChatNotifications(context)
-            return ChatViewModel(vault, { SmackMessenger(vault) }, notifications::show, notifications::clear, media = ChatMedia(context.applicationContext), artwork = ChatArtwork(context.applicationContext)) as T
+            return ChatViewModel(vault, { SmackMessenger(vault) }, notifications::show, notifications::clear,
+                media = ChatMedia(context.applicationContext), artwork = ChatArtwork(context.applicationContext), initialForeground = false) as T
         }
     }
 }

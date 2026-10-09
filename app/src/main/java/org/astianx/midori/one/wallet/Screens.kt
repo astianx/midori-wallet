@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,6 +56,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +64,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -322,6 +325,7 @@ fun HomeScreen(vm: WalletViewModel) {
     val saveAppearance = LocalWalletAppearanceChange.current
     val balancesVisible = !appearance.hideBalances
     val refreshingLabel = stringResource(R.string.wallet_refreshing)
+    var showBreakdown by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(s.isWdkInitialized) {
         if (s.isWdkInitialized) while (true) { vm.fetchBalance(); delay(30_000) }
     }
@@ -357,7 +361,7 @@ fun HomeScreen(vm: WalletViewModel) {
                             Column(Modifier.weight(1f)) {
                                 Text(stringResource(R.string.digital_dollars), style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer)
-                                Text(stringResource(R.string.mainnet), style = MaterialTheme.typography.labelSmall,
+                                Text("${stringResource(R.string.network_base)} · ${stringResource(R.string.mainnet)}", style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = .75f))
                             }
                             IconButton(onClick = { saveAppearance(appearance.copy(hideBalances = balancesVisible)) }) {
@@ -373,15 +377,24 @@ fun HomeScreen(vm: WalletViewModel) {
                             }
                         }
                         Spacer(Modifier.height(18.dp))
-                        StablecoinBalance(Asset.USDC, vm.formattedUsdcBalance, balancesVisible) {
-                            vm.updateReceiveAsset(Asset.USDC); vm.navigate(Screen.Receive)
+                        Text(if (balancesVisible) vm.formattedDollarBalance else "••••••",
+                            style = MaterialTheme.typography.displaySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.testTag("dollar-account-balance"))
+                        Text(stringResource(R.string.dollars_nominal_balance), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        TextButton(onClick = { showBreakdown = !showBreakdown }) {
+                            Text(stringResource(if (showBreakdown) R.string.dollars_hide_breakdown else R.string.dollars_breakdown))
                         }
-                        Divider(Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = .10f))
-                        StablecoinBalance(Asset.USDT, vm.formattedUsdtBalance, balancesVisible) {
-                            vm.updateReceiveAsset(Asset.USDT); vm.navigate(Screen.Receive)
+                        if (showBreakdown) {
+                            StablecoinBalance(Asset.USDC, vm.formattedUsdcBalance, balancesVisible) {
+                                vm.openReceive(Asset.USDC)
+                            }
+                            StablecoinBalance(Asset.USDT, vm.formattedUsdtBalance, balancesVisible) {
+                                vm.openReceive(Asset.USDT)
+                            }
                         }
-                        Spacer(Modifier.height(22.dp))
-                        Text(stringResource(R.string.stablecoin_types), style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.dollars_balance_explanation), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = .8f))
                     }
                 }
@@ -389,13 +402,14 @@ fun HomeScreen(vm: WalletViewModel) {
                     WalletAction(Icons.Default.ArrowUpward, R.string.send, {
                         vm.resetSend(); vm.updateSendAsset(appearance.preferredToken); vm.navigate(Screen.Send)
                     }, Modifier.weight(1f))
-                    WalletAction(Icons.Default.ArrowDownward, R.string.receive, {
-                        vm.updateReceiveAsset(appearance.preferredToken); vm.navigate(Screen.Receive)
+                    WalletAction(Icons.Default.ArrowDownward, R.string.wallet_deposit, {
+                        vm.openFunding(org.astianx.midori.one.wallet.fiat.FiatOperation.BUY)
                     }, Modifier.weight(1f))
-                    WalletAction(Icons.Outlined.Payments, R.string.buy, { vm.openFeature(AppFeature.BUY) }, Modifier.weight(1f))
-                    WalletAction(Icons.Outlined.SwapHoriz, R.string.trade, { vm.openFeature(AppFeature.TRADE) }, Modifier.weight(1f))
+                    WalletAction(Icons.Outlined.Payments, R.string.wallet_withdraw, {
+                        vm.openFunding(org.astianx.midori.one.wallet.fiat.FiatOperation.SELL)
+                    }, Modifier.weight(1f))
                 }
-                SectionLabel(R.string.other_assets)
+                SectionLabel(R.string.dollars_crypto_assets)
                 val assets = if (appearance.bitcoinFirst) listOf(Asset.BTC, Asset.ETH) else listOf(Asset.ETH, Asset.BTC)
                 assets.forEach { asset ->
                     if (asset == Asset.BTC) AssetRow("₿", Color(0xFFBD7016), stringResource(R.string.network_bitcoin), stringResource(R.string.mainnet),
@@ -405,6 +419,8 @@ fun HomeScreen(vm: WalletViewModel) {
                 }
                 Text(stringResource(R.string.gas_explanation), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(22.dp))
+                ShortcutRow(Icons.Outlined.SwapHoriz, stringResource(R.string.dollars_invest),
+                    stringResource(R.string.dollars_invest_pending), { vm.openFeature(AppFeature.TRADE) })
                 if (appearance.showHelp) ShortcutRow(Icons.AutoMirrored.Outlined.HelpOutline, stringResource(R.string.help_center),
                     stringResource(R.string.help_shortcut_body), { vm.navigate(Screen.Help) })
             }
@@ -417,6 +433,8 @@ fun HomeScreen(vm: WalletViewModel) {
 fun SendScreen(vm: WalletViewModel) {
     val s by vm.state.collectAsState()
     val context = LocalContext.current
+    val focus = LocalFocusManager.current
+    val hideBalances = LocalWalletAppearance.current.hideBalances
 
     BackHandler { vm.navigate(Screen.Home) }
 
@@ -438,6 +456,14 @@ fun SendScreen(vm: WalletViewModel) {
             )
 
             AssetSelector(s.sendAsset, vm::updateSendAsset)
+            if (s.sendAsset in DigitalDollarAccount.assets) {
+                Text(stringResource(R.string.dollars_destination_asset), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
+                Text(stringResource(R.string.dollars_send_balance, if (hideBalances) "••••" else vm.formattedDollarBalance,
+                    if (hideBalances) "•••• ${s.sendAsset.name}" else if (s.sendAsset == Asset.USDC) vm.formattedUsdcBalance else vm.formattedUsdtBalance),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            }
             s.sendAsset.unavailableReason?.let { reason ->
                 Text(reason.asString(), color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
@@ -456,6 +482,7 @@ fun SendScreen(vm: WalletViewModel) {
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     singleLine = true,
                     modifier = Modifier
+                        .testTag("send-recipient")
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -492,7 +519,7 @@ fun SendScreen(vm: WalletViewModel) {
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("send-amount"),
                     decorationBox = { innerTextField ->
                         Box {
                             if (s.sendAmount.isEmpty()) {
@@ -533,7 +560,10 @@ fun SendScreen(vm: WalletViewModel) {
             }
 
             Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                PrimaryButton(stringResource(R.string.send), enabled = s.sendAsset.isAvailable && !s.isLoading) { vm.doSend() }
+                PrimaryButton(stringResource(R.string.send_review_action), enabled = s.sendAsset.isAvailable && !s.isLoading) {
+                    focus.clearFocus()
+                    vm.prepareSend()
+                }
             }
 
             if (s.pendingTransactions.isNotEmpty()) {
@@ -556,6 +586,39 @@ fun SendScreen(vm: WalletViewModel) {
             Spacer(Modifier.height(24.dp))
         }
     }
+    s.sendReview?.let { review -> SendReviewDialog(review, s.isLoading, vm::dismissSendReview, vm::doSend) }
+}
+
+@Composable
+private fun SendReviewDialog(review: SendReview, busy: Boolean, dismiss: () -> Unit, confirm: () -> Unit) {
+    var expired by androidx.compose.runtime.remember(review) { mutableStateOf(System.currentTimeMillis() >= review.expiresAt) }
+    val title = stringResource(R.string.send_review_title)
+    val network = "${review.asset.network.label} · ${stringResource(R.string.mainnet)}"
+    val fee = stringResource(R.string.send_review_fee, review.feeDisplay)
+    val estimate = stringResource(R.string.send_review_estimate)
+    val expiration = stringResource(R.string.send_review_expired)
+    val confirmLabel = stringResource(R.string.send_confirm_action)
+    val editLabel = stringResource(R.string.send_edit_action)
+    LaunchedEffect(review) {
+        delay((review.expiresAt - System.currentTimeMillis()).coerceAtLeast(0))
+        expired = true
+    }
+    AlertDialog(onDismissRequest = { if (!busy) dismiss() },
+        title = { Text(title) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("${review.amount} ${review.asset.name}", style = MaterialTheme.typography.headlineMedium)
+                Text(review.address, fontFamily = FontFamily.Monospace, modifier = Modifier.testTag("review-recipient"))
+                Text(network)
+                Text(fee)
+                Text(estimate, style = MaterialTheme.typography.bodySmall)
+                if (expired) Text(expiration, color = MaterialTheme.colorScheme.error)
+            }
+        },
+        confirmButton = { TextButton(onClick = confirm, enabled = !busy && !expired) {
+            Text(confirmLabel)
+        } },
+        dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text(editLabel) } })
 }
 
 @Composable
@@ -653,23 +716,26 @@ fun ReceiveScreen(vm: WalletViewModel) {
     val s by vm.state.collectAsState()
     val context = LocalContext.current
 
-    BackHandler { vm.navigate(Screen.Home) }
+    BackHandler { vm.navigate(s.receiveReturnScreen) }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxSize()
     ) {
-        ScreenHeader(stringResource(R.string.receive)) { vm.navigate(Screen.Home) }
+        ScreenHeader(stringResource(R.string.receive)) { vm.navigate(s.receiveReturnScreen) }
 
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally) {
-        AssetSelector(s.receiveAsset, vm::updateReceiveAsset)
-        if (s.receiveAsset == Asset.USDT) {
+        ReceiveAccountSelector(s.receiveAsset, vm::updateReceiveAsset)
+        if (s.receiveAsset in DigitalDollarAccount.assets) {
+            Text(stringResource(R.string.dollars_receive_title), style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(16.dp))
             Text(stringResource(R.string.usdt_bridge_description), fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 20.dp))
         }
-        Text(vm.receiveLabel.asString(), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(if (s.receiveAsset in DigitalDollarAccount.assets) stringResource(R.string.dollars_receive_tokens)
+            else vm.receiveLabel.asString(), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
 
         val request = vm.receiveQrContent
@@ -677,7 +743,8 @@ fun ReceiveScreen(vm: WalletViewModel) {
             QrCodeImage(request)
             Spacer(Modifier.height(12.dp))
             Text(
-                if (s.receiveAsset == Asset.BTC)
+                if (s.receiveAsset in DigitalDollarAccount.assets) stringResource(R.string.dollars_receive_warning)
+                else if (s.receiveAsset == Asset.BTC)
                     stringResource(R.string.receive_btc_warning)
                 else stringResource(R.string.receive_base_warning, s.receiveAsset.name),
                 fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -702,6 +769,16 @@ fun ReceiveScreen(vm: WalletViewModel) {
 
         Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ReceiveAccountSelector(selected: Asset, select: (Asset) -> Unit) {
+    androidx.compose.foundation.layout.FlowRow(Modifier.padding(20.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        NetworkPill(stringResource(R.string.digital_dollars), "$", selected in DigitalDollarAccount.assets) { select(Asset.USDC) }
+        NetworkPill("ETH", "Ξ", selected == Asset.ETH) { select(Asset.ETH) }
+        NetworkPill("BTC", "₿", selected == Asset.BTC) { select(Asset.BTC) }
     }
 }
 

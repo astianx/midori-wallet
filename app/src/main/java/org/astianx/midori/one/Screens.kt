@@ -238,7 +238,8 @@ fun MoreScreen(vm: WalletViewModel, chat: ChatViewModel) {
                 stringResource(R.string.onboarding_version, BuildConfig.VERSION_NAME), { vm.navigate(Screen.Welcome) })
             SectionLabel(R.string.explore_features)
             listOf(AppFeature.BUY, AppFeature.TRADE, AppFeature.DESKTOP).forEach { feature ->
-                ShortcutRow(featureIcon(feature), stringResource(feature.title), stringResource(R.string.in_development),
+                ShortcutRow(featureIcon(feature), stringResource(if (feature == AppFeature.BUY) R.string.fiat_title else feature.title),
+                    stringResource(if (feature == AppFeature.BUY) R.string.fiat_intro else R.string.in_development),
                     { vm.openFeature(feature) })
             }
             if (s.isWdkInitialized) {
@@ -279,7 +280,7 @@ fun FeatureScreen(vm: WalletViewModel) {
             if (s.feature in setOf(AppFeature.CONTACTS, AppFeature.PROFILE)) {
                 OutlinedButton(onClick = { vm.navigate(Screen.Messaging) }) { Text(stringResource(R.string.chat_account_title)) }
             } else if (s.feature == AppFeature.SCANNER && s.isWdkInitialized) {
-                OutlinedButton(onClick = { vm.updateReceiveAsset(Asset.USDC); vm.navigate(Screen.Receive) }) {
+                OutlinedButton(onClick = { vm.openReceive(Asset.USDC) }) {
                     Text(stringResource(R.string.receive))
                 }
             }

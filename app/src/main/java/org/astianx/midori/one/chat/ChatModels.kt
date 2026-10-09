@@ -40,6 +40,7 @@ data class ChatDevice(val address: String, val id: Int, val fingerprint: String,
 data class ConversationOptions(val pinned: Boolean = false, val muted: Boolean = false,
     val hidden: Boolean = false, val deletedBefore: Long = 0, val deletedIds: Set<String> = emptySet(), val appearance: ChatAppearance? = null, val alias: String = "")
 data class ChatUiState(
+    val restoringSession: Boolean = false,
     val connection: ChatConnection = ChatConnection.DISCONNECTED,
     val backgroundConnection: Boolean = true,
     val connectionServiceRunning: Boolean = false,
@@ -54,7 +55,7 @@ data class ChatUiState(
     val ownFingerprint: String = "",
     val blocked: Set<String> = emptySet(),
     val requests: Set<String> = emptySet(),
-    val readReceipts: Boolean = false,
+    val readReceipts: Boolean = true,
     val error: UiText? = null,
     val busy: Boolean = false,
     val groups: List<ChatGroup> = emptyList(),

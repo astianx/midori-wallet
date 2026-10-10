@@ -8,11 +8,18 @@ import org.json.JSONObject
 internal object P2pJson {
     private fun JSONObject.s(key: String) = get(key).let { require(it is String); it }
     private fun JSONObject.u(key: String, positive: Boolean = false) = s(key).also { require(p2pInteger(it, positive)) }
+    fun time(j: JSONObject, key: String): Long = j.get(key).let {
+        require(it is Number && it.toString().matches(Regex("0|[1-9][0-9]{0,15}")))
+        it.toString().toLong()
+    }
     fun protocol(j: JSONObject) {
         require(j.get("version").toString() == "2" && j.get("chainId").toString() == "8453" && j.s("asset") == "USDC" &&
             j.s("token").equals(BaseMainnet.USDC_CONTRACT, true) && j.s("diamond").equals(P2P_DIAMOND, true) &&
             j.s("execution") == "LOCAL_WDK")
     }
+    fun account(j: JSONObject) = P2pAccount(j.s("user"), j.s("country"), j.s("currency"), j.s("fiat"),
+        j.u("usdcBalanceUnits"), j.u("buyLimitUnits"), j.u("sellLimitUnits"), j.u("block", true),
+        time(j, "quotedAt"), time(j, "expiresAt"))
     fun order(j: JSONObject) = P2pOrder(j.u("orderId", true), j.s("user"), when (j.s("type")) {
         "buy" -> FiatOperation.BUY; "sell" -> FiatOperation.SELL; else -> error("Unsupported order")
     }, j.s("currency"), j.u("usdcAmount", true), j.u("fiatAmount"), j.u("actualUsdcAmount"),
@@ -28,7 +35,7 @@ internal object P2pJson {
     fun quote(j: JSONObject) = P2pOrderQuote(j.s("id"), j.s("user"), FiatOperation.valueOf(j.s("operation")),
         j.s("country"), j.s("currency"), j.s("fiat"), j.u("amountUnits", true), j.u("totalUsdcUnits", true),
         j.u("fiatUnits", true), j.u("estimatedFiatTotalUnits", true), j.u("feeUsdcUnits"), j.u("priceUnits", true),
-        j.s("relayPublicKey"), j.u("circleId", true), j.s("to"), j.s("data"), j.getLong("quotedAt"), j.getLong("expiresAt"))
+        j.s("relayPublicKey"), j.u("circleId", true), j.s("to"), j.s("data"), time(j, "quotedAt"), time(j, "expiresAt"))
     fun quote(q: P2pOrderQuote) = JSONObject().put("id", q.id).put("user", q.user).put("operation", q.operation.name)
         .put("country", q.country).put("currency", q.currency).put("fiat", q.fiat).put("amountUnits", q.amount)
         .put("totalUsdcUnits", q.totalUsdc).put("fiatUnits", q.fiatUnits).put("estimatedFiatTotalUnits", q.estimatedFiatTotal)

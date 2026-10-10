@@ -16,6 +16,8 @@ internal class HttpP2pOrderGateway(url: String) : P2pOrderGateway {
         return P2pAvailability(j.getBoolean("enabled"), j.getString("reason"),
             index.optString("indexedBlock").takeIf { it.isNotEmpty() }, index.optString("latestBlock").takeIf { it.isNotEmpty() })
     }
+    override suspend fun account(user: String, country: String) =
+        P2pJson.account(request("account", owner(user).put("country", country)))
     override suspend fun quote(user: String, operation: FiatOperation, country: String, amount: String, relayPublicKey: String) =
         P2pJson.quote(request("quote", owner(user).put("operation", operation.name).put("country", country)
             .put("amountUnits", amount).put("relayPublicKey", relayPublicKey)))
@@ -33,7 +35,7 @@ internal class HttpP2pOrderGateway(url: String) : P2pOrderGateway {
         require(j.getString("value") == "0" && p2pInteger(j.getString("approvalUnits")))
         return P2pPreparedAction(j.getString("user"), j.getString("orderId"), P2pAction.valueOf(j.getString("action")),
             P2pJson.order(j.getJSONObject("order")), j.getString("to"), j.getString("data"), j.getString("approvalUnits"),
-            j.getLong("quotedAt"), j.getLong("expiresAt"))
+            P2pJson.time(j, "quotedAt"), P2pJson.time(j, "expiresAt"))
     }
     override suspend fun receipt(user: String, hash: String, to: String, data: String): P2pReceipt {
         val j = request("receipt", owner(user).put("hash", hash).put("to", to).put("data", data))

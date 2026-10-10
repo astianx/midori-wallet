@@ -14,7 +14,7 @@ internal class FiatHttpClient(backendUrl: String) {
     val origin = fiatBackendOrigin(backendUrl)
     suspend fun request(path: String, body: JSONObject? = null): JSONObject = withContext(Dispatchers.IO) {
         require(path in setOf("/v1/fiat/capabilities", "/v1/fiat/offers", "/v1/fiat/challenge", "/v1/fiat/session",
-            "/v1/p2p/catalog", "/v1/p2p/rates", "/v1/p2p/operations", "/v1/p2p/quote",
+            "/v1/p2p/catalog", "/v1/p2p/rates", "/v1/p2p/operations", "/v1/p2p/account", "/v1/p2p/quote",
             "/v1/p2p/prepare", "/v1/p2p/order", "/v1/p2p/history", "/v1/p2p/action", "/v1/p2p/receipt"))
         val connection = URL("$origin$path").openConnection() as HttpsURLConnection
         try {

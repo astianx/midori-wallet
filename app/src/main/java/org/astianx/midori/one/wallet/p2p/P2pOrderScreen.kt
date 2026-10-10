@@ -53,7 +53,7 @@ internal fun P2pOrdersScreen(wallet: WalletViewModel) {
         }
     }
     LaunchedEffect(state.records) { if (state.records.isNotEmpty()) wallet.fetchBalance() }
-    LaunchedEffect(account.fiatOperation) { vm.operation(account.fiatOperation) }
+    LaunchedEffect(vm, account.fiatOperation) { vm.enter(account.fiatOperation) }
     LaunchedEffect(state.review) { state.review?.let {
         delay((it.expiresAt * 1000 - System.currentTimeMillis()).coerceAtLeast(0) + 100); vm.expire()
     } }
@@ -91,12 +91,22 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
                         onClick = { expanded = false; country(row.country) }) } }
             }
             if (selected?.alpha == true) Text(stringResource(R.string.p2p_alpha), style = MaterialTheme.typography.bodySmall)
+            s.account?.let { a ->
+                Card(Modifier.fillMaxWidth().testTag("p2po-account")) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.p2po_account_limit, p2pDecimal(a.limit(s.operation))))
+                        if (s.operation == FiatOperation.SELL) Text(stringResource(R.string.p2po_account_balance, p2pDecimal(a.usdcBalance)))
+                        if (a.limit(s.operation) == "0") Text(stringResource(R.string.p2po_account_disabled))
+                    }
+                }
+            }
             OutlinedTextField(s.amount, amount, enabled = !s.busy, label = { Text(stringResource(R.string.p2po_amount)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth().testTag("p2po-amount"))
             if (s.operation == FiatOperation.SELL && selected != null) {
                 Text(stringResource(R.string.p2po_destination_label), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.p2po_destination_hint), style = MaterialTheme.typography.bodySmall)
-                var inputs by remember(selected.country) { mutableStateOf(emptyMap<String,String>()) }
+                var inputs by remember(selected.country) { mutableStateOf(
+                    P2pPaymentDetails.fields(selected.country).zip(s.destination.split('|')).toMap()) }
                 LaunchedEffect(s.destination) { if (s.destination.isEmpty()) inputs = emptyMap() }
                 P2pPaymentDetails.fields(selected.country).forEach { field ->
                     OutlinedTextField(inputs[field].orEmpty(), { value ->
@@ -111,8 +121,9 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
             }
             if (s.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             s.error?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("p2po-error")) }
-            if (s.availability?.enabled != true) Text(stringResource(R.string.p2po_unavailable))
+            if (!s.busy && s.error == null && s.availability?.enabled == false) Text(stringResource(R.string.p2po_unavailable))
             PrimaryButton(stringResource(R.string.p2po_review), !s.busy && s.availability?.enabled == true && selected != null && s.amount.isNotBlank() &&
+                s.account?.limit(s.operation)?.let { p2pInteger(it, true) } == true &&
                 (s.operation == FiatOperation.BUY || P2pPaymentDetails.valid(s.country, s.destination))) { focus.clearFocus(); quote() }
             OutlinedButton(reload, enabled = !s.busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.p2po_refresh)) }
             s.review?.let { r ->
@@ -199,6 +210,7 @@ internal fun statusLabel(record: P2pPublicRecord): Int = when {
     record.submission == P2pSubmission.REVERTED -> R.string.p2po_reverted
     record.order?.status == "completed" -> R.string.p2po_completed
     record.order?.status == "cancelled" -> R.string.p2po_cancelled
+    record.order?.dispute == "open" -> R.string.p2po_disputed
     record.order?.status == "paid" -> R.string.p2po_wait_payment
     record.order?.status == "accepted" -> R.string.p2po_accepted
     else -> R.string.p2po_placed

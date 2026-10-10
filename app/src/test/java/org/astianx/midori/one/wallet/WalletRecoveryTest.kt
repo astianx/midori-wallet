@@ -85,6 +85,10 @@ class WalletRecoveryTest {
         }
         override suspend fun callMethod(methodName: String, network: String, accountIndex: Int, args: String): Any {
             check(!failBalance) { "Simulated balance outage" }
+            if (methodName == "quoteSendTransaction") {
+                assertEquals("bitcoin", network)
+                return "100"
+            }
             assertEquals("base", network)
             return when (methodName) {
                 "getTokenBalance" -> {
@@ -188,12 +192,12 @@ class WalletRecoveryTest {
         assertEquals(0, store.clears)
     }
 
-    private fun sendViewModel(client: Client, failL1: Boolean = false): WalletViewModel {
+    private fun sendViewModel(client: Client, failL1: () -> Boolean = { false }): WalletViewModel {
         val fees = object : BaseFeeProvider {
             override suspend fun chainId() = BigInteger.valueOf(8453)
             override suspend fun estimateGas(transaction: BaseTransaction) = BigInteger.valueOf(65000)
             override suspend fun l1FeeUpperBound(unsignedSize: Int): BigInteger {
-                check(!failL1) { "L1 provider failed" }
+                check(!failL1()) { "L1 provider failed" }
                 return BigInteger.valueOf(200)
             }
             override suspend fun operatorFee(gas: BigInteger) = BigInteger.valueOf(3)
@@ -204,11 +208,16 @@ class WalletRecoveryTest {
 
     @Test
     fun enoughEthForL2AloneDoesNotAuthorizeATokenBroadcast() = runTest(dispatcher) {
-        val client = Client().apply { nativeBalance = "150"; tokenBalance = "1000000" }
+        val client = Client().apply { nativeBalance = "1000000"; tokenBalance = "1000000" }
         val vm = sendViewModel(client)
         advanceUntilIdle()
         vm.updateSendAddress("0x" + "2".repeat(40))
         vm.updateSendAmount("1")
+        vm.prepareSend()
+        advanceUntilIdle()
+        assertNotNull(vm.state.value.sendReview)
+        // Funds disappear after review: the fresh check must still block submission.
+        client.nativeBalance = "150"
         vm.doSend()
         advanceUntilIdle()
         assertEquals(0, client.broadcasts)
@@ -219,10 +228,15 @@ class WalletRecoveryTest {
     @Test
     fun failedL1LookupStopsBroadcastEvenWithEnoughEth() = runTest(dispatcher) {
         val client = Client().apply { nativeBalance = "1000000"; tokenBalance = "1000000" }
-        val vm = sendViewModel(client, failL1 = true)
+        var failL1 = false
+        val vm = sendViewModel(client) { failL1 }
         advanceUntilIdle()
         vm.updateSendAddress("0x" + "2".repeat(40))
         vm.updateSendAmount("1")
+        vm.prepareSend()
+        advanceUntilIdle()
+        assertNotNull(vm.state.value.sendReview)
+        failL1 = true
         vm.doSend()
         advanceUntilIdle()
         assertEquals(0, client.broadcasts)
@@ -254,6 +268,9 @@ class WalletRecoveryTest {
         vm.setSendMax()
         assertEquals("1.234567", vm.state.value.sendAmount)
         vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.prepareSend()
+        advanceUntilIdle()
+        assertNotNull(vm.state.value.sendReview)
         vm.doSend()
         advanceUntilIdle()
         assertEquals(listOf(BaseMainnet.USDT_CONTRACT), client.sentTokens)
@@ -269,8 +286,9 @@ class WalletRecoveryTest {
         vm.updateSendAsset(Asset.USDT)
         vm.updateSendAddress("0x" + "2".repeat(40))
         vm.updateSendAmount("1")
-        vm.doSend()
-        assertEquals(UiText(R.string.error_balance_insufficient, listOf("USDT")), vm.state.value.toastMessage)
+        vm.prepareSend()
+        assertEquals(UiText(R.string.dollars_conversion_required), vm.state.value.toastMessage)
+        assertNull(vm.state.value.sendReview)
         advanceUntilIdle()
         assertEquals(0, client.broadcasts)
         assertTrue(vm.state.value.pendingTransactions.isEmpty())
@@ -278,14 +296,19 @@ class WalletRecoveryTest {
 
     @Test
     fun wrongBitcoinProviderStopsBeforeWdkBroadcast() = runTest(dispatcher) {
-        val client = Client()
+        val client = Client().apply { nativeBalance = "1000000" }
+        var wrongNetwork = false
         val vm = WalletViewModel(Store(WalletCredentials("test-key", "test-seed")), { client }, dispatcher,
-            bitcoinNetworkVerifier = BitcoinNetworkVerifier { error("Wrong Bitcoin chain") })
+            bitcoinNetworkVerifier = BitcoinNetworkVerifier { check(!wrongNetwork) { "Wrong Bitcoin chain" } })
             .also { viewModels.put("wallet", it) }
         advanceUntilIdle()
         vm.updateSendAsset(Asset.BTC)
         vm.updateSendAddress("bc1q" + "q".repeat(38))
         vm.updateSendAmount("0.00001")
+        vm.prepareSend()
+        advanceUntilIdle()
+        assertNotNull(vm.state.value.sendReview)
+        wrongNetwork = true
         vm.doSend()
         advanceUntilIdle()
         assertEquals(0, client.broadcasts)

@@ -4,7 +4,7 @@ import java.math.BigInteger
 import org.astianx.midori.one.wallet.BaseMainnet
 import org.astianx.midori.one.wallet.fiat.FiatOperation
 
-/** Canonical local encoding of the seven permitted P2P calls; no arbitrary provider calldata. */
+/** Canonical local encoding of permitted P2P calls; no arbitrary provider calldata. */
 internal object P2pAbi {
     private data class Arg(val value: String, val dynamic: Boolean = false)
     private fun uint(value: String): Arg {

@@ -14,10 +14,11 @@ import org.astianx.midori.one.wallet.toSmallestUnit
 
 internal data class P2pOrderState(val operation: FiatOperation, val countries: List<P2pCountry> = emptyList(),
     val country: String = "", val amount: String = "", val destination: String = "",
-    val availability: P2pAvailability? = null, val records: List<P2pPublicRecord> = emptyList(),
+    val availability: P2pAvailability? = null, val account: P2pAccount? = null,
+    val records: List<P2pPublicRecord> = emptyList(),
     val history: List<P2pOrder> = emptyList(), val review: P2pOrderReview? = null,
     val payment: Pair<String, String>? = null, val busy: Boolean = false, val error: UiText? = null) {
-    val available get() = countries.filter { if (operation == FiatOperation.BUY) it.buy else it.sell }
+    val available get() = countries.filter { if (operation == FiatOperation.BUY) it.buy && it.country != "IN" else it.sell }
 }
 
 /** Presentation only. The interactor owns signing intent, recovery and validation. */
@@ -25,6 +26,7 @@ internal class P2pOrderViewModel(operation: FiatOperation, private val catalog: 
     private val orders: P2pOrderInteractor?) : ViewModel() {
     private val mutable = MutableStateFlow(P2pOrderState(operation))
     val state = mutable.asStateFlow()
+    private var pendingEntry: FiatOperation? = null
     init { reload() }
     private fun task(block: suspend () -> Unit) {
         if (state.value.busy) return
@@ -38,28 +40,58 @@ internal class P2pOrderViewModel(operation: FiatOperation, private val catalog: 
                 if (orders != null) runCatching { orders.localRecords() }.onSuccess { rows -> mutable.update { it.copy(records = rows) } }
                     .onFailure { mutable.update { it.copy(error = UiText(R.string.p2po_storage)) } }
                 mutable.update { it.copy(busy = false) }
+                pendingEntry?.let { desired ->
+                    pendingEntry = null
+                    if (state.value.operation != desired) { operation(desired); reload() }
+                }
             }
         }
     }
     fun reload() = task {
         val interactor = orders ?: throw P2pOrderFailure("orders_disabled")
-        val local = interactor.localRecords(); mutable.update { it.copy(records = local, review = null) }
+        interactor.dismissReview()
+        val local = interactor.localRecords(); mutable.update { it.copy(records = local, review = null, payment = null) }
         val rows = catalog?.catalog() ?: emptyList()
         val availability = interactor.availability()
         mutable.update { it.copy(countries = rows, availability = availability) }
+        loadAccount()
+        val reconciled = interactor.reconcile(); mutable.update { it.copy(records = reconciled) }
         val history = interactor.history(); mutable.update { it.copy(history = history) }
+    }
+    /** Navigation may arrive during initial loading; do not discard its requested direction. */
+    fun enter(value: FiatOperation) {
+        if (state.value.busy) { pendingEntry = value; return }
+        operation(value); reload()
+    }
+    private suspend fun loadAccount() {
+        val selected = state.value.country
+        mutable.update { it.copy(account = null) }
+        if (selected.isBlank()) return
+        val account = checkNotNull(orders).account(selected)
+        mutable.update { it.copy(account = account) }
     }
     private fun edit(block: (P2pOrderState) -> P2pOrderState) {
         if (state.value.busy) return
         orders?.dismissReview(); mutable.update { block(it).copy(review = null, payment = null, error = null) }
     }
-    fun operation(value: FiatOperation) = edit { it.copy(operation = value, country = "", destination = "") }
-    fun country(value: String) { if (state.value.available.any { it.country == value }) edit { it.copy(country = value, destination = "") } }
+    fun operation(value: FiatOperation) {
+        if (value != state.value.operation) edit { it.copy(operation = value, country = "", destination = "", account = null) }
+    }
+    fun country(value: String) {
+        if (state.value.busy || state.value.available.none { it.country == value }) return
+        edit { it.copy(country = value, destination = "", account = null) }
+        task { loadAccount() }
+    }
     fun amount(value: String) { if (value.length <= 40) edit { it.copy(amount = value) } }
     fun destination(value: String) { if (value.length <= 512) edit { it.copy(destination = value) } }
     fun quote() = task {
         val s = state.value
         val units = toSmallestUnit(s.amount.replace(',', '.'), 6) ?: throw P2pOrderFailure("invalid_amount")
+        if (!p2pInteger(units, true)) throw P2pOrderFailure("invalid_amount")
+        loadAccount()
+        val account = checkNotNull(state.value.account)
+        if (units.toBigInteger() > account.limit(s.operation).toBigInteger()) throw P2pOrderFailure("verification_required")
+        if (s.operation == FiatOperation.SELL && units.toBigInteger() > account.usdcBalance.toBigInteger()) throw P2pOrderFailure("insufficient_usdc")
         val review = checkNotNull(orders).quote(s.operation, s.country, units, s.destination)
         mutable.update { it.copy(review = review) }
     }
@@ -79,8 +111,10 @@ internal class P2pOrderViewModel(operation: FiatOperation, private val catalog: 
         val row = state.value.records.firstOrNull {
             it.hash != null && (it.submission in setOf(P2pSubmission.PENDING, P2pSubmission.UNKNOWN, P2pSubmission.SUBMITTING) ||
                 it.order?.status in setOf("placed", "accepted", "paid"))
-        } ?: return
-        refresh(row.localId)
+        }
+        if (row != null) refresh(row.localId)
+        else if (state.value.availability?.enabled != true) reload()
+        else if (state.value.account?.expiresAt?.let { it <= System.currentTimeMillis() / 1000 } == true) task { loadAccount() }
     }
     fun recover(id: String, hash: String) = task {
         checkNotNull(orders).recoverHash(id, hash.trim()); orders.refresh(id)

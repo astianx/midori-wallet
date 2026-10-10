@@ -642,4 +642,8 @@
     <string name="p2po_field_till">Número Till de M-PESA</string>
     <string name="p2po_field_paybill">Número Paybill de M-PESA</string>
     <string name="p2po_field_paybill_account">Cuenta Paybill de M-PESA</string>
+    <string name="p2po_account_limit">Límite por operación: %1$s USDC</string>
+    <string name="p2po_account_balance">Disponible para vender: %1$s USDC</string>
+    <string name="p2po_account_disabled">El proveedor aún no habilita un límite de operación para esta cuenta. Elige otro método o completa la verificación requerida.</string>
+    <string name="p2po_disputed">Disputa en curso</string>
 </resources>

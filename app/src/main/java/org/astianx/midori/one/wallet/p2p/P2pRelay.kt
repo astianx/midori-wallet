@@ -13,16 +13,9 @@ import org.bouncycastle.crypto.params.ECDomainParameters
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters
 import org.bouncycastle.crypto.signers.ECDSASigner
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator
-import org.bouncycastle.jcajce.provider.digest.Keccak
 import org.bouncycastle.math.ec.ECAlgorithms
 import org.json.JSONObject
 
-internal fun ByteArray.p2pHex() = joinToString("") { "%02x".format(it.toInt() and 255) }
-internal fun p2pBytes(hex: String): ByteArray {
-    require(hex.length % 2 == 0 && hex.matches(Regex("[a-fA-F0-9]*")))
-    return hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-}
-internal fun p2pKeccak(bytes: ByteArray) = Keccak.Digest256().digest(bytes)
 private fun BigInteger.fixed32() = toString(16).padStart(64, '0').let(::p2pBytes)
 
 /** Implements the pinned SDK's eth-crypto wire format, not a new encryption protocol.

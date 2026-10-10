@@ -62,13 +62,13 @@ class WalletViewModelTest {
     }
 
     @Test
-    fun qrIdentifiesBaseChainAndUsdcContractInsteadOfNativeEth() {
+    fun receiveQrUsesAnExchangeCompatibleAddressForBothBaseTokens() {
         val recipient = "0x" + "1".repeat(40)
         assertEquals(
-            "ethereum:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913@8453/transfer?address=$recipient",
+            recipient,
             receiveRequest(Asset.USDC, recipient)
         )
-        assertEquals("ethereum:$recipient@8453", receiveRequest(Asset.ETH, recipient))
+        assertEquals(recipient, receiveRequest(Asset.ETH, recipient))
         assertNull(receiveRequest(Asset.USDC, ""))
         assertNull(receiveRequest(Asset.USDC, "not-an-address"))
     }
@@ -79,7 +79,8 @@ class WalletViewModelTest {
         assertTrue(Asset.USDT.isAvailable)
         assertEquals("0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2", Asset.USDT.contract)
         val recipient = "0x" + "1".repeat(40)
-        assertEquals("ethereum:${Asset.USDT.contract}@8453/transfer?address=$recipient", receiveRequest(Asset.USDT, recipient))
+        assertEquals(recipient, receiveRequest(Asset.USDT, recipient))
+        assertEquals(receiveRequest(Asset.USDC, recipient), receiveRequest(Asset.USDT, recipient))
         val config = org.json.JSONObject(BaseMainnet.wdkConfig).getJSONObject("networks")
         assertEquals(8453, config.getJSONObject("base").getJSONObject("config").getInt("chainId"))
         assertEquals("bitcoin", config.getJSONObject("bitcoin").getJSONObject("config").getString("network"))
@@ -99,7 +100,7 @@ class WalletViewModelTest {
     fun bitcoinUsesMainnetAddressesAndItsOwnExplorer() {
         val tx = PendingTx(network = Network.BTC, toAddress = "bc1q" + "q".repeat(38), amount = "0.001", hash = "a".repeat(64))
         assertEquals("https://blockbook.btc.zelcore.io/tx/${tx.hash}", tx.explorerUrl)
-        assertEquals("bitcoin:${tx.toAddress}", receiveRequest(Asset.BTC, tx.toAddress))
+        assertEquals(tx.toAddress, receiveRequest(Asset.BTC, tx.toAddress))
         assertNull(receiveRequest(Asset.BTC, "tb1q" + "q".repeat(38)))
         assertNull(receiveRequest(Asset.BTC, "bcrt1q" + "q".repeat(38)))
         assertNull(receiveRequest(Asset.BTC, "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"))

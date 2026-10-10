@@ -10,6 +10,11 @@ internal enum class P2pAction { PLACE, APPROVE, HANDOFF, PAID, CANCEL, DISPUTE }
 internal enum class P2pSubmission { DRAFT, SUBMITTING, PENDING, UNKNOWN, CONFIRMED, REVERTED }
 internal data class P2pAvailability(val enabled: Boolean, val reason: String,
     val indexedBlock: String? = null, val latestBlock: String? = null)
+internal data class P2pAccount(val user: String, val country: String, val currency: String, val fiat: String,
+    val usdcBalance: String, val buyLimit: String, val sellLimit: String, val block: String,
+    val quotedAt: Long, val expiresAt: Long) {
+    fun limit(operation: FiatOperation) = if (operation == FiatOperation.BUY) buyLimit else sellLimit
+}
 internal data class P2pOrder(val id: String, val user: String, val operation: FiatOperation,
     val currency: String, val amount: String, val fiat: String, val actualUsdc: String,
     val actualFiat: String, val circle: String, val status: String, val dispute: String,
@@ -45,6 +50,7 @@ internal data class P2pPublicRecord(val localId: String, val operation: FiatOper
 
 internal interface P2pOrderGateway {
     suspend fun availability(): P2pAvailability
+    suspend fun account(user: String, country: String): P2pAccount
     suspend fun quote(user: String, operation: FiatOperation, country: String, amount: String, relayPublicKey: String): P2pOrderQuote
     suspend fun prepare(user: String, quoteId: String): P2pOrderQuote
     suspend fun order(user: String, orderId: String): P2pOrder
@@ -102,6 +108,16 @@ internal class P2pOrderInteractor(private val owner: String, private val gateway
     private fun P2pPrivateRecord.public() = P2pPublicRecord(localId, operation, country, amount, orderId, submission, action, hash, order)
     suspend fun localRecords(): List<P2pPublicRecord> = mutex.withLock { read().filter { it.submission != P2pSubmission.DRAFT }.map { it.public() }.reversed() }
     suspend fun availability() = gateway.availability()
+    suspend fun account(country: String): P2pAccount {
+        current()
+        return gateway.account(owner, country).also {
+            current()
+            p2pRequire(it.user.equals(owner, true) && it.country == country &&
+                it.currency == p2pCurrencyForCountry(country) && it.fiat == p2pFiatCode(it.currency))
+            p2pRequire(listOf(it.usdcBalance, it.buyLimit, it.sellLimit).all { value -> p2pInteger(value) } &&
+                p2pInteger(it.block, true) && p2pTimeValid(it.quotedAt, it.expiresAt, clock()))
+        }
+    }
     suspend fun history(): List<P2pOrder> { current(); return gateway.history(owner).also { current() } }
     private fun validate(quote: P2pOrderQuote, record: P2pPrivateRecord) {
         p2pRequire(quote.id.matches(Regex("[a-f0-9]{64}")) && quote.currency == p2pCurrencyForCountry(record.country) &&
@@ -115,12 +131,18 @@ internal class P2pOrderInteractor(private val owner: String, private val gateway
         current(); p2pRequire(p2pInteger(amount, true), "invalid_amount")
         p2pRequire(operation != FiatOperation.BUY || country != "IN", "verification_required")
         p2pRequire(destination.length <= 512 && (operation == FiatOperation.BUY || P2pPaymentDetails.valid(country, destination)), "payment_details_required")
-        val rows = read()
+        var rows = read()
+        // Refresh a known active order before rejecting a new one on stale local status.
+        // Ambiguous submissions continue to block, without automatic replay or key replacement.
+        p2pRequire(rows.none { it.submission in setOf(P2pSubmission.SUBMITTING, P2pSubmission.PENDING, P2pSubmission.UNKNOWN) }, "order_already_active")
+        rows.filter { it.orderId != null && it.order?.status !in setOf("completed", "cancelled") }.forEach { refreshRecord(it) }
+        rows = read()
         p2pRequire(rows.none { it.submission in setOf(P2pSubmission.SUBMITTING, P2pSubmission.PENDING, P2pSubmission.UNKNOWN) ||
             it.orderId != null && it.order?.status !in setOf("completed", "cancelled") }, "order_already_active")
         val draft = P2pPrivateRecord(UUID.randomUUID().toString(), owner, country, operation, amount, crypto.createSecret(), destination)
         // Discard only never-broadcast drafts. A corrupt vault is never replaced by an empty one.
         val retained = rows.filterNot { it.submission == P2pSubmission.DRAFT }
+        p2pRequire(retained.size < 200, "local_storage_failed")
         store.save(owner, retained + draft); records = retained + draft
         val quote = gateway.quote(owner, operation, country, amount, crypto.publicKey(draft.relaySecret))
         current(); validate(quote, draft)
@@ -134,6 +156,9 @@ internal class P2pOrderInteractor(private val owner: String, private val gateway
         val row = read().single { it.localId == localId }
         p2pRequire(row.orderId != null && row.submission !in setOf(P2pSubmission.PENDING, P2pSubmission.UNKNOWN, P2pSubmission.SUBMITTING), "order_pending")
         val order = gateway.order(owner, checkNotNull(row.orderId)); validateOrder(order, row)
+        p2pRequire(order.status in setOf("placed", "accepted", "paid"), "order_changed")
+        if (action == P2pAction.PAID) p2pRequire(row.operation == FiatOperation.BUY && order.status == "accepted", "order_changed")
+        if (action == P2pAction.APPROVE) p2pRequire(row.operation == FiatOperation.SELL && order.status in setOf("placed", "accepted"), "order_changed")
         val encrypted = if (action == P2pAction.HANDOFF) {
             p2pRequire(order.status == "accepted" && row.operation == FiatOperation.SELL && row.destination.isNotBlank())
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { crypto.encrypt(row.relaySecret, order.merchantKey, row.destination) }
@@ -198,8 +223,8 @@ internal class P2pOrderInteractor(private val owner: String, private val gateway
         p2pRequire(order.id == row.orderId && order.user.equals(owner, true) && order.operation == row.operation &&
             order.amount == row.amount && row.quote?.currency?.let { it == order.currency } != false)
     }
-    suspend fun refresh(localId: String): P2pPublicRecord = mutex.withLock {
-        current(); var row = read().single { it.localId == localId }
+    private suspend fun refreshRecord(record: P2pPrivateRecord): P2pPrivateRecord {
+        current(); var row = record
         if (row.submission in setOf(P2pSubmission.SUBMITTING, P2pSubmission.PENDING, P2pSubmission.UNKNOWN) && row.hash != null) {
             val receipt = gateway.receipt(owner, checkNotNull(row.hash), row.to, row.data)
             p2pRequire(receipt.hash.equals(row.hash, true))
@@ -214,7 +239,17 @@ internal class P2pOrderInteractor(private val owner: String, private val gateway
             val order = gateway.order(owner, id); validateOrder(order, row)
             row = row.copy(order = order); commit(row)
         }
-        row.public()
+        return row
+    }
+    suspend fun refresh(localId: String): P2pPublicRecord = mutex.withLock {
+        refreshRecord(read().single { it.localId == localId }).public()
+    }
+    suspend fun reconcile(): List<P2pPublicRecord> = mutex.withLock {
+        read().filter { row ->
+            row.hash != null && (row.submission in setOf(P2pSubmission.PENDING, P2pSubmission.UNKNOWN, P2pSubmission.SUBMITTING) ||
+                row.orderId != null && row.order?.status !in setOf("completed", "cancelled"))
+        }.forEach { refreshRecord(it) }
+        read().filter { it.submission != P2pSubmission.DRAFT }.map { it.public() }.reversed()
     }
     suspend fun recoverHash(localId: String, hash: String): P2pPublicRecord = mutex.withLock {
         current(); val row = read().single { it.localId == localId }

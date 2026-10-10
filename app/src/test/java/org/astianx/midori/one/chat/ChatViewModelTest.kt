@@ -80,6 +80,9 @@ class ChatViewModelTest {
         client.events.message(message, false); client.events.message(message, true); advanceUntilIdle()
         assertEquals(1, vm.state.value.unreadCount); assertEquals(1, notifications)
         vm.open(message.peer); advanceUntilIdle(); assertEquals(0, vm.state.value.unreadCount)
+        assertTrue(vm.state.value.readReceipts)
+        vm.setReadReceipts(false)
+        advanceUntilIdle()
         assertFalse(vm.state.value.readReceipts)
     }
     @Test fun storageFailureDoesNotSendOrLeaveMessageStuckSending() = runTest(dispatcher) {

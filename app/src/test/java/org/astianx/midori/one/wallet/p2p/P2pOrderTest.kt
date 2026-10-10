@@ -30,6 +30,8 @@ class P2pOrderTest {
         var q = quote(); var o = order(); var tamper = false; var approval = "1000000"
         var receipt = P2pReceipt(hash,P2pSubmission.CONFIRMED,"7")
         override suspend fun availability() = P2pAvailability(true,"ready")
+        var account = P2pAccount(owner,"CO","COP","COP","100000000","100000000","100000000","20",now,now+60)
+        override suspend fun account(user: String, country: String) = account
         override suspend fun quote(user: String, operation: FiatOperation, country: String, amount: String, relayPublicKey: String) = q
         override suspend fun prepare(user: String, quoteId: String) = q
         override suspend fun order(user: String, orderId: String) = o
@@ -147,6 +149,40 @@ class P2pOrderTest {
         fails("invalid_protocol_response"){e.flow.refresh(e.flow.localRecords().single().localId)}
         assertEquals(P2pSubmission.PENDING,e.flow.localRecords().single().submission)
     }
+    @Test fun accountLimitsBindOwnerCountryCurrencyIntegersAndExpiry() = runTest {
+        val e=Environment();val account=e.gateway.account
+        assertEquals("100000000",e.flow.account("CO").buyLimit)
+        for (invalid in listOf(account.copy(user="0x"+"2".repeat(40)),account.copy(country="BR"),
+            account.copy(currency="BRL"),account.copy(fiat="USD"),account.copy(usdcBalance="1.5"),
+            account.copy(buyLimit="-1"),account.copy(block="0"),account.copy(expiresAt=now))) {
+            e.gateway.account=invalid
+            fails("invalid_protocol_response"){e.flow.account("CO")}
+        }
+        assertTrue(e.store.rows.isEmpty());assertEquals(0,e.wallet.emits)
+    }
+    @Test fun reentryReconcilesPendingReceiptAndClosedOrderAllowsAnotherReviewedOrder() = runTest {
+        val e=Environment();e.place();val restarted=e.interactor()
+        e.gateway.o=e.gateway.o.copy(status="completed")
+        val reconciled=restarted.reconcile().single()
+        assertEquals(P2pSubmission.CONFIRMED,reconciled.submission);assertEquals("completed",reconciled.order?.status)
+        val review=restarted.quote(FiatOperation.BUY,"CO","1000000","")
+        assertNotEquals(reconciled.localId,review.localId);assertEquals(1,e.wallet.emits)
+    }
+    @Test fun newQuoteRefreshesAnActiveOrderInsteadOfBlockingOnItsStaleLocalStatus() = runTest {
+        val e=Environment();e.place();e.flow.refresh(e.flow.localRecords().single().localId)
+        assertEquals("accepted",e.flow.localRecords().single().order?.status)
+        e.gateway.o=e.gateway.o.copy(status="cancelled")
+        e.flow.quote(FiatOperation.BUY,"CO","1000000","")
+        assertEquals("cancelled",e.flow.localRecords().single().order?.status);assertEquals(1,e.wallet.emits)
+    }
+    @Test fun localActionPolicyRejectsWrongDirectionAndTerminalStateEvenWithPermissiveGateway() = runTest {
+        val e=Environment();e.place();val id=e.flow.localRecords().single().localId;e.flow.refresh(id)
+        fails("order_changed"){e.flow.action(id,P2pAction.APPROVE)}
+        e.gateway.o=e.gateway.o.copy(status="completed")
+        fails("order_changed"){e.flow.action(id,P2pAction.PAID)}
+        fails("order_changed"){e.flow.action(id,P2pAction.CANCEL)}
+        assertEquals(1,e.wallet.emits)
+    }
     @Test fun nativePaymentFormatsMatchPublicSdkFixturesAndRejectMissingOrInjectedFields() {
         val rows=org.json.JSONArray(checkNotNull(javaClass.getResource("/p2p-payment-ids.json")).readText())
         for(i in 0 until rows.length()) {
@@ -164,5 +200,6 @@ class P2pOrderTest {
         val row=P2pPrivateRecord("id",owner,"CO",FiatOperation.BUY,"1000000",fixture.getString("secret"),"bank",quote=quote(),order=order())
         assertEquals(row,P2pJson.record(P2pJson.record(row)));assertEquals("P2pPrivateRecord(redacted)",row.toString())
         assertTrue(runCatching {P2pJson.quote(P2pJson.quote(quote()).put("amountUnits",1.5))}.isFailure)
+        assertTrue(runCatching {P2pJson.quote(P2pJson.quote(quote()).put("quotedAt",now+0.5))}.isFailure)
     }
 }

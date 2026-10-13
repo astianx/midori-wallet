@@ -644,6 +644,6 @@
     <string name="p2po_field_paybill_account">Cuenta Paybill de M-PESA</string>
     <string name="p2po_account_limit">Límite por operación: %1$s USDC</string>
     <string name="p2po_account_balance">Disponible para vender: %1$s USDC</string>
-    <string name="p2po_account_disabled">El proveedor aún no habilita un límite de operación para esta cuenta. Elige otro método o completa la verificación requerida.</string>
+    <string name="p2po_account_disabled">La cuenta no tiene un límite habilitado para esta operación. La verificación de cuenta aún no está disponible en Midori; puedes usar otro método para depositar o retirar.</string>
     <string name="p2po_disputed">Disputa en curso</string>
 </resources>

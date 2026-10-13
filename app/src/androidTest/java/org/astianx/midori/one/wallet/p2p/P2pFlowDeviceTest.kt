@@ -29,6 +29,8 @@ class P2pFlowDeviceTest {
     @Test fun spanishWithdraw() = flow("es", FiatOperation.SELL)
     @Test fun portugueseWithdraw() = flow("pt", FiatOperation.SELL)
     @Test fun zeroLimitShowsAnAccountBlockWithoutCreatingAnIdentity() = flow("en", FiatOperation.BUY, true)
+    @Test fun spanishZeroLimitExplainsPendingVerification() = flow("es", FiatOperation.BUY, true)
+    @Test fun portugueseZeroLimitExplainsPendingVerification() = flow("pt", FiatOperation.BUY, true)
     private fun flow(language: String, operation: FiatOperation, zeroLimit: Boolean = false) {
         val target = InstrumentationRegistry.getInstrumentation().targetContext
         val config = Configuration(target.resources.configuration).apply { setLocale(Locale.forLanguageTag(language)) }

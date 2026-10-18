@@ -102,6 +102,8 @@ data class WalletUiState(
     val sendAsset: Asset = Asset.USDC,
     val sendAddress: String = "",
     val sendAmount: String = "",
+    val p2pVerificationRequested: Boolean = false,
+    val p2pVerificationCountry: String = "",
     val sendReview: SendReview? = null,
     val pendingTransactions: List<PendingTx> = emptyList(),
     val receiveAsset: Asset = Asset.USDC,
@@ -244,13 +246,21 @@ class WalletViewModel internal constructor(
         navigate(Screen.Receive)
     }
 
+    internal fun openP2pVerification(country: String = "") {
+        if (!state.value.isWdkInitialized) return
+        update { copy(p2pVerificationRequested = true, p2pVerificationCountry = country) }
+        navigate(Screen.P2p)
+    }
+    internal fun finishP2pVerification() { update { copy(p2pVerificationRequested = false) } }
+
     /** WDK remains the sole signer. Journal callback is durable before this adapter broadcasts. */
     internal fun p2pWalletPort(): P2pWalletPort = object : P2pWalletPort {
         override fun isCurrent(owner: String) = state.value.isWdkInitialized && wdkCore != null &&
             state.value.ethAddress.equals(owner, true)
         private suspend fun estimate(owner: String, to: String, data: String, requiredUsdc: String): String {
             p2pRequire(isCurrent(owner), "wallet_changed")
-            p2pRequire(to.equals(P2P_DIAMOND, true) || to.equals(BaseMainnet.USDC_CONTRACT, true))
+            p2pRequire(to.equals(P2P_DIAMOND, true) || to.equals(BaseMainnet.USDC_CONTRACT, true) ||
+                to.equals(org.astianx.midori.one.wallet.p2p.P2P_REPUTATION_MANAGER, true))
             p2pRequire(data.matches(Regex("0x[a-fA-F0-9]{8,20000}")) && data.length % 2 == 0 && p2pInteger(requiredUsdc))
             val client = checkNotNull(wdkCore)
             val args = JSONObject().put("to", to).put("value", "0").put("data", data).toString()
@@ -287,6 +297,17 @@ class WalletViewModel internal constructor(
                 if (hash.startsWith("0x")) hash else "0x$hash"
             } finally { update { copy(isLoading = false) } }
         }
+    }
+
+    internal suspend fun signP2pVerification(record: org.astianx.midori.one.wallet.p2p.P2pKycRecord,
+        expiresAt: Long, origin: String): String {
+        check(origin == fiatBackendOrigin(BuildConfig.FIAT_BACKEND_URL))
+        val client = checkNotNull(wdkCore)
+        fun current() = check(state.value.isWdkInitialized && client === wdkCore && state.value.ethAddress.equals(record.owner, true))
+        current()
+        val message = org.astianx.midori.one.wallet.p2p.kycMessage(origin, record, expiresAt)
+        val signature = client.callMethod("sign", Network.BASE.wdkName, 0, JSONObject.quote(message)).toString()
+        current(); check(signature.matches(Regex("0x[a-fA-F0-9]{130}"))); return signature
     }
 
     internal suspend fun signFiatChallenge(request: FiatRequest, challenge: FiatChallenge, origin: String): String {

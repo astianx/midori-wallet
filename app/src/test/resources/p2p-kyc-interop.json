@@ -1,0 +1,15 @@
+{
+  "scope": "PUBLIC_UNFUNDED_SYNTHETIC_FIXTURE",
+  "now": 1700000000,
+  "proof": {
+    "user": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a",
+    "country": "CO",
+    "nullifier": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "limit": "100",
+    "expiry": "1700003600",
+    "signature": "0xccf4ec99182c61e89c1cdc43458722ead8c08fe9167ab7ba8eb3bfc5b917dd7c3d5d197e1e55cb95dc44c00c3b95f4f546b15245da37f43e49ccb28afc963f911b",
+    "signer": "0x1563915e194d8cfba1943570603f7606a3115508"
+  },
+  "data": "0x6d692e79cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc0000000000000000000000000000000000000000000000000000000000000064000000000000000000000000000000000000000000000000000000006553ff1000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000041ccf4ec99182c61e89c1cdc43458722ead8c08fe9167ab7ba8eb3bfc5b917dd7c3d5d197e1e55cb95dc44c00c3b95f4f546b15245da37f43e49ccb28afc963f911b00000000000000000000000000000000000000000000000000000000000000",
+  "message": "Midori account verification\nhttps://midori.test\nChain: 8453\nWallet: 0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a\nCountry: CO\nNonce: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nToken hash: a0fab1377f49a759b57f63318262ebe89fabfc990e8e93ceac2984561482b9d4\nExpires: 1700000120\nThis signature starts identity verification. It does not authorize a transaction."
+}

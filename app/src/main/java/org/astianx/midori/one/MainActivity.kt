@@ -65,15 +65,18 @@ import org.astianx.midori.one.wallet.WalletViewModel
 class MainActivity : ComponentActivity() {
     private var notificationPeer by mutableStateOf<String?>(null)
     private var openConnectionSettings by mutableStateOf(false)
+    private var verificationReturn by mutableStateOf(false)
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        verificationReturn = org.astianx.midori.one.wallet.p2p.isP2pVerificationReturn(intent.dataString)
         notificationPeer = intent.getStringExtra(ChatNotifications.PEER_EXTRA)
         openConnectionSettings = intent.action == org.astianx.midori.one.chat.ChatConnectionService.OPEN_CONNECTION
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        verificationReturn = org.astianx.midori.one.wallet.p2p.isP2pVerificationReturn(intent.dataString)
         notificationPeer = intent.getStringExtra(ChatNotifications.PEER_EXTRA)
         openConnectionSettings = intent.action == org.astianx.midori.one.chat.ChatConnectionService.OPEN_CONNECTION
         setContent {
@@ -98,6 +101,11 @@ class MainActivity : ComponentActivity() {
                 val chat = androidx.compose.runtime.remember { org.astianx.midori.one.chat.ChatSession.get(applicationContext) }
                 val chatStatus by chat.state.collectAsState()
                 val walletStatus by vm.state.collectAsState()
+                LaunchedEffect(verificationReturn, walletStatus.isWdkInitialized, walletStatus.isLoading) {
+                    if (verificationReturn && walletStatus.isWdkInitialized && !walletStatus.isLoading) {
+                        vm.openP2pVerification(); verificationReturn = false
+                    }
+                }
                 LaunchedEffect(openConnectionSettings, walletStatus.isLoading) {
                     if (openConnectionSettings && !walletStatus.isLoading) {
                         vm.navigate(Screen.Messaging)

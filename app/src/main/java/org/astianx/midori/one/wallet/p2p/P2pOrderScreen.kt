@@ -46,6 +46,10 @@ internal fun P2pOrdersScreen(wallet: WalletViewModel) {
         }
     })
     val state by vm.state.collectAsState()
+    if (account.p2pVerificationRequested) {
+        P2pKycScreen(wallet, account.p2pVerificationCountry) { wallet.finishP2pVerification(); vm.reload() }
+        return
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(vm, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -60,14 +64,15 @@ internal fun P2pOrdersScreen(wallet: WalletViewModel) {
     DisposableEffect(vm) { onDispose { vm.dismiss() } }
     P2pOrderContent(state, { wallet.openFunding(state.operation) }, vm::operation, vm::country, vm::amount,
         vm::destination, vm::quote, vm::reload, vm::action, vm::refresh, vm::instructions, vm::recover,
-        vm::submit, vm::dismiss)
+        vm::submit, vm::dismiss, { wallet.openP2pVerification(state.country) })
 }
 
 @Composable
 internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (FiatOperation) -> Unit,
     country: (String) -> Unit, amount: (String) -> Unit, destination: (String) -> Unit, quote: () -> Unit,
     reload: () -> Unit, action: (String, P2pAction, String?) -> Unit, refresh: (String) -> Unit,
-    instructions: (String) -> Unit, recover: (String, String) -> Unit, submit: (Boolean) -> Unit, dismiss: () -> Unit) {
+    instructions: (String) -> Unit, recover: (String, String) -> Unit, submit: (Boolean) -> Unit, dismiss: () -> Unit,
+    verify: (() -> Unit)? = null) {
     BackHandler { if (s.review != null) dismiss() else back() }
     val locale = LocalConfiguration.current.locales[0]
     val focus = LocalFocusManager.current
@@ -99,6 +104,10 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
                         if (a.limit(s.operation) == "0") Text(stringResource(R.string.p2po_account_disabled))
                     }
                 }
+            }
+            if (verify != null && s.operation == FiatOperation.BUY && selected != null) {
+                OutlinedButton(verify, enabled = !s.busy, modifier = Modifier.fillMaxWidth().testTag("p2po-verify")) {
+                    Text(stringResource(R.string.p2pk_title)) }
             }
             OutlinedTextField(s.amount, amount, enabled = !s.busy, label = { Text(stringResource(R.string.p2po_amount)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth().testTag("p2po-amount"))

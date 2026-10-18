@@ -25,7 +25,7 @@ def rpc(url, method, params):
 
 def main():
     source = (Path(__file__).resolve().parents[1] /
-              "app/src/main/java/org/astianx/midori/one/WalletNetwork.kt").read_text()
+              "app/src/main/java/org/astianx/midori/one/wallet/WalletNetwork.kt").read_text()
     chain_id = int(re.search(r'const val CHAIN_ID = (\d+)', source)[1])
     contract = re.search(r'const val USDC_CONTRACT = "([^"]+)"', source)[1]
     usdt_contract = re.search(r'const val USDT_CONTRACT = "([^"]+)"', source)[1]

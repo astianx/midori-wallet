@@ -179,7 +179,9 @@ fun CreateWalletScreen(vm: WalletViewModel) {
                     .padding(horizontal = 18.dp, vertical = 8.dp)
             )
             Spacer(Modifier.height(10.dp))
-            PrimaryButton(stringResource(R.string.seed_saved), enabled = !s.isLoading) {
+            CountryChoice(s.pendingCountry, !s.isLoading, vm::selectCountry)
+            Spacer(Modifier.height(10.dp))
+            PrimaryButton(stringResource(R.string.seed_saved), enabled = !s.isLoading && walletCountryValid(s.pendingCountry)) {
                 vm.confirmSeedAndInitialize()
             }
         }
@@ -242,8 +244,12 @@ fun ImportWalletScreen(vm: WalletViewModel) {
 
         Spacer(Modifier.height(8.dp))
 
+        CountryChoice(s.pendingCountry, !s.isLoading, vm::selectCountry, Modifier.padding(horizontal = 20.dp))
+
+        Spacer(Modifier.height(8.dp))
+
         Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-            PrimaryButton(stringResource(R.string.import_wallet)) { vm.doImport() }
+            PrimaryButton(stringResource(R.string.import_wallet), enabled = !s.isLoading && walletCountryValid(s.pendingCountry)) { vm.doImport() }
         }
 
         Spacer(Modifier.height(24.dp))

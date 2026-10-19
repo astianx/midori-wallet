@@ -94,6 +94,8 @@ data class WalletUiState(
     val statusText: UiText? = null,
     val restoreError: UiText? = null,
     val ethAddress: String = "",
+    val country: String = "",
+    val pendingCountry: String = "",
     val ethBalance: String? = null,
     val tokenBalances: Map<Asset, String> = emptyMap(),
     val btcAddress: String = "",
@@ -126,10 +128,11 @@ class WalletViewModel internal constructor(
     private val baseFeeProvider: BaseFeeProvider = HttpBaseFeeProvider(),
     private val bitcoinNetworkVerifier: BitcoinNetworkVerifier = HttpBitcoinNetworkVerifier(),
     private val appEntryStore: AppEntryStore = MemoryAppEntryStore(),
-    private val clock: () -> Long = System::currentTimeMillis
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val countryStore: WalletCountryStore = MemoryWalletCountryStore()
 ) : ViewModel() {
     constructor(context: Context) : this(KeystoreWalletStore(context), { WdkWalletClient(context) },
-        appEntryStore = AppEntryPreferences(context))
+        appEntryStore = AppEntryPreferences(context), countryStore = WalletCountryPreferences(context))
 
     private val _state = MutableStateFlow(WalletUiState(
         currentScreen = if (appEntryStore.hasEntered()) Screen.Chats else Screen.Welcome,
@@ -167,6 +170,7 @@ class WalletViewModel internal constructor(
                 encryptionKey = key
                 encryptedSeed = seed
                 update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc,
+                    country = countryStore.country(eth).orEmpty(),
                     currentScreen = Screen.Chats, hasEnteredApp = true, isLoading = false, statusText = null) }
                 appEntryStore.markEntered()
                 fetchBalance()
@@ -372,14 +376,34 @@ class WalletViewModel internal constructor(
         }
     }
 
+    fun selectCountry(code: String) {
+        if (walletCountryValid(code) && !_state.value.isLoading && _state.value.country.isBlank()) update { copy(pendingCountry = code) }
+    }
+
+    fun confirmCountry() {
+        val current = _state.value
+        if (!current.isWdkInitialized || current.country.isNotBlank() || !walletCountryValid(current.pendingCountry)) return
+        if (countryStore.bind(current.ethAddress, current.pendingCountry)) {
+            update { copy(country = countryStore.country(ethAddress).orEmpty()) }
+        } else showToast(UiText(R.string.error_country))
+    }
+
+    private fun bindWalletCountry(address: String): String =
+        countryStore.country(address) ?: _state.value.pendingCountry.takeIf { countryStore.bind(address, it) }.orEmpty()
+
     fun confirmSeedAndInitialize() {
         if (_state.value.isLoading) return
+        if (!walletCountryValid(_state.value.pendingCountry)) {
+            showToast(UiText(R.string.country_required))
+            return
+        }
         viewModelScope.launch {
             update { copy(isLoading = true, statusText = UiText(R.string.status_initializing)) }
             try {
                 val (eth, btc) = initializeWallet(encryptionKey, encryptedSeed)
                 saveCredentials(encryptionKey, encryptedSeed)
-                update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc,
+                val boundCountry = bindWalletCountry(eth)
+                update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc, country = boundCountry,
                     seedPhrase = emptyList(), currentScreen = Screen.Chats, hasEnteredApp = true, isLoading = false, statusText = null) }
                 appEntryStore.markEntered()
                 fetchBalance()
@@ -414,6 +438,10 @@ class WalletViewModel internal constructor(
             update { copy(importError = true) }
             return
         }
+        if (!walletCountryValid(_state.value.pendingCountry)) {
+            showToast(UiText(R.string.country_required))
+            return
+        }
         update { copy(importError = false) }
 
         val mnemonic = words.joinToString(" ")
@@ -426,7 +454,8 @@ class WalletViewModel internal constructor(
                 saveCredentials(result.encryptionKey, result.encryptedSeedBuffer)
                 encryptionKey = result.encryptionKey
                 encryptedSeed = result.encryptedSeedBuffer
-                update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc,
+                val boundCountry = bindWalletCountry(eth)
+                update { copy(isWdkInitialized = true, ethAddress = eth, btcAddress = btc, country = boundCountry,
                     importWords = List(12) { "" }, currentScreen = Screen.Chats, hasEnteredApp = true,
                     isLoading = false, statusText = null, restoreError = null) }
                 appEntryStore.markEntered()

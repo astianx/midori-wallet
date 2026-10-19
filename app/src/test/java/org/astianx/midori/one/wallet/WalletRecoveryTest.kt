@@ -143,6 +143,7 @@ class WalletRecoveryTest {
         var fail = true
         val vm = viewModel(store) { Client().apply { failImport = fail } }
         vm.navigate(Screen.Import)
+        vm.selectCountry("CO")
         // Artificial words are consumed by a fake, never by a real wallet.
         vm.pasteImportWords(List(12) { "invalid" }.joinToString(" "))
         vm.doImport()
@@ -156,6 +157,66 @@ class WalletRecoveryTest {
         assertEquals(Screen.Chats, vm.state.value.currentScreen)
         assertEquals(1, store.saves)
         assertTrue(vm.state.value.importWords.all { it.isEmpty() })
+    }
+
+    @Test
+    fun importRequiresACountryAndBindsItToTheWallet() = runTest(dispatcher) {
+        val store = Store()
+        val vm = viewModel(store) { Client() }
+        vm.navigate(Screen.Import)
+        vm.pasteImportWords(List(12) { "word" }.joinToString(" "))
+        vm.doImport()
+        assertEquals(UiText(R.string.country_required), vm.state.value.toastMessage)
+        advanceUntilIdle()
+        assertEquals(Screen.Import, vm.state.value.currentScreen)
+        assertNull(store.credentials)
+        vm.selectCountry("not-a-country")
+        assertEquals("", vm.state.value.pendingCountry)
+        vm.selectCountry("BR")
+        vm.doImport()
+        advanceUntilIdle()
+        assertEquals(Screen.Chats, vm.state.value.currentScreen)
+        assertEquals("BR", vm.state.value.country)
+        assertNotNull(store.credentials)
+    }
+
+    @Test
+    fun boundCountrySurvivesRestartAndCannotBeChanged() = runTest(dispatcher) {
+        val store = Store()
+        val countries = MemoryWalletCountryStore()
+        val first = WalletViewModel(store, { Client() }, dispatcher, countryStore = countries).also { viewModels.put("first", it) }
+        first.selectCountry("CO")
+        first.pasteImportWords(List(12) { "word" }.joinToString(" "))
+        first.doImport()
+        advanceUntilIdle()
+        assertEquals("CO", first.state.value.country)
+        first.selectCountry("BR")
+        first.confirmCountry()
+        assertEquals("CO", first.state.value.country)
+        val restarted = WalletViewModel(store, { Client() }, dispatcher, countryStore = countries).also { viewModels.put("restarted", it) }
+        advanceUntilIdle()
+        assertEquals("CO", restarted.state.value.country)
+        restarted.selectCountry("BR")
+        restarted.confirmCountry()
+        assertEquals("CO", restarted.state.value.country)
+        assertFalse(countries.bind(restarted.state.value.ethAddress, "BR"))
+    }
+
+    @Test
+    fun existingWalletWithoutCountryCanBindItExactlyOnce() = runTest(dispatcher) {
+        val store = Store(WalletCredentials("test-key", "test-seed"))
+        val vm = viewModel(store) { Client() }
+        advanceUntilIdle()
+        assertTrue(vm.state.value.isWdkInitialized)
+        assertEquals("", vm.state.value.country)
+        vm.confirmCountry()
+        assertEquals("", vm.state.value.country)
+        vm.selectCountry("PE")
+        vm.confirmCountry()
+        assertEquals("PE", vm.state.value.country)
+        vm.selectCountry("BR")
+        vm.confirmCountry()
+        assertEquals("PE", vm.state.value.country)
     }
 
     @Test
@@ -183,6 +244,7 @@ class WalletRecoveryTest {
         val vm = viewModel(store) { Client().apply { failInitialization = true; failImport = true } }
         advanceUntilIdle()
         vm.navigate(Screen.Import)
+        vm.selectCountry("CO")
         vm.pasteImportWords(List(12) { "invalid" }.joinToString(" "))
         vm.doImport()
         advanceUntilIdle()

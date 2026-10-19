@@ -17,6 +17,7 @@ internal class P2pKycFixture {
     var remoteFailure = false
     var receiptStatus = P2pSubmission.CONFIRMED
     var verified = false
+    var sessionSkew = 0L
     val hash = "0x" + "d".repeat(64)
     class Store : P2pKycStore {
         var row: P2pKycRecord? = null
@@ -36,7 +37,7 @@ internal class P2pKycFixture {
         override suspend fun session(record: P2pKycRecord, expiresAt: Long, signature: String): P2pKycSession {
             check(store.row?.state == "STARTING"); sessions++
             return P2pKycSession(record.nonce, owner, record.country, "https://passport.p2p.cool/embed?handoff=" + "a".repeat(32),
-                "https://passport.p2p.cool", now + 900)
+                "https://passport.p2p.cool", now + 900 + sessionSkew)
         }
         override suspend fun status(record: P2pKycRecord): P2pKycStatus {
             if (remoteFailure) throw P2pOrderFailure("provider_unavailable")

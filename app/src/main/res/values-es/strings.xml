@@ -675,4 +675,18 @@
     <string name="p2pk_browser_error">No se pudo abrir el asistente del pasaporte. Usa Continuar verificación para intentar abrirlo de nuevo.</string>
     <string name="p2pk_done">Volver a P2P</string>
     <string name="p2pk_already_verified">Esta wallet ya tiene verificación de pasaporte en Base. Actualiza su límite real por transacción; no hace falta otra sesión de pasaporte.</string>
+    <string name="wallet_country_label">Tu país</string>
+    <string name="wallet_country_warning">Elige con cuidado: solo se puede fijar una vez y no se podrá cambiar después. Comprar y vender usará siempre este país.</string>
+    <string name="country_required">Selecciona tu país para continuar.</string>
+    <string name="error_country">No se pudo guardar el país. Inténtalo de nuevo.</string>
+    <string name="wallet_country_gate_title">Elige tu país</string>
+    <string name="wallet_country_gate_body">Comprar y vender queda ligado a un solo país para esta billetera. Solo puedes fijarlo una vez y no se podrá cambiar después.</string>
+    <string name="wallet_country_confirm">Confirmar país</string>
+    <string name="wallet_country_locked">País: %1$s</string>
+    <string name="wallet_country_unavailable_p2p">P2P no está disponible en %1$s para esta operación.</string>
+    <string name="wallet_country_unavailable_fiat">Ningún proveedor admite %1$s para esta operación.</string>
+    <string name="p2pk_other_device">Continuar en otro dispositivo</string>
+    <string name="p2pk_other_device_hint">Escanea este código con tu propio teléfono para completar allí la verificación con pasaporte; después vuelve aquí y actualiza el estado. Quien lo escanee mientras sea válido podría usar esta verificación para tu billetera: no lo compartas.</string>
+    <string name="p2pk_hide_code">Ocultar código</string>
+    <string name="p2pk_interrupted">El intento anterior se interrumpió antes de terminar. No se envió ninguna transacción. Inicia la verificación de nuevo.</string>
 </resources>

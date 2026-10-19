@@ -17,14 +17,15 @@ internal data class P2pOrderState(val operation: FiatOperation, val countries: L
     val availability: P2pAvailability? = null, val account: P2pAccount? = null,
     val records: List<P2pPublicRecord> = emptyList(),
     val history: List<P2pOrder> = emptyList(), val review: P2pOrderReview? = null,
-    val payment: Pair<String, String>? = null, val busy: Boolean = false, val error: UiText? = null) {
+    val payment: Pair<String, String>? = null, val busy: Boolean = false, val error: UiText? = null,
+    val locked: Boolean = false) {
     val available get() = countries.filter { if (operation == FiatOperation.BUY) it.buy && it.country != "IN" else it.sell }
 }
 
 /** Presentation only. The interactor owns signing intent, recovery and validation. */
 internal class P2pOrderViewModel(operation: FiatOperation, private val catalog: P2pGateway?,
-    private val orders: P2pOrderInteractor?) : ViewModel() {
-    private val mutable = MutableStateFlow(P2pOrderState(operation))
+    private val orders: P2pOrderInteractor?, private val lockedCountry: String = "") : ViewModel() {
+    private val mutable = MutableStateFlow(P2pOrderState(operation, country = lockedCountry, locked = lockedCountry.isNotBlank()))
     val state = mutable.asStateFlow()
     private var pendingEntry: FiatOperation? = null
     init { reload() }
@@ -66,7 +67,7 @@ internal class P2pOrderViewModel(operation: FiatOperation, private val catalog: 
     private suspend fun loadAccount() {
         val selected = state.value.country
         mutable.update { it.copy(account = null) }
-        if (selected.isBlank()) return
+        if (selected.isBlank() || state.value.available.none { it.country == selected }) return
         val account = checkNotNull(orders).account(selected)
         mutable.update { it.copy(account = account) }
     }
@@ -75,10 +76,10 @@ internal class P2pOrderViewModel(operation: FiatOperation, private val catalog: 
         orders?.dismissReview(); mutable.update { block(it).copy(review = null, payment = null, error = null) }
     }
     fun operation(value: FiatOperation) {
-        if (value != state.value.operation) edit { it.copy(operation = value, country = "", destination = "", account = null) }
+        if (value != state.value.operation) edit { it.copy(operation = value, country = lockedCountry, destination = "", account = null) }
     }
     fun country(value: String) {
-        if (state.value.busy || state.value.available.none { it.country == value }) return
+        if (state.value.locked || state.value.busy || state.value.available.none { it.country == value }) return
         edit { it.copy(country = value, destination = "", account = null) }
         task { loadAccount() }
     }

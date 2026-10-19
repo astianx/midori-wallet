@@ -28,6 +28,21 @@ class P2pOrderViewModelTest {
         assertEquals("0", vm.state.value.account?.buyLimit); assertNull(vm.state.value.review)
         assertEquals(0, f.identities); assertEquals(0, f.emissions); assertTrue(f.store.rows.isEmpty())
     }
+    @Test fun theWalletCountryIsUsedForTheAccountAndCannotBeChangedOrClearedByNavigation() = runTest(dispatcher) {
+        val f = P2pOrderFixture(); val vm = f.viewModel(country = "CO").also { models.put("locked", it) }; advanceUntilIdle()
+        assertTrue(vm.state.value.locked); assertEquals("CO", vm.state.value.country)
+        assertEquals("100000000", vm.state.value.account?.buyLimit)
+        vm.country("BR"); advanceUntilIdle(); assertEquals("CO", vm.state.value.country)
+        vm.operation(FiatOperation.SELL); advanceUntilIdle(); assertEquals("CO", vm.state.value.country)
+        vm.operation(FiatOperation.BUY); advanceUntilIdle(); assertEquals("CO", vm.state.value.country)
+    }
+    @Test fun aWalletCountryWithoutP2pMarketNeverLoadsAnAccountOrQuotes() = runTest(dispatcher) {
+        val f = P2pOrderFixture(); val vm = f.viewModel(country = "US").also { models.put("unsupported", it) }; advanceUntilIdle()
+        assertEquals("US", vm.state.value.country); assertTrue(vm.state.value.available.none { it.country == "US" })
+        assertNull(vm.state.value.account)
+        vm.amount("1"); vm.quote(); advanceUntilIdle()
+        assertNull(vm.state.value.review); assertEquals(0, f.identities); assertEquals(0, f.emissions)
+    }
     @Test fun aFailedAccountReadClearsStaleLimitsInsteadOfAssumingThePreviousAllowance() = runTest(dispatcher) {
         val f = P2pOrderFixture(); val vm = vm(f); advanceUntilIdle(); vm.country("CO"); advanceUntilIdle()
         f.accountFailure = true; vm.amount("1"); vm.quote(); advanceUntilIdle()

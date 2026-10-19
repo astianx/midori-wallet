@@ -81,5 +81,6 @@ internal class P2pOrderFixture {
         }
     }
     fun interactor() = P2pOrderInteractor(owner, gateway, store, crypto, wallet)
-    fun viewModel(operation: FiatOperation = FiatOperation.BUY) = P2pOrderViewModel(operation, catalog, interactor())
+    fun viewModel(operation: FiatOperation = FiatOperation.BUY, country: String = "") =
+        P2pOrderViewModel(operation, catalog, interactor(), country)
 }

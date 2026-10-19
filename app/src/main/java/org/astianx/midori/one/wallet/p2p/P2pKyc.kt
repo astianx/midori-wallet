@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.sec.SECNamedCurves
 import org.bouncycastle.math.ec.ECAlgorithms
 
 internal const val P2P_REPUTATION_MANAGER = "0xcf613e08ee1b4c2669ddcf06a7d22c9856f6aa1d"
+internal const val KYC_CLOCK_SKEW_SECONDS = 60L
 internal fun validateKycWidget(s: P2pKycSession) {
     val u = URI(s.widgetUrl)
     p2pRequire(s.widgetOrigin == "https://passport.p2p.cool" && u.scheme == "https" && u.rawAuthority == "passport.p2p.cool" &&
@@ -107,7 +108,8 @@ internal class P2pKycInteractor(private val owner: String, private val gateway: 
     suspend fun start(country: String) = mutex.withLock {
         current(); val previous = local()
         p2pRequire(previous?.state !in setOf("SUBMITTING", "PENDING", "UNKNOWN", "EXCHANGE_UNKNOWN", "DUPLICATE_IDENTITY"), "submission_unknown")
-        p2pRequire(previous?.state !in setOf("WAITING", "READY"), "verification_pending")
+        val resumable = previous != null && previous.state in setOf("WAITING", "READY") && !(previous.state == "WAITING" && previous.session == null)
+        p2pRequire(!resumable, "verification_pending")
         val caps = gateway.capabilities(); p2pRequire(caps.enabled && country in caps.countries, "verification_service_unavailable")
         p2pRequire(!gateway.verified(owner), "already_verified")
         val random = SecureRandom(); fun token() = ByteArray(32).also(random::nextBytes).p2pHex()
@@ -116,7 +118,7 @@ internal class P2pKycInteractor(private val owner: String, private val gateway: 
         val signature = sign(r, expires); current()
         val session = gateway.session(r, expires, signature)
         p2pRequire(session.user.equals(owner, true) && session.country == country && session.nonce == r.nonce &&
-            session.expiresAt > clock() && session.expiresAt <= clock() + 900)
+            session.expiresAt > clock() && session.expiresAt <= clock() + 900 + KYC_CLOCK_SKEW_SECONDS)
         validateKycWidget(session)
         r = r.copy(session = session, state = "WAITING"); commit(r); review = null; r
     }
@@ -126,6 +128,8 @@ internal class P2pKycInteractor(private val owner: String, private val gateway: 
             val receipt = gateway.receipt(r, checkNotNull(r.hash)); current()
             p2pRequire(receipt.hash.equals(r.hash, true))
             r = r.copy(state = receipt.status.name); commit(r)
+        } else if (r.session == null && r.proof == null && r.state in setOf("STARTING", "WAITING")) {
+            return@withLock r
         } else if (r.state in setOf("WAITING", "READY", "STARTING", "EXCHANGE_UNKNOWN")) {
             if (r.proof?.expiry?.toBigInteger()?.let { it <= BigInteger.valueOf(clock()) } == true) {
                 r = r.copy(state = "EXPIRED"); commit(r); return@withLock r

@@ -68,6 +68,26 @@ class P2pKycTest {
         val other = P2pKycFixture(); val next = other.interactor(); other.ready(next); other.remoteFailure = true
         fails { next.refresh() }; assertEquals("READY", other.store.row?.state); assertEquals(0, other.emissions)
     }
+    @Test fun aSmallClockSkewBetweenServerAndDeviceDoesNotRejectAValidSession() = runTest {
+        val f = P2pKycFixture(); f.sessionSkew = 1; val flow = f.interactor()
+        val record = flow.start("CO")
+        assertEquals("WAITING", record.state); assertNotNull(record.session); assertEquals(1, f.sessions)
+        assertEquals(record.session!!.widgetUrl, flow.widget())
+    }
+    @Test fun aSessionFarBeyondTheProviderWindowIsStillRejectedAndCanBeRestarted() = runTest {
+        val f = P2pKycFixture(); f.sessionSkew = 600; val flow = f.interactor()
+        fails { flow.start("CO") }
+        assertEquals("STARTING", f.store.row?.state); assertNull(f.store.row?.session)
+        f.sessionSkew = 0; assertEquals("WAITING", flow.start("CO").state)
+    }
+    @Test fun anInterruptedAttemptWithoutASessionIsRecoverableInsteadOfStuckWaiting() = runTest {
+        val f = P2pKycFixture(); f.store.row = P2pKycRecord(f.owner, "CO", "a".repeat(64), "b".repeat(64), "WAITING")
+        val vm = f.viewModel(); val flow = f.interactor()
+        assertEquals("WAITING", flow.refresh()?.state); assertNull(f.store.row?.session)
+        val restarted = flow.start("CO")
+        assertEquals("WAITING", restarted.state); assertNotNull(restarted.session); assertEquals(1, f.sessions)
+        assertNotNull(vm)
+    }
     @Test fun widgetAndReturnValidationRejectForeignHostsExtraParametersAndInjectedCredentials() {
         val f = P2pKycFixture()
         val session = P2pKycSession("a".repeat(64), f.owner, "CO", "https://passport.p2p.cool/embed?handoff=" + "a".repeat(32),

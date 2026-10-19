@@ -27,6 +27,7 @@ import org.astianx.midori.one.BuildConfig
 import org.astianx.midori.one.PrimaryButton
 import org.astianx.midori.one.R
 import org.astianx.midori.one.ScreenHeader
+import org.astianx.midori.one.wallet.WalletCountryGate
 import org.astianx.midori.one.wallet.WalletViewModel
 import org.astianx.midori.one.wallet.fiat.FiatOperation
 import java.math.BigDecimal
@@ -35,14 +36,18 @@ import java.math.BigDecimal
 internal fun P2pOrdersScreen(wallet: WalletViewModel) {
     val account by wallet.state.collectAsState()
     val context = LocalContext.current.applicationContext
+    if (account.country.isBlank()) {
+        WalletCountryGate(wallet) { wallet.openFunding(account.fiatOperation) }
+        return
+    }
     // One lifecycle per wallet, shared across deposit/withdraw navigation. No wallet replacement.
-    val vm: P2pOrderViewModel = viewModel(key = "p2p-orders:${account.ethAddress}", factory = object : ViewModelProvider.Factory {
+    val vm: P2pOrderViewModel = viewModel(key = "p2p-orders:${account.ethAddress}:${account.country}", factory = object : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             val catalog = runCatching { HttpP2pGateway(BuildConfig.FIAT_BACKEND_URL) }.getOrNull()
             val interactor = runCatching { P2pOrderInteractor(account.ethAddress, HttpP2pOrderGateway(BuildConfig.FIAT_BACKEND_URL),
                 KeystoreP2pOrderStore(context), P2pEcies(), wallet.p2pWalletPort()) }.getOrNull()
-            return P2pOrderViewModel(account.fiatOperation, catalog, interactor) as T
+            return P2pOrderViewModel(account.fiatOperation, catalog, interactor, account.country) as T
         }
     })
     val state by vm.state.collectAsState()
@@ -86,7 +91,14 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
             Text(stringResource(R.string.p2p_network), style = MaterialTheme.typography.labelLarge)
             var expanded by remember { mutableStateOf(false) }
             val selected = s.available.find { it.country == s.country }
-            Box {
+            if (s.locked) {
+                val name = java.util.Locale("", s.country).getDisplayCountry(locale)
+                Text(selected?.let { stringResource(R.string.wallet_country_locked, "$name · ${it.fiat}") }
+                    ?: stringResource(R.string.wallet_country_locked, name), style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.testTag("p2po-country"))
+                if (selected == null && s.countries.isNotEmpty()) Text(stringResource(R.string.wallet_country_unavailable_p2p, name),
+                    color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("p2po-country-unavailable"))
+            } else Box {
                 OutlinedButton({ expanded = true }, enabled = !s.busy && s.available.isNotEmpty(), modifier = Modifier.fillMaxWidth().testTag("p2po-country")) {
                     Text(selected?.let { "${java.util.Locale("", it.country).getDisplayCountry(locale)} · ${it.fiat}" }
                         ?: stringResource(R.string.fiat_select_country))

@@ -13,7 +13,7 @@ import org.astianx.midori.one.UiText
 
 internal data class P2pKycState(val owner: String, val country: String, val stage: String = "IDLE",
     val capabilities: P2pKycCapability? = null, val account: P2pAccount? = null, val expiresAt: Long? = null, val hash: String? = null,
-    val review: P2pKycReview? = null, val launchUrl: String? = null, val busy: Boolean = false, val error: UiText? = null)
+    val review: P2pKycReview? = null, val launchUrl: String? = null, val shareUrl: String? = null, val busy: Boolean = false, val error: UiText? = null)
 
 internal class P2pKycViewModel(owner: String, country: String, private val flow: P2pKycInteractor?) : ViewModel() {
     private val mutable = MutableStateFlow(P2pKycState(owner, country))
@@ -35,7 +35,11 @@ internal class P2pKycViewModel(owner: String, country: String, private val flow:
     }
     private fun display(r: P2pKycRecord?) {
         if (r != null) mutable.update { it.copy(country = r.country,
-            stage = if (accountVerified && r.state !in setOf("SUBMITTING", "PENDING", "UNKNOWN", "CONFIRMED")) "ALREADY_VERIFIED" else r.state, hash = r.hash,
+            stage = when {
+                accountVerified && r.state !in setOf("SUBMITTING", "PENDING", "UNKNOWN", "CONFIRMED") -> "ALREADY_VERIFIED"
+                r.session == null && r.proof == null && r.state in setOf("STARTING", "WAITING") -> "INTERRUPTED"
+                else -> r.state
+            }, shareUrl = it.shareUrl.takeIf { _ -> r.state == "WAITING" && r.session != null }, hash = r.hash,
             expiresAt = r.proof?.expiry?.toLongOrNull() ?: r.session?.expiresAt) }
         else mutable.update { it.copy(stage = if (accountVerified) "ALREADY_VERIFIED" else "IDLE") }
     }
@@ -57,6 +61,8 @@ internal class P2pKycViewModel(owner: String, country: String, private val flow:
         val f = checkNotNull(flow); display(f.start(state.value.country)); val url = f.widget(); mutable.update { it.copy(launchUrl = url) }
     }
     fun reopen() = task { val url = checkNotNull(flow).widget(); mutable.update { it.copy(launchUrl = url) } }
+    fun otherDevice() = task { val url = checkNotNull(flow).widget(); mutable.update { it.copy(shareUrl = url) } }
+    fun hideShare() { mutable.update { it.copy(shareUrl = null) } }
     fun launched() { mutable.update { it.copy(launchUrl = null) } }
     fun launchFailed() { mutable.update { it.copy(launchUrl = null, error = UiText(R.string.p2pk_browser_error)) } }
     fun prepare() = task { val review = checkNotNull(flow).review(); mutable.update { it.copy(review = review) } }

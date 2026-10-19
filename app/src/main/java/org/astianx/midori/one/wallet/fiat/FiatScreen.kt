@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,6 +30,7 @@ import org.astianx.midori.one.R
 import org.astianx.midori.one.Screen
 import org.astianx.midori.one.ScreenHeader
 import org.astianx.midori.one.wallet.Asset
+import org.astianx.midori.one.wallet.WalletCountryGate
 import org.astianx.midori.one.wallet.WalletViewModel
 
 @Composable
@@ -36,13 +38,17 @@ internal fun FiatScreen(wallet: WalletViewModel) {
     val account by wallet.state.collectAsState()
     val identity = account.ethAddress
     val bitcoin = account.btcAddress
-    val vm: FiatViewModel = viewModel(key = "fiat:$identity:$bitcoin:${account.fiatOperation}", factory =
+    if (account.country.isBlank()) {
+        WalletCountryGate(wallet) { wallet.openFunding(account.fiatOperation) }
+        return
+    }
+    val vm: FiatViewModel = viewModel(key = "fiat:$identity:$bitcoin:${account.fiatOperation}:${account.country}", factory =
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T = FiatViewModel(account.fiatOperation,
                 runCatching { HttpFiatGateway(BuildConfig.FIAT_BACKEND_URL) }.getOrNull(), identity, bitcoin,
                 { wallet.state.value.let { it.isWdkInitialized && it.ethAddress == identity && it.btcAddress == bitcoin } },
-                wallet::signFiatChallenge) as T
+                wallet::signFiatChallenge, account.country) as T
         })
     val state by vm.state.collectAsState()
     LaunchedEffect(state.offers, state.busy) {
@@ -116,7 +122,13 @@ internal fun FiatContent(state: FiatUiState, address: String, onBack: () -> Unit
                         !state.busy, onFiat)
                     val locale = LocalConfiguration.current.locales[0]
                     val countries = state.countries.associate { it.code to java.util.Locale("", it.code).getDisplayCountry(locale) }
-                    ChoiceField(stringResource(R.string.fiat_country), countries[state.country] ?: stringResource(R.string.fiat_select_country),
+                    if (state.locked) {
+                        val name = java.util.Locale("", state.country).getDisplayCountry(locale)
+                        Text(stringResource(R.string.wallet_country_locked, name), style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.testTag("fiat-country"))
+                        if (state.country !in countries.keys) Text(stringResource(R.string.wallet_country_unavailable_fiat, name),
+                            color = MaterialTheme.colorScheme.error)
+                    } else ChoiceField(stringResource(R.string.fiat_country), countries[state.country] ?: stringResource(R.string.fiat_select_country),
                         countries.values.sorted(), !state.busy) { name -> onCountry(countries.entries.first { it.value == name }.key) }
                     OutlinedTextField(value = state.amount, onValueChange = onAmount, enabled = !state.busy,
                         modifier = Modifier.fillMaxWidth(), singleLine = true,

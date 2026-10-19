@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
@@ -25,6 +26,7 @@ import org.astianx.midori.one.BuildConfig
 import org.astianx.midori.one.PrimaryButton
 import org.astianx.midori.one.R
 import org.astianx.midori.one.ScreenHeader
+import org.astianx.midori.one.wallet.QrCodeImage
 import org.astianx.midori.one.wallet.WalletViewModel
 import java.math.BigDecimal
 
@@ -54,12 +56,14 @@ internal fun P2pKycScreen(wallet: WalletViewModel, country: String, back: () -> 
     } }
     LaunchedEffect(s.stage) { if (s.stage == "CONFIRMED") wallet.fetchBalance() }
     DisposableEffect(vm) { onDispose { vm.dismiss() } }
-    P2pKycContent(s, back, vm::start, vm::reopen, vm::refresh, vm::prepare, vm::submit, vm::dismiss, vm::recover)
+    P2pKycContent(s, back, vm::start, vm::reopen, vm::refresh, vm::prepare, vm::submit, vm::dismiss, vm::recover,
+        vm::otherDevice, vm::hideShare)
 }
 
 @Composable
 internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, reopen: () -> Unit,
-    refresh: () -> Unit, prepare: () -> Unit, submit: () -> Unit, dismiss: () -> Unit, recover: (String) -> Unit) {
+    refresh: () -> Unit, prepare: () -> Unit, submit: () -> Unit, dismiss: () -> Unit, recover: (String) -> Unit,
+    otherDevice: () -> Unit = {}, hideShare: () -> Unit = {}) {
     BackHandler { if (s.review != null) dismiss() else back() }
     val locale = LocalConfiguration.current.locales[0]
     Column(Modifier.fillMaxSize()) {
@@ -76,7 +80,7 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
             s.account?.let { Text(stringResource(R.string.p2po_account_limit, p2pDecimal(it.buyLimit))) }
             if (s.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             s.error?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("p2pk-error")) }
-            if (s.stage in setOf("IDLE", "EXPIRED", "CANCELLED", "REVERTED")) {
+            if (s.stage in setOf("IDLE", "EXPIRED", "CANCELLED", "REVERTED", "INTERRUPTED")) {
                 var consent by remember(s.stage) { mutableStateOf(false) }
                 Row { Checkbox(consent, { consent = it }, enabled = !s.busy); Text(stringResource(R.string.p2pk_consent)) }
                 PrimaryButton(stringResource(R.string.p2pk_start), consent && !s.busy && s.capabilities?.enabled == true &&
@@ -84,7 +88,20 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
                 if (s.capabilities?.enabled == false || s.capabilities?.countries?.contains(s.country) == false)
                     Text(stringResource(R.string.p2pk_unavailable))
             }
-            if (s.stage == "WAITING") OutlinedButton(reopen, enabled = !s.busy) { Text(stringResource(R.string.p2pk_reopen)) }
+            if (s.stage == "WAITING") {
+                OutlinedButton(reopen, enabled = !s.busy) { Text(stringResource(R.string.p2pk_reopen)) }
+                if (s.shareUrl == null) OutlinedButton(otherDevice, enabled = !s.busy, modifier = Modifier.testTag("p2pk-other-device")) {
+                    Text(stringResource(R.string.p2pk_other_device)) }
+                s.shareUrl?.let { url ->
+                    Card(Modifier.fillMaxWidth().testTag("p2pk-share")) {
+                        Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(stringResource(R.string.p2pk_other_device_hint))
+                            QrCodeImage(url, 240)
+                            OutlinedButton(hideShare) { Text(stringResource(R.string.p2pk_hide_code)) }
+                        }
+                    }
+                }
+            }
             if (s.stage == "READY" && s.review == null) PrimaryButton(stringResource(R.string.p2pk_prepare), !s.busy, prepare)
             s.review?.let { r ->
                 Card(Modifier.fillMaxWidth().testTag("p2pk-review")) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -109,6 +126,7 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
 
 internal fun kycStageLabel(stage: String) = when (stage) {
     "WAITING", "STARTING" -> R.string.p2pk_waiting
+    "INTERRUPTED" -> R.string.p2pk_interrupted
     "READY" -> R.string.p2pk_ready
     "EXPIRED" -> R.string.p2pk_expired
     "REJECTED" -> R.string.p2pk_rejected

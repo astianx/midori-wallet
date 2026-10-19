@@ -682,4 +682,18 @@
     <string name="p2pk_browser_error">Could not open the passport wizard. Use Continue verification to try opening it again.</string>
     <string name="p2pk_done">Return to P2P</string>
     <string name="p2pk_already_verified">This wallet already has passport verification on Base. Refresh its actual transaction limit; another passport session is unnecessary.</string>
+    <string name="wallet_country_label">Your country</string>
+    <string name="wallet_country_warning">Choose carefully: it can be set only once and cannot be changed later. Buying and selling will always use this country.</string>
+    <string name="country_required">Select your country to continue.</string>
+    <string name="error_country">The country could not be saved. Try again.</string>
+    <string name="wallet_country_gate_title">Choose your country</string>
+    <string name="wallet_country_gate_body">Buying and selling are tied to one country for this wallet. You can set it only once and it cannot be changed afterward.</string>
+    <string name="wallet_country_confirm">Confirm country</string>
+    <string name="wallet_country_locked">Country: %1$s</string>
+    <string name="wallet_country_unavailable_p2p">P2P is not available in %1$s for this operation.</string>
+    <string name="wallet_country_unavailable_fiat">No provider supports %1$s for this operation.</string>
+    <string name="p2pk_other_device">Continue on another device</string>
+    <string name="p2pk_other_device_hint">Scan this code with your own phone to complete the passport verification there, then return here and refresh the status. Anyone who scans it while it is valid could use this verification for your wallet: do not share it.</string>
+    <string name="p2pk_hide_code">Hide code</string>
+    <string name="p2pk_interrupted">The previous attempt was interrupted before it could finish. No transaction was sent. Start the verification again.</string>
 </resources>

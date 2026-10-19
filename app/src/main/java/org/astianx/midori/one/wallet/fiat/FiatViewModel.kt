@@ -16,7 +16,8 @@ internal data class FiatUiState(
     val operation: FiatOperation, val asset: Asset = Asset.USDC, val fiat: String = "USD",
     val amount: String = "", val capabilities: FiatCapabilities? = null, val busy: Boolean = false,
     val error: UiText? = null, val widgetUrl: String? = null, val configured: Boolean = true,
-    val country: String = "", val offers: List<FiatOffer> = emptyList(), val selectedOfferId: String? = null
+    val country: String = "", val offers: List<FiatOffer> = emptyList(), val selectedOfferId: String? = null,
+    val locked: Boolean = false
 ) {
     val assets get() = capabilities?.assets.orEmpty().filter { it.supports(operation) }.map { it.asset }
     val fiats get() = capabilities?.fiats.orEmpty().filter { it.supports(operation) }
@@ -34,9 +35,11 @@ internal data class FiatUiState(
 internal class FiatViewModel(
     operation: FiatOperation, private val gateway: FiatGateway?, private val identityAddress: String,
     private val bitcoinAddress: String, private val isCurrentWallet: () -> Boolean,
-    private val sign: suspend (FiatRequest, FiatChallenge, String) -> String
+    private val sign: suspend (FiatRequest, FiatChallenge, String) -> String,
+    private val lockedCountry: String = ""
 ) : ViewModel() {
-    private val mutableState = MutableStateFlow(FiatUiState(operation, configured = gateway != null))
+    private val mutableState = MutableStateFlow(FiatUiState(operation, configured = gateway != null,
+        country = lockedCountry, locked = lockedCountry.isNotBlank()))
     val state = mutableState.asStateFlow()
     private var checkoutJob: Job? = null
     init { reload() }
@@ -60,7 +63,7 @@ internal class FiatViewModel(
     }
     private fun selectAvailable(state: FiatUiState): FiatUiState = state.copy(
         asset = state.asset.takeIf { it in state.assets } ?: state.assets.firstOrNull() ?: Asset.USDC,
-        country = state.country.takeIf { code -> state.countries.any { it.code == code } } ?: "",
+        country = if (state.locked) state.country else state.country.takeIf { code -> state.countries.any { it.code == code } } ?: "",
         fiat = state.fiat.takeIf { code -> state.fiats.any { it.code == code } } ?: state.fiats.firstOrNull()?.code ?: "USD")
 
     fun enter(operation: FiatOperation) {
@@ -78,7 +81,7 @@ internal class FiatViewModel(
     fun amount(value: String) { if (!state.value.busy && value.length <= 50) mutableState.update {
         it.copy(amount = value, error = null, widgetUrl = null).withoutOffers() } }
 
-    fun country(value: String) { if (!state.value.busy && state.value.countries.any { it.code == value }) mutableState.update {
+    fun country(value: String) { if (!state.value.locked && !state.value.busy && state.value.countries.any { it.code == value }) mutableState.update {
         it.copy(country = value, error = null).withoutOffers() } }
     fun chooseOffer(id: String) { if (!state.value.busy && state.value.offers.any { it.id == id }) {
         mutableState.update { it.copy(selectedOfferId = id, error = null) }

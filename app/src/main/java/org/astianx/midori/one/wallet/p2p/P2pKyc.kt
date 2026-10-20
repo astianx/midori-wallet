@@ -11,13 +11,17 @@ import org.bouncycastle.math.ec.ECAlgorithms
 
 internal const val P2P_REPUTATION_MANAGER = "0xcf613e08ee1b4c2669ddcf06a7d22c9856f6aa1d"
 internal const val KYC_CLOCK_SKEW_SECONDS = 60L
-internal fun validateKycWidget(s: P2pKycSession) {
-    val u = URI(s.widgetUrl)
-    p2pRequire(s.widgetOrigin == "https://passport.p2p.cool" && u.scheme == "https" && u.rawAuthority == "passport.p2p.cool" &&
+internal const val KYC_PASSPORT = "PASSPORT"
+internal const val KYC_LIVENESS = "LIVENESS"
+internal fun kycWidgetHost(method: String) = if (method == KYC_LIVENESS) "liveness.p2p.cool" else "passport.p2p.cool"
+internal fun validateKycWidget(s: P2pKycSession, method: String = KYC_PASSPORT) {
+    val u = URI(s.widgetUrl); val host = kycWidgetHost(method)
+    p2pRequire(s.widgetOrigin == "https://$host" && u.scheme == "https" && u.rawAuthority == host &&
         u.rawUserInfo == null && u.rawFragment == null && u.rawPath == "/embed" &&
         u.rawQuery?.matches(Regex("handoff=[a-zA-Z0-9_-]{20,128}")) == true)
 }
-internal data class P2pKycCapability(val enabled: Boolean, val reason: String, val countries: List<String>)
+internal data class P2pKycCapability(val enabled: Boolean, val reason: String, val countries: List<String>,
+    val livenessEnabled: Boolean = false)
 internal data class P2pKycProof(val user: String, val country: String, val nullifier: String,
     val limit: String, val expiry: String, val signature: String, val signer: String)
 internal data class P2pKycSession(val nonce: String, val user: String, val country: String,
@@ -29,7 +33,7 @@ internal data class P2pKycPrepared(val proof: P2pKycProof, val to: String, val d
 internal data class P2pKycReview(val prepared: P2pKycPrepared, val gas: String)
 internal data class P2pKycRecord(val owner: String, val country: String, val nonce: String, val token: String,
     val state: String = "STARTING", val session: P2pKycSession? = null, val proof: P2pKycProof? = null,
-    val data: String = "", val hash: String? = null) {
+    val data: String = "", val hash: String? = null, val method: String = KYC_PASSPORT) {
     override fun toString() = "P2pKycRecord(redacted)"
 }
 internal interface P2pKycStore {
@@ -40,6 +44,7 @@ internal interface P2pKycGateway {
     val origin: String
     suspend fun capabilities(): P2pKycCapability
     suspend fun verified(user: String): Boolean
+    suspend fun livenessVerified(user: String): Boolean = false
     suspend fun account(user: String, country: String): P2pAccount
     suspend fun session(record: P2pKycRecord, expiresAt: Long, signature: String): P2pKycSession
     suspend fun status(record: P2pKycRecord): P2pKycStatus
@@ -47,7 +52,7 @@ internal interface P2pKycGateway {
     suspend fun receipt(record: P2pKycRecord, hash: String): P2pReceipt
 }
 internal fun kycMessage(origin: String, r: P2pKycRecord, expiresAt: Long): String = listOf(
-    "Midori account verification", origin, "Chain: 8453", "Wallet: ${r.owner.lowercase()}",
+    if (r.method == KYC_LIVENESS) "Midori face verification" else "Midori account verification", origin, "Chain: 8453", "Wallet: ${r.owner.lowercase()}",
     "Country: ${r.country}", "Nonce: ${r.nonce}",
     "Token hash: ${MessageDigest.getInstance("SHA-256").digest(r.token.toByteArray()).p2pHex()}",
     "Expires: $expiresAt", "This signature starts identity verification. It does not authorize a transaction.").joinToString("\n")
@@ -57,19 +62,24 @@ internal object P2pKycEncoding {
     private fun word(value: String) = value.toBigInteger().toString(16).padStart(64, '0')
     private fun address(value: String) = value.removePrefix("0x").lowercase().padStart(64, '0')
     private fun hash(value: String) = p2pKeccak(value.toByteArray()).p2pHex()
-    fun calldata(p: P2pKycProof): String {
+    fun calldata(p: P2pKycProof, method: String = KYC_PASSPORT): String {
         require(p.signature.matches(Regex("0x[a-fA-F0-9]{130}")) && p.nullifier.matches(Regex("0x[a-fA-F0-9]{64}")))
         require(p2pInteger(p.limit, true) && p2pInteger(p.expiry, true))
-        return "0x" + hash("submitKycAttestation(bytes32,uint256,uint256,bytes)").take(8) +
+        val function = if (method == KYC_LIVENESS) "submitLivenessAttestation(bytes32,uint256,uint256,bytes)" else "submitKycAttestation(bytes32,uint256,uint256,bytes)"
+        return "0x" + hash(function).take(8) +
             p.nullifier.removePrefix("0x") + word(p.limit) + word(p.expiry) + word("128") + word("65") +
             p.signature.removePrefix("0x").padEnd(192, '0')
     }
-    fun validate(p: P2pKycProof, owner: String, country: String, now: Long, allowExpired: Boolean = false) {
+    fun validate(p: P2pKycProof, owner: String, country: String, now: Long, allowExpired: Boolean = false, method: String = KYC_PASSPORT) {
         p2pRequire(p.user.equals(owner, true) && p.country == country && p.nullifier != "0x" + "0".repeat(64))
         p2pRequire(owner.matches(Regex("0x[a-fA-F0-9]{40}")) && country.matches(Regex("[A-Z]{2}")))
         p2pRequire(p2pInteger(p.limit, true) && p2pInteger(p.expiry, true) &&
             (allowExpired || p.expiry.toBigInteger() > BigInteger.valueOf(now)) && p.expiry.toBigInteger() <= BigInteger.valueOf(now + 3660))
-        calldata(p)
+        calldata(p, method)
+        if (method == KYC_LIVENESS) {
+            p2pRequire(p.signature.matches(Regex("0x[a-fA-F0-9]{130}")) && p.signer.matches(Regex("0x[a-fA-F0-9]{40}")))
+            return
+        }
         val domain = hash("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)") +
             hash("KycVerifier") + hash("1") + word("8453") + address(P2P_REPUTATION_MANAGER)
         val message = hash("KycAttestation(address wallet,bytes32 nullifier,uint256 limit,uint256 expiry)") +
@@ -99,27 +109,30 @@ internal class P2pKycInteractor(private val owner: String, private val gateway: 
     private suspend fun commit(r: P2pKycRecord) { current(); store.save(owner, r) }
     suspend fun capabilities() = gateway.capabilities()
     suspend fun verified(): Boolean { current(); return gateway.verified(owner).also { current() } }
+    suspend fun livenessVerified(): Boolean { current(); return gateway.livenessVerified(owner).also { current() } }
     suspend fun account(country: String): P2pAccount {
         current(); val a = gateway.account(owner, country); current()
         p2pRequire(a.user.equals(owner, true) && a.country == country && p2pTimeValid(a.quotedAt, a.expiresAt, clock()))
         return a
     }
     suspend fun local() = store.load(owner).also { current(); p2pRequire(it == null || it.owner.equals(owner, true), "local_storage_failed") }
-    suspend fun start(country: String) = mutex.withLock {
+    suspend fun start(country: String, method: String = KYC_PASSPORT) = mutex.withLock {
+        p2pRequire(method == KYC_PASSPORT || method == KYC_LIVENESS, "verification_service_unavailable")
         current(); val previous = local()
         p2pRequire(previous?.state !in setOf("SUBMITTING", "PENDING", "UNKNOWN", "EXCHANGE_UNKNOWN", "DUPLICATE_IDENTITY"), "submission_unknown")
         val resumable = previous != null && previous.state in setOf("WAITING", "READY") && !(previous.state == "WAITING" && previous.session == null)
         p2pRequire(!resumable, "verification_pending")
-        val caps = gateway.capabilities(); p2pRequire(caps.enabled && country in caps.countries, "verification_service_unavailable")
-        p2pRequire(!gateway.verified(owner), "already_verified")
+        val caps = gateway.capabilities()
+        p2pRequire(if (method == KYC_LIVENESS) caps.livenessEnabled else caps.enabled && country in caps.countries, "verification_service_unavailable")
+        p2pRequire(!(if (method == KYC_LIVENESS) gateway.livenessVerified(owner) else gateway.verified(owner)), "already_verified")
         val random = SecureRandom(); fun token() = ByteArray(32).also(random::nextBytes).p2pHex()
-        var r = P2pKycRecord(owner, country, token(), token()); commit(r)
+        var r = P2pKycRecord(owner, country, token(), token(), method = method); commit(r)
         val expires = clock() + 120
         val signature = sign(r, expires); current()
         val session = gateway.session(r, expires, signature)
         p2pRequire(session.user.equals(owner, true) && session.country == country && session.nonce == r.nonce &&
             session.expiresAt > clock() && session.expiresAt <= clock() + 900 + KYC_CLOCK_SKEW_SECONDS)
-        validateKycWidget(session)
+        validateKycWidget(session, method)
         r = r.copy(session = session, state = "WAITING"); commit(r); review = null; r
     }
     suspend fun refresh() = mutex.withLock {
@@ -137,7 +150,7 @@ internal class P2pKycInteractor(private val owner: String, private val gateway: 
             val status = gateway.status(r); current()
             p2pRequire(status.user.equals(owner, true) && status.country == r.country && status.status in
                 setOf("WAITING", "READY", "UNKNOWN", "EXPIRED", "REJECTED", "CANCELLED", "DUPLICATE_IDENTITY"))
-            status.proof?.let { P2pKycEncoding.validate(it, owner, r.country, clock(), status.status == "EXPIRED") }
+            status.proof?.let { P2pKycEncoding.validate(it, owner, r.country, clock(), status.status == "EXPIRED", r.method) }
             p2pRequire(status.status != "READY" || status.proof != null)
             // UNKNOWN without a broadcast concerns the provider exchange, not a wallet transaction.
             r = r.copy(state = if (status.status == "UNKNOWN") "EXCHANGE_UNKNOWN" else status.status, proof = status.proof); commit(r)
@@ -152,11 +165,11 @@ internal class P2pKycInteractor(private val owner: String, private val gateway: 
     }
     suspend fun widget(): String = mutex.withLock {
         current(); val r = checkNotNull(local()); val s = checkNotNull(r.session)
-        p2pRequire(r.state == "WAITING" && s.expiresAt > clock(), "expired_session"); validateKycWidget(s); s.widgetUrl
+        p2pRequire(r.state == "WAITING" && s.expiresAt > clock(), "expired_session"); validateKycWidget(s, r.method); s.widgetUrl
     }
     private fun validate(p: P2pKycPrepared, r: P2pKycRecord) {
-        P2pKycEncoding.validate(p.proof, owner, r.country, clock())
-        p2pRequire(p.proof == r.proof && p.to.equals(P2P_REPUTATION_MANAGER, true) && p.data.equals(P2pKycEncoding.calldata(p.proof), true) &&
+        P2pKycEncoding.validate(p.proof, owner, r.country, clock(), method = r.method)
+        p2pRequire(p.proof == r.proof && p.to.equals(P2P_REPUTATION_MANAGER, true) && p.data.equals(P2pKycEncoding.calldata(p.proof, r.method), true) &&
             p2pTimeValid(p.quotedAt, p.expiresAt, clock()))
     }
     fun dismiss() { review = null }

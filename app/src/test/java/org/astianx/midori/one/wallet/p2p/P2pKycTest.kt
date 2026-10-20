@@ -88,6 +88,49 @@ class P2pKycTest {
         assertEquals("WAITING", restarted.state); assertNotNull(restarted.session); assertEquals(1, f.sessions)
         assertNotNull(vm)
     }
+    @Test fun faceOnlyUsesItsOwnSignedMessageSelectorAndWizardOriginWhileThePassportFormatIsUnchanged() {
+        val f = P2pKycFixture()
+        val passport = P2pKycRecord(f.owner, "CO", "a".repeat(64), "b".repeat(64))
+        val face = passport.copy(method = KYC_LIVENESS)
+        assertTrue(kycMessage("https://midori.test", passport, f.now).startsWith("Midori account verification\n"))
+        assertTrue(kycMessage("https://midori.test", face, f.now).startsWith("Midori face verification\n"))
+        assertEquals("0x6d692e79", P2pKycEncoding.calldata(f.proof).take(10))
+        assertEquals("0x2bd54ab8", P2pKycEncoding.calldata(f.proof, KYC_LIVENESS).take(10))
+        assertEquals("passport.p2p.cool", kycWidgetHost(KYC_PASSPORT)); assertEquals("liveness.p2p.cool", kycWidgetHost(KYC_LIVENESS))
+        val url = "https://liveness.p2p.cool/embed?handoff=" + "a".repeat(32)
+        val session = P2pKycSession("a".repeat(64), f.owner, "CO", url, "https://liveness.p2p.cool", f.now + 900)
+        validateKycWidget(session, KYC_LIVENESS)
+        assertTrue(runCatching { validateKycWidget(session, KYC_PASSPORT) }.isFailure)
+        assertTrue(runCatching { validateKycWidget(session.copy(widgetUrl = url.replace("liveness", "passport"), widgetOrigin = "https://passport.p2p.cool"), KYC_LIVENESS) }.isFailure)
+    }
+    @Test fun aFaceOnlyVerificationRunsTheWholeJournalWithItsOwnCalldata() = runTest {
+        val f = P2pKycFixture(); val flow = f.interactor(); f.ready(flow, KYC_LIVENESS)
+        assertEquals(KYC_LIVENESS, f.store.row?.method); assertEquals("READY", f.store.row?.state)
+        assertTrue(checkNotNull(f.store.row?.session).widgetUrl.startsWith("https://liveness.p2p.cool/embed"))
+        val review = flow.review()
+        assertEquals(P2pKycEncoding.calldata(f.proof, KYC_LIVENESS), review.prepared.data)
+        val done = flow.submit(review); assertEquals("PENDING", done.state); assertEquals(1, f.emissions)
+        assertEquals(KYC_LIVENESS, done.method)
+    }
+    @Test fun aFaceOnlyReviewRejectsPassportCalldataAndTheTierFlagsAreIndependent() = runTest {
+        val f = P2pKycFixture(); val flow = f.interactor(); f.ready(flow, KYC_LIVENESS)
+        f.tamper = true; fails { flow.review() }
+        val other = P2pKycFixture(); other.faceVerified = true
+        fails("already_verified") { other.interactor().start("CO", KYC_LIVENESS) }
+        assertEquals("WAITING", other.interactor().start("CO", KYC_PASSPORT).state)
+        val passportDone = P2pKycFixture(); passportDone.verified = true
+        assertEquals("WAITING", passportDone.interactor().start("CO", KYC_LIVENESS).state)
+        fails("verification_service_unavailable") { P2pKycFixture().interactor().start("CO", "SELFIE") }
+    }
+    @Test fun aFaceOnlyRecordSurvivesTheEncryptedJsonRoundTripAndDefaultsOldRecordsToPassport() {
+        val f = P2pKycFixture()
+        val record = P2pKycRecord(f.owner, "CO", "a".repeat(64), "b".repeat(64), "READY", proof = f.proof, method = KYC_LIVENESS)
+        assertEquals(KYC_LIVENESS, P2pKycJson.record(P2pKycJson.record(record)).method)
+        val legacy = P2pKycJson.record(record.copy(method = KYC_PASSPORT)); legacy.remove("method")
+        assertEquals(KYC_PASSPORT, P2pKycJson.record(legacy).method)
+        val tampered = P2pKycJson.record(record); tampered.put("method", "SELFIE")
+        assertTrue(runCatching { P2pKycJson.record(tampered) }.isFailure)
+    }
     @Test fun widgetAndReturnValidationRejectForeignHostsExtraParametersAndInjectedCredentials() {
         val f = P2pKycFixture()
         val session = P2pKycSession("a".repeat(64), f.owner, "CO", "https://passport.p2p.cool/embed?handoff=" + "a".repeat(32),

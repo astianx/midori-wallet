@@ -689,4 +689,7 @@
     <string name="p2pk_other_device_hint">Escaneie este código com seu próprio celular para concluir lá a verificação com passaporte; depois volte aqui e atualize o status. Quem o escanear enquanto for válido poderá usar esta verificação para sua carteira: não o compartilhe.</string>
     <string name="p2pk_hide_code">Ocultar código</string>
     <string name="p2pk_interrupted">A tentativa anterior foi interrompida antes de terminar. Nenhuma transação foi enviada. Inicie a verificação novamente.</string>
+    <string name="p2pk_start_liveness">Verificar apenas com o rosto</string>
+    <string name="p2pk_liveness_note">Sem passaporte? A verificação apenas com o rosto não lê nenhum documento. Dá um limite de compra menor que o passaporte e pode ser combinada com ele depois. Ainda assim vincula seu rosto a esta carteira.</string>
+    <string name="p2pk_liveness_active">A verificação apenas com o rosto já está ativa nesta carteira. Você pode adicionar a verificação com passaporte para aumentar seu limite.</string>
 </resources>

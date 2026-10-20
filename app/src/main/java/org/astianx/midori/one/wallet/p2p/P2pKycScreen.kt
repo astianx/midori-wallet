@@ -57,13 +57,13 @@ internal fun P2pKycScreen(wallet: WalletViewModel, country: String, back: () -> 
     LaunchedEffect(s.stage) { if (s.stage == "CONFIRMED") wallet.fetchBalance() }
     DisposableEffect(vm) { onDispose { vm.dismiss() } }
     P2pKycContent(s, back, vm::start, vm::reopen, vm::refresh, vm::prepare, vm::submit, vm::dismiss, vm::recover,
-        vm::otherDevice, vm::hideShare)
+        vm::otherDevice, vm::hideShare, vm::startLiveness)
 }
 
 @Composable
 internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, reopen: () -> Unit,
     refresh: () -> Unit, prepare: () -> Unit, submit: () -> Unit, dismiss: () -> Unit, recover: (String) -> Unit,
-    otherDevice: () -> Unit = {}, hideShare: () -> Unit = {}) {
+    otherDevice: () -> Unit = {}, hideShare: () -> Unit = {}, startLiveness: () -> Unit = {}) {
     BackHandler { if (s.review != null) dismiss() else back() }
     val locale = LocalConfiguration.current.locales[0]
     Column(Modifier.fillMaxSize()) {
@@ -87,6 +87,12 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
                     s.country in s.capabilities.countries, start)
                 if (s.capabilities?.enabled == false || s.capabilities?.countries?.contains(s.country) == false)
                     Text(stringResource(R.string.p2pk_unavailable))
+                if (s.livenessDone) Text(stringResource(R.string.p2pk_liveness_active), modifier = Modifier.testTag("p2pk-liveness-active"))
+                else if (s.capabilities?.livenessEnabled == true) {
+                    OutlinedButton(startLiveness, enabled = consent && !s.busy, modifier = Modifier.fillMaxWidth().testTag("p2pk-start-liveness")) {
+                        Text(stringResource(R.string.p2pk_start_liveness)) }
+                    Text(stringResource(R.string.p2pk_liveness_note), style = MaterialTheme.typography.bodySmall)
+                }
             }
             if (s.stage == "WAITING") {
                 OutlinedButton(reopen, enabled = !s.busy) { Text(stringResource(R.string.p2pk_reopen)) }

@@ -13,7 +13,7 @@ import org.astianx.midori.one.UiText
 
 internal data class P2pKycState(val owner: String, val country: String, val stage: String = "IDLE",
     val capabilities: P2pKycCapability? = null, val account: P2pAccount? = null, val expiresAt: Long? = null, val hash: String? = null,
-    val review: P2pKycReview? = null, val launchUrl: String? = null, val shareUrl: String? = null, val busy: Boolean = false, val error: UiText? = null)
+    val review: P2pKycReview? = null, val launchUrl: String? = null, val shareUrl: String? = null, val livenessDone: Boolean = false, val busy: Boolean = false, val error: UiText? = null)
 
 internal class P2pKycViewModel(owner: String, country: String, private val flow: P2pKycInteractor?) : ViewModel() {
     private val mutable = MutableStateFlow(P2pKycState(owner, country))
@@ -48,6 +48,7 @@ internal class P2pKycViewModel(owner: String, country: String, private val flow:
         display(f.local())
         val caps = f.capabilities(); mutable.update { it.copy(capabilities = caps, account = null) }
         accountVerified = f.verified()
+        val faceDone = f.livenessVerified(); mutable.update { it.copy(livenessDone = faceDone) }
         display(f.refresh())
         readAccount()
     }
@@ -57,8 +58,10 @@ internal class P2pKycViewModel(owner: String, country: String, private val flow:
             val account = checkNotNull(flow).account(state.value.country); mutable.update { it.copy(account = account) }
         }
     }
-    fun start() = task {
-        val f = checkNotNull(flow); display(f.start(state.value.country)); val url = f.widget(); mutable.update { it.copy(launchUrl = url) }
+    fun start() = begin(KYC_PASSPORT)
+    fun startLiveness() = begin(KYC_LIVENESS)
+    private fun begin(method: String) = task {
+        val f = checkNotNull(flow); display(f.start(state.value.country, method)); val url = f.widget(); mutable.update { it.copy(launchUrl = url) }
     }
     fun reopen() = task { val url = checkNotNull(flow).widget(); mutable.update { it.copy(launchUrl = url) } }
     fun otherDevice() = task { val url = checkNotNull(flow).widget(); mutable.update { it.copy(shareUrl = url) } }

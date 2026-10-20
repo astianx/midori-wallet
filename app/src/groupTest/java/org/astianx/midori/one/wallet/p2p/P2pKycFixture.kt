@@ -17,6 +17,7 @@ internal class P2pKycFixture {
     var remoteFailure = false
     var receiptStatus = P2pSubmission.CONFIRMED
     var verified = false
+    var faceVerified = false
     var sessionSkew = 0L
     val hash = "0x" + "d".repeat(64)
     class Store : P2pKycStore {
@@ -31,20 +32,22 @@ internal class P2pKycFixture {
     val store = Store()
     val gateway = object : P2pKycGateway {
         override val origin = "https://midori.test"
-        override suspend fun capabilities() = P2pKycCapability(true, "ready", listOf("CO", "BR"))
+        override suspend fun capabilities() = P2pKycCapability(true, "ready", listOf("CO", "BR"), true)
         override suspend fun verified(user: String) = verified
+        override suspend fun livenessVerified(user: String) = faceVerified
         override suspend fun account(user: String, country: String) = P2pAccount(user, country, "COP", "COP", "1000000", "100000000", "300000000", "20", now, now + 60)
         override suspend fun session(record: P2pKycRecord, expiresAt: Long, signature: String): P2pKycSession {
             check(store.row?.state == "STARTING"); sessions++
-            return P2pKycSession(record.nonce, owner, record.country, "https://passport.p2p.cool/embed?handoff=" + "a".repeat(32),
-                "https://passport.p2p.cool", now + 900 + sessionSkew)
+            val host = kycWidgetHost(record.method)
+            return P2pKycSession(record.nonce, owner, record.country, "https://$host/embed?handoff=" + "a".repeat(32),
+                "https://$host", now + 900 + sessionSkew)
         }
         override suspend fun status(record: P2pKycRecord): P2pKycStatus {
             if (remoteFailure) throw P2pOrderFailure("provider_unavailable")
             return P2pKycStatus(owner, record.country, stage, if (stage == "READY") proof else null)
         }
         override suspend fun prepare(record: P2pKycRecord): P2pKycPrepared = P2pKycPrepared(proof, P2P_REPUTATION_MANAGER,
-            P2pKycEncoding.calldata(proof) + if (tamper) "00" else "", now, now + 60)
+            P2pKycEncoding.calldata(proof, record.method) + if (tamper) "00" else "", now, now + 60)
         override suspend fun receipt(record: P2pKycRecord, hash: String) = P2pReceipt(hash, receiptStatus, null)
     }
     val wallet = object : P2pWalletPort {
@@ -60,5 +63,5 @@ internal class P2pKycFixture {
     }
     fun interactor() = P2pKycInteractor(owner, gateway, store, wallet, { _, _ -> "0x" + "a".repeat(130) }, { now })
     fun viewModel() = P2pKycViewModel(owner, "CO", interactor())
-    suspend fun ready(flow: P2pKycInteractor) { flow.start("CO"); stage = "READY"; flow.refresh() }
+    suspend fun ready(flow: P2pKycInteractor, method: String = KYC_PASSPORT) { flow.start("CO", method); stage = "READY"; flow.refresh() }
 }

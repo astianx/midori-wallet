@@ -689,4 +689,7 @@
     <string name="p2pk_other_device_hint">Escanea este código con tu propio teléfono para completar allí la verificación con pasaporte; después vuelve aquí y actualiza el estado. Quien lo escanee mientras sea válido podría usar esta verificación para tu billetera: no lo compartas.</string>
     <string name="p2pk_hide_code">Ocultar código</string>
     <string name="p2pk_interrupted">El intento anterior se interrumpió antes de terminar. No se envió ninguna transacción. Inicia la verificación de nuevo.</string>
+    <string name="p2pk_start_liveness">Verificar solo con el rostro</string>
+    <string name="p2pk_liveness_note">¿Sin pasaporte? La verificación solo con el rostro no lee ningún documento. Da un límite de compra menor que el pasaporte y se puede combinar con él después. Aun así vincula tu rostro a esta billetera.</string>
+    <string name="p2pk_liveness_active">La verificación solo con el rostro ya está activa en esta billetera. Puedes añadir la verificación con pasaporte para aumentar tu límite.</string>
 </resources>

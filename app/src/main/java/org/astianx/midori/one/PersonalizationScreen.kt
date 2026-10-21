@@ -68,7 +68,7 @@ internal fun PersonalizationScreen(chat: ChatViewModel, themeMode: ThemeMode, on
     StylePage(R.string.style_title, { navigate(Screen.More) }) {
         Text(stringResource(R.string.style_intro), style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
+        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceVariant) {
             Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.style_preview), style = MaterialTheme.typography.labelMedium)
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge)

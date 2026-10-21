@@ -14,9 +14,8 @@ internal fun WalletAppearanceScreen(back: () -> Unit) {
     val style = LocalWalletAppearance.current
     val save = LocalWalletAppearanceChange.current
     StylePage(R.string.style_wallet, back) {
-        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
+        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surface) {
             Box {
-                if (style.showTexture) MidoriPattern(Modifier.matchParentSize())
                 Column(Modifier.fillMaxWidth().padding(if (style.compact) 16.dp else 24.dp)) {
                     Text(stringResource(R.string.style_preview), style = MaterialTheme.typography.labelSmall)
                     Spacer(Modifier.height(16.dp))
@@ -27,7 +26,6 @@ internal fun WalletAppearanceScreen(back: () -> Unit) {
             }
         }
         StyleToggle(R.string.hide_balances, style.hideBalances) { save(style.copy(hideBalances = it)) }
-        StyleToggle(R.string.style_texture, style.showTexture) { save(style.copy(showTexture = it)) }
         StyleToggle(R.string.style_compact, style.compact) { save(style.copy(compact = it)) }
         StyleToggle(R.string.style_btc_first, style.bitcoinFirst) { save(style.copy(bitcoinFirst = it)) }
         StyleToggle(R.string.style_help, style.showHelp) { save(style.copy(showHelp = it)) }

@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -68,10 +67,10 @@ import org.astianx.midori.one.UiText
 @Composable
 internal fun ChatAvatar(name: String, modifier: Modifier = Modifier) {
     val style = LocalChatAppearance.current
-    Box(modifier.size(style.avatarSize.dp).clip(RoundedCornerShape(style.avatarStyle.radius.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+    Box(modifier.size(style.avatarSize.dp).clip(RoundedCornerShape(style.avatarStyle.radius.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center) {
         Text(name.trim().take(1).uppercase(java.util.Locale.getDefault()), fontSize = 22.sp,
-            fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -82,29 +81,31 @@ internal fun ConversationRow(contact: ChatContact, last: ChatMessage?, unread: I
     val menuLabel = stringResource(R.string.chat_options)
     val style = LocalChatAppearance.current
     val name = options.alias.ifBlank { contact.name }
-    Row(Modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = menuLabel).padding(horizontal = 20.dp, vertical = if (style.compact) 8.dp else 14.dp),
+    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp)
+        .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = menuLabel)
+        .padding(horizontal = 16.dp, vertical = if (style.compact) 8.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
         ChatAvatar(name)
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(name, fontSize = 17.sp, fontWeight = if (unread > 0) FontWeight.SemiBold else FontWeight.Medium,
+            Text(name, fontSize = 16.sp, fontWeight = if (unread > 0) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(5.dp))
+            Spacer(Modifier.height(4.dp))
             Text(if (!style.showPreviews) contact.address else if (draft.isNotBlank()) stringResource(R.string.chat_draft, draft) else last?.displayBody() ?: contact.address, maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                fontSize = 14.sp, color = if (draft.isNotBlank() && style.showPreviews) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.width(10.dp))
         Column(horizontalAlignment = Alignment.End) {
-            last?.let { Text(chatTime(it.timestamp), fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            last?.let { Text(chatTime(it.timestamp), fontSize = 12.sp,
+                color = if (unread > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (options.pinned) Icon(Icons.Outlined.PushPin, stringResource(R.string.chat_pinned), Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (options.muted) Icon(Icons.Outlined.NotificationsOff, stringResource(R.string.chat_muted), Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (unread > 0) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(5.dp))
                 androidx.compose.material3.Badge(containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary) { Text(if (unread > 99) "99+" else unread.toString()) }
             }
@@ -138,19 +139,19 @@ internal fun MessageBubble(message: ChatMessage, audio: ChatAudioController, onI
         topEnd = if (outgoing && joinsPrevious) 6.dp else radius,
         bottomStart = if (!outgoing) 6.dp else radius,
         bottomEnd = if (outgoing) 6.dp else radius)
-    Row(Modifier.fillMaxWidth().padding(start = if (outgoing) 48.dp else 14.dp,
-        end = if (outgoing) 14.dp else 48.dp, top = if (joinsPrevious) 2.dp else 9.dp, bottom = 2.dp),
+    Row(Modifier.fillMaxWidth().padding(start = if (outgoing) 48.dp else 12.dp,
+        end = if (outgoing) 12.dp else 48.dp, top = if (joinsPrevious) 2.dp else 8.dp, bottom = 2.dp),
         horizontalArrangement = if (outgoing) Arrangement.End else Arrangement.Start) {
         if (style.showMessageAvatars && !outgoing) {
             if (!joinsPrevious) ChatAvatar(message.sender.ifBlank { message.peer }, Modifier.size(28.dp)) else Spacer(Modifier.width(28.dp))
             Spacer(Modifier.width(6.dp))
         }
-        Column(Modifier.weight(1f, fill = false).widthIn(max = 420.dp).shadow(1.dp, shape).clip(shape).background(background).padding(horizontal = 13.dp, vertical = 9.dp)) {
+        Column(Modifier.weight(1f, fill = false).widthIn(max = 420.dp).clip(shape).background(background).padding(horizontal = 12.dp, vertical = 8.dp)) {
             if (!joinsPrevious && !outgoing && message.sender.isNotBlank() && message.sender != message.peer) Text(message.sender.substringBefore('@'),
                 fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
             message.attachment?.let { ChatFileContent(it, localPath, audio, onImage, onDownload) }
             message.sharedContact?.let { address ->
-                Row(Modifier.clickable { onContact(address) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.PersonOutline, null)
+                Row(Modifier.heightIn(min = 48.dp).clickable { onContact(address) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.PersonOutline, null)
                     Spacer(Modifier.width(8.dp)); Text(address, fontSize = 14.sp) }
             }
             message.location?.let { geo ->
@@ -200,9 +201,9 @@ internal fun MessageBubble(message: ChatMessage, audio: ChatAudioController, onI
 @Composable
 internal fun ChatError(error: UiText?, onDismiss: () -> Unit) {
     if (error == null) return
-    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.errorContainer).padding(start = 16.dp),
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(MaterialTheme.colorScheme.errorContainer).padding(start = 16.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Text(error.asString(), modifier = Modifier.weight(1f).padding(vertical = 12.dp), fontSize = 13.sp,
+        Text(error.asString(), modifier = Modifier.weight(1f).padding(vertical = 10.dp), style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onErrorContainer)
         IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, stringResource(R.string.close),
             tint = MaterialTheme.colorScheme.onErrorContainer) }
@@ -212,23 +213,24 @@ internal fun ChatError(error: UiText?, onDismiss: () -> Unit) {
 @Composable
 internal fun ChatComposer(
     draft: String, onDraft: (String) -> Unit, enabled: Boolean, expanded: Boolean,
-    onExpand: () -> Unit, onEmoji: () -> Unit, onPhoto: () -> Unit, onVoice: () -> Unit, onSend: () -> Unit,
+    onExpand: () -> Unit, onEmoji: () -> Unit, onVoice: () -> Unit, onSend: () -> Unit,
     onTyping: () -> Unit
 ) {
     val style = LocalChatAppearance.current
-    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(horizontal = 4.dp, vertical = 8.dp),
+    val messageLabel = stringResource(R.string.chat_type_message)
+    Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.Bottom) {
-        IconButton(onClick = onExpand, enabled = enabled) {
-            Icon(if (expanded) Icons.Outlined.Close else Icons.Outlined.Add,
-                stringResource(if (expanded) R.string.close else R.string.chat_attach), Modifier.size(28.dp),
-                tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-        }
-        Row(Modifier.weight(1f).clip(RoundedCornerShape(28.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(start = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant), verticalAlignment = Alignment.Bottom) {
+            IconButton(onClick = onExpand, enabled = enabled, modifier = Modifier.size(48.dp)) {
+                Icon(if (expanded) Icons.Outlined.Close else Icons.Outlined.AttachFile,
+                    stringResource(if (expanded) R.string.close else R.string.chat_attach), Modifier.size(24.dp),
+                    tint = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             BasicTextField(value = draft, onValueChange = onDraft,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = if (style.sendOnEnter) androidx.compose.ui.text.input.ImeAction.Send else androidx.compose.ui.text.input.ImeAction.Default),
                 keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSend = { if (enabled && draft.isNotBlank()) onSend() }),
-                modifier = Modifier.weight(1f).onPreviewKeyEvent {
+                modifier = Modifier.weight(1f).semantics { contentDescription = messageLabel }.onPreviewKeyEvent {
                     if (style.sendOnEnter && it.key == Key.Enter && !it.isShiftPressed) {
                         if (it.type == KeyEventType.KeyUp && enabled && draft.isNotBlank()) onSend()
                         true
@@ -237,41 +239,45 @@ internal fun ChatComposer(
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { inner ->
-                    Box { if (draft.isEmpty()) Text(stringResource(R.string.chat_type_message), fontSize = 15.sp,
+                    Box { if (draft.isEmpty()) Text(messageLabel, style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         inner() }
                 })
-            if (draft.isEmpty()) IconButton(onClick = onEmoji) {
-                Icon(Icons.Outlined.SentimentSatisfiedAlt, stringResource(R.string.chat_emoji))
-            } else Spacer(Modifier.width(15.dp))
+            IconButton(onClick = onEmoji, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Outlined.SentimentSatisfiedAlt, stringResource(R.string.chat_emoji),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        if (draft.isNotBlank()) androidx.compose.material3.FilledIconButton(onClick = onSend, enabled = enabled,
-            modifier = Modifier.padding(horizontal = 4.dp).size(48.dp)) {
-            Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.send), Modifier.size(29.dp),
+        Spacer(Modifier.width(8.dp))
+        androidx.compose.material3.FilledIconButton(onClick = if (draft.isNotBlank()) onSend else onVoice, enabled = enabled,
+            modifier = Modifier.size(48.dp)) {
+            Icon(if (draft.isNotBlank()) Icons.AutoMirrored.Filled.Send else Icons.Outlined.MicNone,
+                stringResource(if (draft.isNotBlank()) R.string.send else R.string.chat_record), Modifier.size(24.dp),
                 tint = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            IconButton(onClick = onPhoto, enabled = enabled) { Icon(Icons.Outlined.Image, stringResource(R.string.chat_photos)) }
-            IconButton(onClick = onVoice, enabled = enabled) { Icon(Icons.Outlined.MicNone, stringResource(R.string.chat_record)) }
         }
     }
 }
 
 @Composable
-internal fun ChatAttachmentTray(onCamera: () -> Unit, onFile: () -> Unit, onContact: () -> Unit, onLocation: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 150.dp).background(MaterialTheme.colorScheme.background).padding(horizontal = 12.dp, vertical = 20.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly) {
-        listOf(Triple(Icons.Outlined.PhotoCamera, R.string.chat_camera, onCamera),
+internal fun ChatAttachmentTray(onPhoto: () -> Unit, onCamera: () -> Unit, onFile: () -> Unit, onContact: () -> Unit, onLocation: () -> Unit) {
+    val actions = listOf(Triple(Icons.Outlined.Image, R.string.chat_photos, onPhoto),
+            Triple(Icons.Outlined.PhotoCamera, R.string.chat_camera, onCamera),
             Triple(Icons.Outlined.FolderOpen, R.string.chat_files, onFile),
             Triple(Icons.Outlined.PeopleOutline, R.string.chat_contact, onContact),
-            Triple(Icons.Outlined.LocationOn, R.string.chat_location, onLocation)).forEach { (icon, label, action) ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)
-                .clip(RoundedCornerShape(16.dp)).clickable(role = Role.Button, onClick = action).padding(vertical = 4.dp)) {
-                Box(Modifier.size(58.dp).clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center) {
-                    Icon(icon, null, Modifier.size(27.dp))
+            Triple(Icons.Outlined.LocationOn, R.string.chat_location, onLocation))
+    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 12.dp, vertical = 8.dp)) {
+        actions.chunked(3).forEach { row ->
+            Row(Modifier.fillMaxWidth()) {
+                row.forEach { (icon, label, action) ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)
+                        .clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = action).padding(vertical = 12.dp)) {
+                        Icon(icon, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(8.dp))
+                        Text(stringResource(label), style = MaterialTheme.typography.labelMedium, maxLines = 2,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    }
                 }
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(label), fontSize = 12.sp, maxLines = 1)
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
@@ -482,10 +488,10 @@ internal fun PhotoEditCanvas(bitmap: Bitmap, edits: PhotoEdits, tool: PhotoTool,
 
 @Composable
 internal fun ChatContextAction(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 20.dp),
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, Modifier.size(26.dp)); Spacer(Modifier.width(24.dp))
-        Text(stringResource(label), fontSize = 18.sp)
+        Icon(icon, null, Modifier.size(24.dp)); Spacer(Modifier.width(20.dp))
+        Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
     }
 }
 

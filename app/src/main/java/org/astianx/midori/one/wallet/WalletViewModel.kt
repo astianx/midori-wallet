@@ -896,7 +896,13 @@ class WalletViewModel internal constructor(
 
     override fun onCleared() {
         super.onCleared()
-        wdkCore?.close()
+        val client = wdkCore
+        wdkCore = null
+        // Native worklet teardown can wait on IPC threads. Activity destruction must
+        // not block the UI, and viewModelScope is already cancelled at this point.
+        if (client != null) Thread({
+            try { client.close() } catch (_: Exception) { /* No credentials are changed by teardown. */ }
+        }, "midori-wallet-close").start()
     }
 
     class Factory(private val context: Context) : ViewModelProvider.Factory {

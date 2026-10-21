@@ -35,7 +35,7 @@
     <string name="other_assets">Outros ativos</string>
     <string name="mainnet">Rede principal</string>
     <string name="eth_gas">ETH · gás</string>
-    <string name="gas_explanation">ETH na Base paga as taxas. Compras e trocas ainda não estão disponíveis.</string>
+    <string name="gas_explanation">Mantenha um pouco de ETH na Base para pagar as taxas de envio.</string>
     <string name="delete">Excluir</string>
     <string name="delete_wallet">Excluir carteira</string>
     <string name="wallet">Carteira</string>
@@ -46,7 +46,7 @@
     <string name="max_amount">Máx.</string>
     <string name="fee">Taxa</string>
     <string name="network">Rede</string>
-    <string name="transactions">TRANSAÇÕES</string>
+    <string name="transactions">Transações</string>
     <string name="to_recipient">para</string>
     <string name="transaction_hash">Hash da transação</string>
     <string name="hash_copied">Hash da transação copiado</string>
@@ -148,14 +148,14 @@
     <string name="get_started">Começar</string>
     <string name="go_to_chats">Ir para conversas</string>
     <string name="search">Buscar</string>
-    <string name="search_chats">Buscar neste espaço</string>
+    <string name="search_chats">Buscar conversas</string>
     <string name="search_assets">Buscar ativos</string>
     <string name="no_results">Nenhum resultado</string>
     <string name="clear_search">Limpar busca</string>
     <string name="scan_qr">Ler QR</string>
     <string name="profile">Perfil</string>
     <string name="new_chat">Nova conversa</string>
-    <string name="chats_empty_title">Um espaço para suas conversas</string>
+    <string name="chats_empty_title">Suas conversas</string>
     <string name="chats_empty_body">Conecte sua conta e comece uma conversa privada.</string>
     <string name="help_center">Central de ajuda</string>
     <string name="help_shortcut_body">Recuperação, redes e primeiros passos</string>
@@ -692,4 +692,9 @@
     <string name="p2pk_start_liveness">Verificar apenas com o rosto</string>
     <string name="p2pk_liveness_note">Sem passaporte? A verificação apenas com o rosto não lê nenhum documento. Dá um limite de compra menor que o passaporte e pode ser combinada com ele depois. Ainda assim vincula seu rosto a esta carteira.</string>
     <string name="p2pk_liveness_active">A verificação apenas com o rosto já está ativa nesta carteira. Você pode adicionar a verificação com passaporte para aumentar seu limite.</string>
+    <string name="chat_password_show">Mostrar senha</string>
+    <string name="chat_password_hide">Ocultar senha</string>
+    <string name="wallet_activity_title">Atividade recente</string>
+    <string name="wallet_activity_session">Aqui aparecem apenas as transferências desta sessão.</string>
+    <string name="wallet_activity_empty">Nenhuma transferência nesta sessão</string>
 </resources>

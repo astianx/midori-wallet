@@ -3,12 +3,15 @@ package org.astianx.midori.one.wallet.p2p
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -72,6 +75,7 @@ internal fun P2pOrdersScreen(wallet: WalletViewModel) {
         vm::submit, vm::dismiss, { wallet.openP2pVerification(state.country) })
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (FiatOperation) -> Unit,
     country: (String) -> Unit, amount: (String) -> Unit, destination: (String) -> Unit, quote: () -> Unit,
@@ -81,12 +85,13 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
     BackHandler { if (s.review != null) dismiss() else back() }
     val locale = LocalConfiguration.current.locales[0]
     val focus = LocalFocusManager.current
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().imePadding()) {
         ScreenHeader(stringResource(R.string.funding_p2p), back)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.p2po_intro), style = MaterialTheme.typography.bodyLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { FiatOperation.entries.forEach { value ->
-                FilterChip(value == s.operation, enabled = !s.busy, onClick = { operation(value) }, label = {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(stringResource(R.string.p2po_intro), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) { FiatOperation.entries.forEach { value ->
+                FilterChip(value == s.operation, enabled = !s.busy, onClick = { operation(value) }, modifier = Modifier.heightIn(min = 48.dp), label = {
                     Text(stringResource(if (value == FiatOperation.BUY) R.string.wallet_deposit else R.string.wallet_withdraw)) }) } }
             Text(stringResource(R.string.p2p_network), style = MaterialTheme.typography.labelLarge)
             var expanded by remember { mutableStateOf(false) }
@@ -99,17 +104,19 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
                 if (selected == null && s.countries.isNotEmpty()) Text(stringResource(R.string.wallet_country_unavailable_p2p, name),
                     color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("p2po-country-unavailable"))
             } else Box {
-                OutlinedButton({ expanded = true }, enabled = !s.busy && s.available.isNotEmpty(), modifier = Modifier.fillMaxWidth().testTag("p2po-country")) {
+                OutlinedButton({ expanded = true }, enabled = !s.busy && s.available.isNotEmpty(),
+                    shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("p2po-country")) {
                     Text(selected?.let { "${java.util.Locale("", it.country).getDisplayCountry(locale)} · ${it.fiat}" }
                         ?: stringResource(R.string.fiat_select_country))
                 }
-                DropdownMenu(expanded, { expanded = false }) { s.available.forEach { row ->
+                DropdownMenu(expanded, { expanded = false }, Modifier.heightIn(max = 320.dp)) { s.available.forEach { row ->
                     DropdownMenuItem(text = { Text("${java.util.Locale("", row.country).getDisplayCountry(locale)} · ${row.fiat}") },
                         onClick = { expanded = false; country(row.country) }) } }
             }
             if (selected?.alpha == true) Text(stringResource(R.string.p2p_alpha), style = MaterialTheme.typography.bodySmall)
             s.account?.let { a ->
-                Card(Modifier.fillMaxWidth().testTag("p2po-account")) {
+                Surface(Modifier.fillMaxWidth().testTag("p2po-account"), shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.surfaceVariant) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.p2po_account_limit, p2pDecimal(a.limit(s.operation))))
                         if (s.operation == FiatOperation.SELL) Text(stringResource(R.string.p2po_account_balance, p2pDecimal(a.usdcBalance)))
@@ -148,7 +155,9 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
                 (s.operation == FiatOperation.BUY || P2pPaymentDetails.valid(s.country, s.destination))) { focus.clearFocus(); quote() }
             OutlinedButton(reload, enabled = !s.busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.p2po_refresh)) }
             s.review?.let { r ->
-                Card(Modifier.fillMaxWidth().testTag("p2po-review")) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedCard(Modifier.fillMaxWidth().testTag("p2po-review"),
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(stringResource(actionLabel(r.action)), style = MaterialTheme.typography.titleLarge)
                     val q = r.quote; val o = r.prepared?.order
                     Text(stringResource(R.string.p2po_usdc, p2pDecimal(q?.amount ?: checkNotNull(o).amount)))
@@ -165,9 +174,12 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
                     }
                     Text(stringResource(R.string.p2po_review_notice), style = MaterialTheme.typography.bodySmall)
                     var confirmed by remember(r) { mutableStateOf(false) }
-                    if (r.action == P2pAction.PAID) Row {
-                        Checkbox(confirmed, { confirmed = it }, enabled = !s.busy)
-                        Text(stringResource(R.string.p2po_paid_confirmation))
+                    if (r.action == P2pAction.PAID) Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        .toggleable(confirmed, enabled = !s.busy, role = Role.Checkbox, onValueChange = { confirmed = it }),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(confirmed, onCheckedChange = null, enabled = !s.busy)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.p2po_paid_confirmation), modifier = Modifier.weight(1f))
                     }
                     PrimaryButton(stringResource(R.string.p2po_confirm), !s.busy && (r.action != P2pAction.PAID || confirmed)) { focus.clearFocus(); submit(confirmed) }
                     TextButton(dismiss, enabled = !s.busy) { Text(stringResource(R.string.p2po_close)) }
@@ -175,7 +187,9 @@ internal fun P2pOrderContent(s: P2pOrderState, back: () -> Unit, operation: (Fia
             }
             if (s.records.isNotEmpty()) Text(stringResource(R.string.p2po_orders), style = MaterialTheme.typography.titleLarge)
             s.records.forEach { record ->
-                Card(Modifier.fillMaxWidth().testTag("p2po-order")) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Surface(Modifier.fillMaxWidth().testTag("p2po-order"), color = MaterialTheme.colorScheme.surface) {
+                    Column(Modifier.padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant)
                     Text(stringResource(R.string.p2po_usdc, p2pDecimal(record.amount)), style = MaterialTheme.typography.titleMedium)
                     record.orderId?.let { Text(stringResource(R.string.p2po_order_id, it)) }
                     Text(stringResource(statusLabel(record)))

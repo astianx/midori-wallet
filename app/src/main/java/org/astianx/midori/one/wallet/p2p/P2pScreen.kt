@@ -27,6 +27,7 @@ internal fun P2pScreen(wallet: WalletViewModel) {
     P2pOrdersScreen(wallet)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun P2pContent(state: P2pState, back: () -> Unit, operation: (FiatOperation) -> Unit,
     country: (String) -> Unit, rates: () -> Unit, retry: () -> Unit) {
@@ -34,21 +35,22 @@ internal fun P2pContent(state: P2pState, back: () -> Unit, operation: (FiatOpera
     val locale = LocalConfiguration.current.locales[0]
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(stringResource(R.string.funding_p2p), back)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Text(stringResource(R.string.p2p_intro), style = MaterialTheme.typography.bodyLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { FiatOperation.entries.forEach { value ->
-                FilterChip(value == state.operation, onClick = { operation(value) }, label = {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            Text(stringResource(R.string.p2p_intro), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) { FiatOperation.entries.forEach { value ->
+                FilterChip(value == state.operation, onClick = { operation(value) }, modifier = Modifier.heightIn(min = 48.dp), label = {
                     Text(stringResource(if (value == FiatOperation.BUY) R.string.wallet_deposit else R.string.wallet_withdraw)) }) } }
             Text(stringResource(R.string.p2p_network), style = MaterialTheme.typography.labelLarge)
             var expanded by remember { mutableStateOf(false) }
             val selected = state.available.find { it.country == state.country }
             Box {
                 OutlinedButton(onClick = { expanded = true }, enabled = state.available.isNotEmpty() && !state.busy,
-                    modifier = Modifier.fillMaxWidth().testTag("p2p-country")) {
+                    shape = MaterialTheme.shapes.small, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("p2p-country")) {
                     Text(selected?.let { "${java.util.Locale("", it.country).getDisplayCountry(locale)} · ${it.fiat}" }
                         ?: stringResource(R.string.fiat_select_country))
                 }
-                DropdownMenu(expanded, onDismissRequest = { expanded = false }) { state.available.forEach { row ->
+                DropdownMenu(expanded, onDismissRequest = { expanded = false }, modifier = Modifier.heightIn(max = 320.dp)) { state.available.forEach { row ->
                     DropdownMenuItem(text = { Text("${java.util.Locale("", row.country).getDisplayCountry(locale)} · ${row.fiat}") },
                         onClick = { expanded = false; country(row.country) }) } }
             }
@@ -61,7 +63,9 @@ internal fun P2pContent(state: P2pState, back: () -> Unit, operation: (FiatOpera
             PrimaryButton(stringResource(R.string.p2p_check_rate), selected != null && !state.busy, rates)
             state.rate?.let { rate ->
                 val price = if (state.operation == FiatOperation.BUY) rate.buyPrice else rate.sellPrice
-                Card(Modifier.fillMaxWidth().testTag("p2p-rate")) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(Modifier.fillMaxWidth().testTag("p2p-rate"), color = MaterialTheme.colorScheme.surface) {
+                    Column(Modifier.padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant)
                     Text(stringResource(R.string.p2p_rate, p2pDecimal(price), rate.country.fiat), style = MaterialTheme.typography.titleLarge)
                     Text(stringResource(R.string.p2p_reference), style = MaterialTheme.typography.bodySmall)
                     Text(stringResource(R.string.p2p_fees), style = MaterialTheme.typography.bodySmall)

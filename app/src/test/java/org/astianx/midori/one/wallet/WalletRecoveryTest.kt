@@ -2,6 +2,11 @@ package org.astianx.midori.one.wallet
 
 import androidx.lifecycle.ViewModelStore
 import java.math.BigInteger
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -111,6 +116,67 @@ class WalletRecoveryTest {
 
     private fun viewModel(store: Store, factory: () -> Client) =
         WalletViewModel(store, factory, dispatcher).also { viewModels.put("wallet", it) }
+
+    @Test
+    fun clearingViewModelDoesNotWaitForNativeCloseOrChangeCredentials() = runTest(dispatcher) {
+        val original = WalletCredentials("saved-test-key", "saved-test-seed")
+        val store = Store(original)
+        val client = Client()
+        val closeStarted = CountDownLatch(1)
+        val releaseClose = CountDownLatch(1)
+        val closeFinished = CountDownLatch(1)
+        val closeCalls = AtomicInteger()
+        val closeThread = AtomicReference<Thread>()
+        val clearingThread = AtomicReference<Thread>()
+        val blockingClient = object : WalletClient by client {
+            override fun close() {
+                closeCalls.incrementAndGet()
+                closeThread.set(Thread.currentThread())
+                closeStarted.countDown()
+                try {
+                    releaseClose.await()
+                    client.close()
+                } finally {
+                    closeFinished.countDown()
+                }
+            }
+        }
+        val vm = WalletViewModel(store, { blockingClient }, dispatcher)
+        viewModels.put("wallet", vm)
+        advanceUntilIdle()
+        assertTrue(vm.state.value.isWdkInitialized)
+
+        // Run the lifecycle caller separately so a regression fails with a bounded
+        // timeout instead of hanging the test while the fake native close waits.
+        val lifecycle = Executors.newSingleThreadExecutor()
+        try {
+            val cleared = lifecycle.submit {
+                clearingThread.set(Thread.currentThread())
+                viewModels.clear()
+            }
+            assertTrue("Client teardown never started", closeStarted.await(3, TimeUnit.SECONDS))
+            cleared.get(3, TimeUnit.SECONDS)
+            assertNotSame("Native teardown ran on the lifecycle caller", clearingThread.get(), closeThread.get())
+            assertEquals(1L, closeFinished.count)
+            assertFalse(client.closed)
+            assertEquals(original, store.credentials)
+            assertEquals(0, store.saves)
+            assertEquals(0, store.clears)
+
+            releaseClose.countDown()
+            assertTrue("Client teardown did not finish after release", closeFinished.await(3, TimeUnit.SECONDS))
+            assertTrue(client.closed)
+            assertEquals(1, closeCalls.get())
+            assertEquals(original, store.credentials)
+            assertEquals(0, store.saves)
+            assertEquals(0, store.clears)
+        } finally {
+            releaseClose.countDown()
+            lifecycle.shutdown()
+            lifecycle.awaitTermination(3, TimeUnit.SECONDS)
+            closeFinished.await(3, TimeUnit.SECONDS)
+        }
+    }
 
     @Test
     fun transientRestoreFailureKeepsCredentialsAndRetryUsesANewClient() = runTest(dispatcher) {

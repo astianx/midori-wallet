@@ -17,7 +17,7 @@ class ThemeBundleTest {
         val decoded = ThemeBundle.decode(encoded.toByteArray())
         assertEquals(theme.app, decoded.app)
         assertEquals(theme.wallet, decoded.wallet)
-        assertEquals(ChatWallpaperStyle.BOTANICAL, decoded.chats.wallpaper)
+        assertEquals(ChatWallpaperStyle.PLAIN, decoded.chats.wallpaper)
         assertNull(decoded.chats.photo)
         assertEquals(20, decoded.chats.fontSize)
     }

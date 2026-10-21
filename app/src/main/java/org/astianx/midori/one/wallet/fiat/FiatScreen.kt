@@ -92,20 +92,22 @@ internal fun FiatScreen(wallet: WalletViewModel) {
         onCountry = vm::country, onCompare = vm::compare, onOffer = vm::chooseOffer)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FiatContent(state: FiatUiState, address: String, onBack: () -> Unit,
     onOperation: (FiatOperation) -> Unit, onAsset: (Asset) -> Unit, onFiat: (String) -> Unit,
     onAmount: (String) -> Unit, onRetry: () -> Unit, onContinue: () -> Unit,
     onCountry: (String) -> Unit, onCompare: () -> Unit, onOffer: (String) -> Unit) {
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().imePadding()) {
         ScreenHeader(stringResource(R.string.fiat_title), onBack)
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 12.dp),
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Text(stringResource(R.string.fiat_intro), style = MaterialTheme.typography.bodyLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.fiat_intro), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 FiatOperation.entries.forEach { operation ->
                     FilterChip(selected = state.operation == operation, enabled = !state.busy,
-                        onClick = { onOperation(operation) }, label = {
+                        onClick = { onOperation(operation) }, modifier = Modifier.heightIn(min = 48.dp), label = {
                             Text(stringResource(if (operation == FiatOperation.BUY) R.string.buy else R.string.sell)) })
                 }
             }
@@ -117,7 +119,7 @@ internal fun FiatContent(state: FiatUiState, address: String, onBack: () -> Unit
                     ChoiceField(stringResource(R.string.fiat_asset), state.asset.name, state.assets.map { it.name },
                         !state.busy) { onAsset(Asset.valueOf(it)) }
                     Text(stringResource(R.string.fiat_network, state.asset.network.label),
-                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     ChoiceField(stringResource(R.string.fiat_currency), state.fiat, state.fiats.map { it.code },
                         !state.busy, onFiat)
                     val locale = LocalConfiguration.current.locales[0]
@@ -140,7 +142,8 @@ internal fun FiatContent(state: FiatUiState, address: String, onBack: () -> Unit
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     if (state.operation == FiatOperation.BUY) {
                         Text(stringResource(R.string.fiat_destination), style = MaterialTheme.typography.labelLarge)
-                        SelectionContainer { Text(address, style = MaterialTheme.typography.bodySmall) }
+                        SelectionContainer { Text(address, style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace) }
                     } else Text(stringResource(R.string.fiat_sell_body), style = MaterialTheme.typography.bodyMedium)
                     if (state.asset == Asset.USDT) Text(stringResource(R.string.usdt_bridge_description),
                         style = MaterialTheme.typography.bodySmall)
@@ -186,11 +189,13 @@ private fun OfferRow(offer: FiatOffer, selected: Boolean, fiatDecimals: Int, ena
         "google_pay" -> R.string.fiat_method_google
         else -> R.string.fiat_method_other
     }
-    Surface(shape = MaterialTheme.shapes.large, color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(if (selected) 2.dp else 1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth().selectable(selected, enabled = enabled, role = Role.RadioButton, onClick = onSelect)) {
         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             RadioButton(selected, onClick = null, enabled = enabled)
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(stringResource(R.string.fiat_receive_estimate, received), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.fiat_offer_fee, "${amount(offer.feeUnits, fiatDecimals)} ${offer.selection.fiat}"),
                     style = MaterialTheme.typography.bodySmall)
@@ -205,13 +210,14 @@ private fun ChoiceField(label: String, value: String, choices: List<String>, ena
     onChoice: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Column {
-        Text(label, style = MaterialTheme.typography.labelMedium)
+        Text(label, style = MaterialTheme.typography.labelLarge)
         Box {
-            OutlinedButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = { expanded = true }, enabled = enabled, shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                 Text(value, modifier = Modifier.weight(1f))
                 Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = null)
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.heightIn(max = 320.dp)) {
                 choices.forEach { choice -> DropdownMenuItem(text = { Text(choice) },
                     onClick = { expanded = false; onChoice(choice) }) }
             }

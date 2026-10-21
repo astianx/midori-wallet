@@ -42,7 +42,7 @@
     <string name="other_assets">Other assets</string>
     <string name="mainnet">Mainnet</string>
     <string name="eth_gas">ETH · gas</string>
-    <string name="gas_explanation">ETH on Base pays transaction fees. Buying and swapping are not available yet.</string>
+    <string name="gas_explanation">Keep some ETH on Base to pay transfer fees.</string>
     <string name="delete">Delete</string>
     <string name="delete_wallet">Delete wallet</string>
     <string name="wallet">Wallet</string>
@@ -53,7 +53,7 @@
     <string name="max_amount">Max</string>
     <string name="fee">Fee</string>
     <string name="network">Network</string>
-    <string name="transactions">TRANSACTIONS</string>
+    <string name="transactions">Transactions</string>
     <string name="to_recipient">to</string>
     <string name="transaction_hash">Transaction hash</string>
     <string name="hash_copied">Transaction hash copied</string>
@@ -155,14 +155,14 @@
     <string name="get_started">Get started</string>
     <string name="go_to_chats">Go to chats</string>
     <string name="search">Search</string>
-    <string name="search_chats">Search this space</string>
+    <string name="search_chats">Search chats</string>
     <string name="search_assets">Search assets</string>
     <string name="no_results">No results</string>
     <string name="clear_search">Clear search</string>
     <string name="scan_qr">Scan QR</string>
     <string name="profile">Profile</string>
     <string name="new_chat">New conversation</string>
-    <string name="chats_empty_title">A place for your conversations</string>
+    <string name="chats_empty_title">Your conversations</string>
     <string name="chats_empty_body">Connect your account and start a private conversation.</string>
     <string name="help_center">Help center</string>
     <string name="help_shortcut_body">Recovery, networks and first steps</string>
@@ -699,4 +699,9 @@
     <string name="p2pk_start_liveness">Verify with face only</string>
     <string name="p2pk_liveness_note">No passport? Face-only verification reads no document. It grants a lower purchase limit than the passport and can be combined with it later. It still links your face to this wallet.</string>
     <string name="p2pk_liveness_active">Face-only verification is already active on this wallet. You can add passport verification to raise your limit.</string>
+    <string name="chat_password_show">Show password</string>
+    <string name="chat_password_hide">Hide password</string>
+    <string name="wallet_activity_title">Recent activity</string>
+    <string name="wallet_activity_session">Only transfers from this session appear here.</string>
+    <string name="wallet_activity_empty">No transfers in this session</string>
 </resources>

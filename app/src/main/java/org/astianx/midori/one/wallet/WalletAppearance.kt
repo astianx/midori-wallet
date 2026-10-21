@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
 
-data class WalletAppearance(val hideBalances: Boolean = false, val showTexture: Boolean = true,
+data class WalletAppearance(val hideBalances: Boolean = false, val showTexture: Boolean = false,
     val compact: Boolean = false, val bitcoinFirst: Boolean = true, val showHelp: Boolean = true,
     val preferredToken: Asset = Asset.USDC) {
     fun toJson() = JSONObject().put("hideBalances", hideBalances).put("showTexture", showTexture)

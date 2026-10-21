@@ -50,7 +50,7 @@ class ChatViewModel internal constructor(
         task {
             try {
                 mutableState.update { it.copy(backgroundConnection = records.get("settings/background") != "false",
-                    wallpaper = records.get("settings/wallpaper") != "false") }
+                    wallpaper = records.get("settings/wallpaper") == "true") }
                 val appearance = records.get("settings/appearance")?.let { runCatching { ChatAppearance.fromJson(JSONObject(it)) }.getOrNull() }
                     ?: ChatAppearance(wallpaper = if (state.value.wallpaper) ChatWallpaperStyle.BOTANICAL else ChatWallpaperStyle.PLAIN)
                 mutableState.update { it.copy(appearance = appearance, wallpaper = appearance.wallpaper != ChatWallpaperStyle.PLAIN) }

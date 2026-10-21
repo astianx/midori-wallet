@@ -44,7 +44,7 @@ data class ChatUiState(
     val connection: ChatConnection = ChatConnection.DISCONNECTED,
     val backgroundConnection: Boolean = true,
     val connectionServiceRunning: Boolean = false,
-    val wallpaper: Boolean = true,
+    val wallpaper: Boolean = false,
     val appearance: ChatAppearance = ChatAppearance(),
     val profile: ChatProfile = ChatProfile(),
     val account: String = "",

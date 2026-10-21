@@ -53,7 +53,9 @@ class P2pCountryDeviceTest {
             }
             compose.onNodeWithText(context.getString(R.string.wallet_country_warning)).assertExists()
             compose.onNodeWithTag("wallet-country").performClick()
-            compose.onNodeWithTag("wallet-country-CO").performScrollTo().performClick()
+            compose.onNodeWithTag("wallet-country-search").performTextInput("CO")
+            compose.onNodeWithTag("wallet-country-list").performScrollToNode(hasTestTag("wallet-country-CO"))
+            compose.onNodeWithTag("wallet-country-CO").assertIsDisplayed().performClick()
             compose.onNodeWithTag("wallet-country").assertTextContains(name)
             compose.runOnIdle { showMarket = true }
             compose.onNodeWithTag("p2po-country").assertTextEquals(context.getString(R.string.wallet_country_locked, "$name · COP"))

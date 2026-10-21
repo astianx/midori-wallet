@@ -20,7 +20,7 @@ internal fun StylePage(title: Int, back: () -> Unit, content: @Composable Column
     BackHandler(onBack = back)
     Column(Modifier.fillMaxSize().imePadding()) {
         ScreenHeader(stringResource(title), back)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 22.dp),
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             content()
             Spacer(Modifier.height(24.dp))

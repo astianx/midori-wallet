@@ -41,7 +41,9 @@ internal fun ChatAppearanceScreen(chat: ChatViewModel, peer: String? = null, bac
             { stringResource(it.label) }) { save(style.copy(wallpaper = it)) }
         OutlinedButton({ photos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.style_choose_photo)) }
         Text(stringResource(R.string.style_photo_hint), style = MaterialTheme.typography.bodySmall)
-        StyleSlider(R.string.style_opacity, style.wallpaperOpacity, 5..60) { save(style.copy(wallpaperOpacity = it)) }
+        if (style.wallpaper != ChatWallpaperStyle.PLAIN) {
+            StyleSlider(R.string.style_opacity, style.wallpaperOpacity, 5..60) { save(style.copy(wallpaperOpacity = it)) }
+        }
         StyleChoices(R.string.style_bubbles, BubbleStyle.entries, style.bubbles, { stringResource(it.label) }) { save(style.copy(bubbles = it)) }
         StyleSlider(R.string.style_message_size, style.fontSize, 13..24) { save(style.copy(fontSize = it)) }
         StyleChoices(R.string.style_avatars, AvatarStyle.entries, style.avatarStyle, { stringResource(it.label) }) { save(style.copy(avatarStyle = it)) }
@@ -68,19 +70,19 @@ internal fun ChatAppearanceScreen(chat: ChatViewModel, peer: String? = null, bac
 @Composable
 internal fun ChatStylePreview() {
     val style = LocalChatAppearance.current
-    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
+    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
         ChatWallpaper(Modifier.matchParentSize())
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(stringResource(R.string.style_preview), style = MaterialTheme.typography.labelSmall)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ChatAvatar("M")
+                ChatAvatar("M", Modifier.size(36.dp))
                 Spacer(Modifier.width(12.dp))
                 Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium)
             }
             Text(stringResource(R.string.style_message_in), Modifier.clip(RoundedCornerShape(style.bubbles.radius.dp))
-                .background(MaterialTheme.colorScheme.surface).padding(14.dp), fontSize = style.fontSize.sp, lineHeight = (style.fontSize + 6).sp)
+                .background(MaterialTheme.colorScheme.surface).padding(horizontal = 12.dp, vertical = 8.dp), fontSize = style.fontSize.sp, lineHeight = (style.fontSize + 6).sp)
             Text(stringResource(R.string.style_message_out), Modifier.align(Alignment.End).clip(RoundedCornerShape(style.bubbles.radius.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer).padding(14.dp), color = MaterialTheme.colorScheme.onPrimaryContainer,
+                .background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal = 12.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontSize = style.fontSize.sp, lineHeight = (style.fontSize + 6).sp)
         }
     }

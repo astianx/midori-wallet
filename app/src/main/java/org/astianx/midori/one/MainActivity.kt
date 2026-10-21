@@ -32,7 +32,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,7 +41,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.delay
 import org.astianx.midori.one.chat.ChatNotifications
 import org.astianx.midori.one.chat.ChatSecurityScreen
 import androidx.lifecycle.repeatOnLifecycle
@@ -91,7 +89,7 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT,
                         android.graphics.Color.TRANSPARENT) { darkTheme },
-                    navigationBarStyle = SystemBarStyle.auto(0xE6F7F8F2.toInt(), 0x80141C18.toInt()) { darkTheme }
+                    navigationBarStyle = SystemBarStyle.auto(0xFFFFFFFF.toInt(), 0xFF111518.toInt()) { darkTheme }
                 )
             }
             MidoriTheme(darkTheme, appStyle) {
@@ -139,16 +137,9 @@ class MainActivity : ComponentActivity() {
                     lifecycleOwner.lifecycle.addObserver(observer)
                     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
                 }
-                var showBrandSplash by rememberSaveable { mutableStateOf(true) }
-                LaunchedEffect(showBrandSplash) {
-                    if (showBrandSplash) {
-                        delay(1_000)
-                        showBrandSplash = false
-                    }
-                }
                 CompositionLocalProvider(LocalChatAppearance provides chatStatus.appearance,
                     LocalWalletAppearance provides walletStyle, LocalWalletAppearanceChange provides walletStyleStore::save) {
-                if (showBrandSplash) BrandSplashScreen() else WdkApp(vm, chat, themeMode, styleStore::save) { selected ->
+                WdkApp(vm, chat, themeMode, styleStore::save) { selected ->
                     preferences.save(selected)
                     themeMode = selected
                 }

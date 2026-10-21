@@ -35,11 +35,12 @@ internal fun InvestmentContent(s: InvestmentState, back: () -> Unit, source: (As
                                target: (Asset) -> Unit, amount: (String) -> Unit, quote: () -> Unit) {
     val focus = LocalFocusManager.current
     BackHandler(onBack = back)
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().imePadding()) {
         ScreenHeader(stringResource(R.string.dollars_invest), back)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.invest_intro), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.invest_intro), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NetworkPill("ETH", "Ξ", s.target == Asset.ETH) { target(Asset.ETH) }
                 NetworkPill("BTC", "₿", s.target == Asset.BTC) { target(Asset.BTC) }
@@ -69,10 +70,11 @@ internal fun InvestmentContent(s: InvestmentState, back: () -> Unit, source: (As
                         expired = true
                     }
                     if (expired) Text(stringResource(R.string.invest_quote_expired), color = MaterialTheme.colorScheme.error)
-                    else Card(Modifier.fillMaxWidth().testTag("investment-quote")) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    else Surface(Modifier.fillMaxWidth().testTag("investment-quote"), color = MaterialTheme.colorScheme.surface) {
+                        Column(Modifier.padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Divider(color = MaterialTheme.colorScheme.outlineVariant)
                             Text(stringResource(R.string.invest_estimated_receive), style = MaterialTheme.typography.labelLarge)
-                            Text("${result.ethAmount} ETH", style = MaterialTheme.typography.headlineSmall)
+                            Text("${result.ethAmount} ETH", style = MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "tnum"))
                             Text(stringResource(R.string.invest_gas_reference, result.indicativeGasUsd))
                             Text(stringResource(R.string.invest_provider), style = MaterialTheme.typography.bodySmall)
                             Text(stringResource(R.string.invest_quote_reference), style = MaterialTheme.typography.bodySmall)

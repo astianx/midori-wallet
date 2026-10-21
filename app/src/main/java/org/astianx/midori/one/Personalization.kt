@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
 
 enum class AccentTone(val color: Long, val label: Int) {
-    JADE(0xFF236B56, R.string.style_jade), OCEAN(0xFF225E99, R.string.style_ocean),
+    JADE(0xFF006B52, R.string.style_jade), OCEAN(0xFF225E99, R.string.style_ocean),
     PLUM(0xFF765488, R.string.style_plum), CORAL(0xFF9C4938, R.string.style_coral),
     AMBER(0xFF805B16, R.string.style_amber), GRAPHITE(0xFF45565B, R.string.style_graphite)
 }
@@ -19,7 +19,7 @@ enum class LauncherStyle(val component: String, val label: Int, val icon: Int) {
     OCEAN("LauncherOcean", R.string.style_ocean, R.mipmap.ic_launcher_ocean)
 }
 
-data class AppStyle(val accent: AccentTone = AccentTone.JADE, val typeface: AppTypeface = AppTypeface.MANROPE,
+data class AppStyle(val accent: AccentTone = AccentTone.JADE, val typeface: AppTypeface = AppTypeface.SYSTEM,
     val textScale: Int = 100, val pureBlack: Boolean = false) {
     fun toJson() = JSONObject().put("accent", accent.name).put("typeface", typeface.name)
         .put("textScale", textScale).put("pureBlack", pureBlack)

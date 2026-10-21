@@ -71,9 +71,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.astianx.midori.one.AppSearchField
 import org.astianx.midori.one.BuildConfig
-import org.astianx.midori.one.IntroSlide
 import org.astianx.midori.one.MainHeader
-import org.astianx.midori.one.OnboardingArtwork
 import org.astianx.midori.one.R
 import org.astianx.midori.one.Screen
 import org.astianx.midori.one.ScreenHeader
@@ -94,23 +92,26 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
     Column(Modifier.fillMaxSize()) {
         MainHeader(stringResource(R.string.chats),
             onScan = onScan, onProfile = { onNavigate(Screen.Profile) })
+        if (s.account.isNotBlank()) {
         AppSearchField(query, { query = it }, R.string.search_chats)
-        Row(Modifier.horizontalScroll(rememberScrollState()).fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ChatListFilter.entries.forEach { option ->
                 androidx.compose.material3.FilterChip(selected = filter == option, onClick = { filter = option },
                     label = { Text(stringResource(option.label), style = MaterialTheme.typography.labelMedium) },
-                    border = null, shape = RoundedCornerShape(12.dp),
+                    border = null, shape = RoundedCornerShape(20.dp),
                     colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer))
             }
         }
+        if (s.connection != ChatConnection.ONLINE) ChatConnectionStatus(s.connection) { onNavigate(Screen.Messaging) }
+        }
         ChatError(s.error, chat::clearError)
         Column(Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState())) {
             s.invitations.forEach { invitation ->
-                Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.secondaryContainer).padding(16.dp)) {
+                Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Text(stringResource(R.string.chat_group_invitation, invitation.inviter), fontSize = 13.sp)
                     Row {
                         TextButton(onClick = { scope.launch { chat.acceptInvitation(invitation).join(); if (chat.state.value.selectedPeer == invitation.room) onNavigate(Screen.Conversation) } }) { Text(stringResource(R.string.chat_group_join)) }
@@ -119,7 +120,7 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
                 }
             }
             s.requests.forEach { peer ->
-                Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.secondaryContainer).padding(horizontal = 20.dp, vertical = 8.dp)) {
+                Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Text(stringResource(R.string.chat_contact_request), fontSize = 12.sp)
                     Text(peer, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Row {
@@ -132,18 +133,24 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
         Box(Modifier.weight(1f).fillMaxWidth()) {
             val rows = s.visibleConversations(query, filter)
             if (rows.isEmpty()) {
-                Column(Modifier.align(Alignment.Center).padding(horizontal = 38.dp, vertical = 24.dp),
+                Column(Modifier.align(Alignment.Center).padding(horizontal = 32.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
-                    OnboardingArtwork(IntroSlide.MESSAGING, Modifier.fillMaxWidth().height(150.dp))
-                    Spacer(Modifier.height(24.dp))
+                    Icon(if (query.isBlank() && filter == ChatListFilter.ALL) Icons.Outlined.ChatBubbleOutline else Icons.Outlined.Search,
+                        null, Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(20.dp))
                     Text(stringResource(if (query.isBlank() && filter == ChatListFilter.ALL) R.string.chats_empty_title else R.string.no_results),
-                        fontSize = 23.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                    Spacer(Modifier.height(10.dp))
-                    Text(stringResource(if (filter == ChatListFilter.ALL && query.isBlank()) R.string.chats_empty_body else R.string.chat_filter_empty), fontSize = 15.sp, lineHeight = 22.sp,
+                        style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(if (filter == ChatListFilter.ALL && query.isBlank()) {
+                        if (s.account.isBlank()) R.string.chats_empty_body else R.string.chat_conversation_empty_body
+                    } else R.string.chat_filter_empty), style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(24.dp))
-                    Button(onClick = { if (s.account.isBlank()) onNavigate(Screen.Messaging) else chooseNew = true }) {
-                        Text(stringResource(if (s.account.isBlank()) R.string.chat_connect else R.string.new_chat))
+                    if (query.isBlank() && filter == ChatListFilter.ALL) {
+                        Spacer(Modifier.height(20.dp))
+                        Button(onClick = { if (s.account.isBlank()) onNavigate(Screen.Messaging) else chooseNew = true },
+                            modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(stringResource(if (s.account.isBlank()) R.string.chat_connect else R.string.new_chat))
+                        }
                     }
                 }
             } else {
@@ -159,9 +166,9 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
                     }
                 }
             }
-            if (s.account.isNotBlank()) androidx.compose.material3.FloatingActionButton(onClick = { chooseNew = true },
+            if (s.account.isNotBlank() && (rows.isNotEmpty() || query.isNotBlank() || filter != ChatListFilter.ALL)) androidx.compose.material3.FloatingActionButton(onClick = { chooseNew = true },
                 containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
+                shape = RoundedCornerShape(18.dp), modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
                 Icon(Icons.Outlined.AddComment, stringResource(R.string.new_chat))
             }
         }
@@ -186,13 +193,29 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
         text = { Text(stringResource(R.string.chat_delete_local_body)) },
         confirmButton = { TextButton(onClick = { chat.deleteConversation(address); deletePeer = null }) { Text(stringResource(R.string.chat_delete_local)) } },
         dismissButton = { TextButton(onClick = { deletePeer = null }) { Text(stringResource(R.string.cancel)) } }) }
-    if (chooseNew) AlertDialog(onDismissRequest = { chooseNew = false }, title = { Text(stringResource(R.string.new_chat)) },
-        text = { Column {
-            TextButton(onClick = { chooseNew = false; newChat = true }) { Icon(Icons.Outlined.ChatBubbleOutline, null); Spacer(Modifier.width(12.dp)); Text(stringResource(R.string.new_chat)) }
-            TextButton(onClick = { chooseNew = false; newGroup = true }) { Icon(Icons.Outlined.GroupAdd, null); Spacer(Modifier.width(12.dp)); Text(stringResource(R.string.chat_group_new)) }
-        } }, confirmButton = { TextButton(onClick = { chooseNew = false }) { Text(stringResource(R.string.close)) } })
+    if (chooseNew) androidx.compose.material3.ModalBottomSheet(onDismissRequest = { chooseNew = false }) {
+        Text(stringResource(R.string.new_chat), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.titleLarge)
+        ChatContextAction(Icons.Outlined.ChatBubbleOutline, R.string.new_chat) { chooseNew = false; newChat = true }
+        ChatContextAction(Icons.Outlined.GroupAdd, R.string.chat_group_new) { chooseNew = false; newGroup = true }
+        Spacer(Modifier.height(24.dp))
+    }
     if (newGroup) CreateGroupDialog(chat, onClose = { newGroup = false }, onCreated = { newGroup = false; onNavigate(Screen.Conversation) })
     if (newChat) NewChatDialog(chat, onDismiss = { newChat = false }, onOpen = { onNavigate(Screen.Conversation) })
+}
+
+@Composable
+private fun ChatConnectionStatus(connection: ChatConnection, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onClick)
+        .background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        if (connection == ChatConnection.CONNECTING || connection == ChatConnection.SECURING) {
+            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+        } else Icon(Icons.Outlined.CloudOff, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(12.dp))
+        Text(stringResource(connection.label()), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(Icons.Outlined.ChevronRight, stringResource(R.string.chat_account_title), Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable
@@ -227,6 +250,7 @@ fun MessagingScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, returnScr
     var address by rememberSaveable { mutableStateOf("") }
     // Credentials stay in memory until the authenticated connection is saved in the encrypted vault.
     var password by androidx.compose.runtime.remember { mutableStateOf("") }
+    var showPassword by androidx.compose.runtime.remember { mutableStateOf(false) }
     var host by rememberSaveable { mutableStateOf("") }
     var port by rememberSaveable { mutableStateOf("5222") }
     var advanced by rememberSaveable { mutableStateOf(false) }
@@ -236,55 +260,64 @@ fun MessagingScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, returnScr
     val busy = s.busy || s.connection in setOf(ChatConnection.CONNECTING, ChatConnection.SECURING)
     val back = { onNavigate(returnScreen) }
     BackHandler(onBack = back)
-    LaunchedEffect(s.connection) { if (s.connection == ChatConnection.ONLINE) { password = ""; editing = false } }
-    Column(Modifier.fillMaxSize()) {
+    LaunchedEffect(s.connection) { if (s.connection == ChatConnection.ONLINE) { password = ""; showPassword = false; editing = false } }
+    Column(Modifier.fillMaxSize().imePadding()) {
         ScreenHeader(stringResource(R.string.chat_account_title), back)
         ChatError(s.error, chat::clearError)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
             if (s.account.isBlank() || editing) {
-                Icon(Icons.Outlined.ChatBubbleOutline, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp))
-                Spacer(Modifier.height(18.dp))
-                Text(stringResource(R.string.chat_account_body), fontSize = 16.sp, lineHeight = 24.sp,
+                Text(stringResource(R.string.chat_account_body), style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(16.dp))
                 if (s.account.isBlank()) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     androidx.compose.material3.FilterChip(!registering, { registering = false }, label = { Text(stringResource(R.string.chat_connect)) }, enabled = !busy)
                     androidx.compose.material3.FilterChip(registering, { registering = true }, label = { Text(stringResource(R.string.profile_register)) }, enabled = !busy)
                 }
-                if (registering) Text(stringResource(R.string.profile_registration_hint), style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.height(22.dp))
+                if (registering) Text(stringResource(R.string.profile_registration_hint), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(16.dp))
                 androidx.compose.material3.OutlinedTextField(address, { address = it }, singleLine = true,
                     label = { Text(stringResource(R.string.chat_account_address)) }, modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), enabled = !busy)
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = androidx.compose.ui.text.input.ImeAction.Next), enabled = !busy)
                 Spacer(Modifier.height(12.dp))
                 androidx.compose.material3.OutlinedTextField(password, { password = it }, singleLine = true,
                     label = { Text(stringResource(R.string.chat_password)) }, modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    visualTransformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    trailingIcon = { IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                            stringResource(if (showPassword) R.string.chat_password_hide else R.string.chat_password_show))
+                    } },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), enabled = !busy)
-                TextButton(onClick = { advanced = !advanced }) { Text(stringResource(R.string.chat_advanced)) }
+                TextButton(onClick = { advanced = !advanced }, enabled = !busy) {
+                    Text(stringResource(R.string.chat_advanced))
+                    Spacer(Modifier.width(4.dp))
+                    Icon(if (advanced) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null, Modifier.size(20.dp))
+                }
                 if (advanced) {
                     androidx.compose.material3.OutlinedTextField(host, { host = it }, singleLine = true,
-                        label = { Text(stringResource(R.string.chat_server)) }, modifier = Modifier.fillMaxWidth())
+                        label = { Text(stringResource(R.string.chat_server)) }, modifier = Modifier.fillMaxWidth(), enabled = !busy)
                     Spacer(Modifier.height(8.dp))
                     androidx.compose.material3.OutlinedTextField(port, { port = it }, singleLine = true,
                         label = { Text(stringResource(R.string.chat_port)) }, modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), enabled = !busy)
                 }
                 if (BuildConfig.DEBUG && BuildConfig.CHAT_DEV_CERT_SHA256.isNotEmpty()) {
                     TextButton(onClick = { host = "10.0.2.2"; advanced = true; if (address.isBlank()) address = "@localhost" }) {
                         Text(stringResource(R.string.chat_local_lab))
                     }
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
                 Button(onClick = { if (registering) chat.register(address, password, host.ifBlank { address.substringAfter('@') }, port)
                     else chat.connect(address, password, host.ifBlank { address.substringAfter('@') }, port) },
-                    enabled = !busy && address.isNotBlank() && password.isNotBlank(), modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                    enabled = !busy && address.isNotBlank() && password.isNotBlank(), modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    if (busy) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
                     Text(stringResource(if (busy) R.string.profile_working else if (registering) R.string.profile_register else R.string.chat_connect))
                 }
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ChatAvatar(s.account)
                     Spacer(Modifier.width(16.dp))
-                    Column { Text(s.account, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                    Column(Modifier.weight(1f)) { Text(s.account, fontWeight = FontWeight.Medium, fontSize = 16.sp)
                         Text(stringResource(s.connection.label()), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
                 if (busy) { Spacer(Modifier.height(20.dp)); androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth()) }
@@ -306,9 +339,11 @@ fun MessagingScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, returnScr
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(stringResource(if (s.connectionServiceRunning) R.string.chat_background_active else R.string.chat_background_inactive),
-                    color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(24.dp))
-                Text(stringResource(R.string.chat_privacy), fontSize = 21.sp, fontWeight = FontWeight.SemiBold)
+                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(Modifier.height(20.dp))
+                Text(stringResource(R.string.chat_privacy), style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(16.dp))
                 MessagingFeature(Icons.Outlined.Lock, R.string.chat_encrypted, R.string.chat_encryption_body)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -385,18 +420,19 @@ fun ConversationScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
     val back = { chat.closeConversation(); onNavigate(Screen.Chats) }
     BackHandler { if (attachments || emojis) closeTray() else back() }
     LaunchedEffect(messages.firstOrNull()?.id) { if (list.firstVisibleItemIndex < 2) list.animateScrollToItem(0) }
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
     ChatWallpaper(Modifier.fillMaxSize())
     Column(Modifier.fillMaxSize().imePadding()) {
-        Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(vertical = 8.dp, horizontal = 4.dp),
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).background(MaterialTheme.colorScheme.surface).padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
-            ChatAvatar(contact.name, Modifier.size(42.dp))
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f).clickable { onNavigate(Screen.ChatSecurity) }.padding(vertical = 4.dp)) {
-                Text(s.conversationOptions[peer]?.alias?.ifBlank { contact.name } ?: contact.name, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            ChatAvatar(contact.name, Modifier.size(38.dp))
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f).heightIn(min = 48.dp).clickable { onNavigate(Screen.ChatSecurity) }.padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.Center) {
+                Text(s.conversationOptions[peer]?.alias?.ifBlank { contact.name } ?: contact.name, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(if (s.connection != ChatConnection.ONLINE) stringResource(s.connection.label()) else if (group != null) stringResource(R.string.chat_group_private, group.members.size) else if (LocalChatAppearance.current.showPresence && contact.online) stringResource(R.string.chat_online) else contact.address,
-                    fontSize = 12.sp, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Box {
                 IconButton(onClick = { options = true }) { Icon(Icons.Outlined.MoreVert, stringResource(R.string.chat_options)) }
@@ -410,20 +446,17 @@ fun ConversationScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
             }
         }
         ChatError(s.error, chat::clearError)
-        TextButton(onClick = { onNavigate(Screen.ChatSecurity) }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Icon(Icons.Outlined.Lock, null, Modifier.size(14.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.chat_encrypted), fontSize = 12.sp)
-        }
         if (messages.isEmpty()) {
-            Column(Modifier.weight(1f).fillMaxWidth().padding(36.dp), verticalArrangement = Arrangement.Center,
+            Column(Modifier.weight(1f).fillMaxWidth().padding(32.dp), verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(stringResource(R.string.chat_conversation_empty), fontSize = 22.sp, fontWeight = FontWeight.SemiBold,
+                Icon(Icons.Outlined.Lock, null, Modifier.size(28.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(16.dp))
+                Text(stringResource(R.string.chat_conversation_empty), style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(stringResource(R.string.chat_conversation_empty_body), textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 22.sp)
-                TextButton(onClick = { onNavigate(Screen.ChatSecurity) }) { Text(stringResource(R.string.chat_devices)) }
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = { onNavigate(Screen.ChatSecurity) }) { Text(stringResource(R.string.chat_encrypted)) }
             }
         } else androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, reverseLayout = true,
             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)) {
@@ -453,11 +486,10 @@ fun ConversationScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
         ChatComposer(draft, chat::updateDraft, canSend, attachments,
             onExpand = { emojis = false; attachments = !attachments; focus.clearFocus(); keyboard?.hide() },
             onEmoji = { attachments = false; emojis = !emojis; focus.clearFocus(); keyboard?.hide() },
-            onPhoto = openPhotos,
             onVoice = { audio.pause(); closeTray(); microphone.launch(android.Manifest.permission.RECORD_AUDIO) },
             onSend = { chat.send(draft) }, onTyping = closeTray)
         androidx.compose.animation.AnimatedVisibility(attachments) {
-            ChatAttachmentTray(onCamera = {
+            ChatAttachmentTray(onPhoto = openPhotos, onCamera = {
                 closeTray()
                 val uri = ChatPlatform.uri(context, ChatPlatform.captureFile(context, "jpg"))
                 cameraUri = uri.toString()
@@ -503,27 +535,32 @@ fun ChatSecurityScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
     Column(Modifier.fillMaxSize()) {
         ScreenHeader(stringResource(R.string.chat_devices), back)
         ChatError(s.error, chat::clearError)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp)) {
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(stringResource(R.string.chat_devices_body), fontSize = 15.sp, lineHeight = 23.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(24.dp))
             if (s.busy) CircularProgressIndicator()
             if (!s.busy && s.devices.isEmpty()) Text(stringResource(R.string.chat_no_devices))
             s.devices.forEach { device ->
-                Column(Modifier.fillMaxWidth().padding(vertical = 12.dp).clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant).padding(16.dp)) {
-                    Text(device.address, fontWeight = FontWeight.SemiBold)
+                Column(Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+                    Text(device.address, fontWeight = FontWeight.Medium)
                     Spacer(Modifier.height(4.dp))
                     Text(stringResource(R.string.chat_device_number, device.id), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(14.dp))
                     SelectionContainer { Text(device.fingerprint.chunked(8).joinToString(" "), fontFamily = FontFamily.Monospace,
                         fontSize = 13.sp, lineHeight = 22.sp) }
                     Spacer(Modifier.height(10.dp))
-                    Text(stringResource(if (device.trusted) R.string.chat_trusted else R.string.chat_untrusted), fontSize = 12.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(if (device.trusted) Icons.Outlined.CheckCircle else Icons.Outlined.HelpOutline, null,
+                            Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(if (device.trusted) R.string.chat_trusted else R.string.chat_untrusted), style = MaterialTheme.typography.bodyMedium)
+                    }
                     TextButton(onClick = { chat.trust(device, !device.trusted) }) {
                         Text(stringResource(if (device.trusted) R.string.chat_revoke_device else R.string.chat_trust_device))
                     }
                 }
+                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             OutlinedButton(onClick = { chat.loadDevices() }, enabled = !s.busy) { Text(stringResource(R.string.retry)) }
         }
@@ -580,7 +617,7 @@ fun GroupDetailsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
         ChatError(s.error, chat::clearError)
         Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
             if (group != null) {
-                Text(group.name, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+                Text(group.name, style = MaterialTheme.typography.headlineSmall)
                 Text(stringResource(R.string.chat_group_private, group.members.size), Modifier.padding(vertical = 12.dp), fontSize = 13.sp)
                 Text(stringResource(R.string.chat_group_security), fontSize = 13.sp, lineHeight = 20.sp)
                 TextButton(onClick = { onNavigate(Screen.ChatSecurity) }) { Text(stringResource(R.string.chat_devices)) }

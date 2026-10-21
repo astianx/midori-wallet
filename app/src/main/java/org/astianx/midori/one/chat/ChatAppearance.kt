@@ -5,16 +5,16 @@ import org.astianx.midori.one.R
 import org.json.JSONObject
 
 enum class ChatWallpaperStyle(val label: Int) { BOTANICAL(R.string.style_botanical), PLAIN(R.string.style_plain), DOTS(R.string.style_dots), GRID(R.string.style_grid), PHOTO(R.string.style_photo) }
-enum class BubbleStyle(val label: Int, val radius: Int) { SOFT(R.string.style_soft, 20), ROUND(R.string.style_round, 28), SQUARE(R.string.style_square, 8) }
+enum class BubbleStyle(val label: Int, val radius: Int) { SOFT(R.string.style_soft, 16), ROUND(R.string.style_round, 28), SQUARE(R.string.style_square, 8) }
 enum class AvatarStyle(val label: Int, val radius: Int) { ROUNDED(R.string.style_soft, 19), CIRCLE(R.string.style_round, 100), SQUARE(R.string.style_square, 8) }
 
 data class ChatAppearance(
-    val wallpaper: ChatWallpaperStyle = ChatWallpaperStyle.BOTANICAL,
+    val wallpaper: ChatWallpaperStyle = ChatWallpaperStyle.PLAIN,
     val wallpaperOpacity: Int = 20,
     val photo: String? = null,
     val bubbles: BubbleStyle = BubbleStyle.SOFT,
     val fontSize: Int = 16,
-    val avatarStyle: AvatarStyle = AvatarStyle.ROUNDED,
+    val avatarStyle: AvatarStyle = AvatarStyle.CIRCLE,
     val avatarSize: Int = 52,
     val compact: Boolean = false,
     val showPreviews: Boolean = true,
@@ -25,7 +25,7 @@ data class ChatAppearance(
     val sendOnEnter: Boolean = false
 ) {
     fun toJson(includeLocalPhoto: Boolean = true) = JSONObject()
-        .put("wallpaper", (if (!includeLocalPhoto && wallpaper == ChatWallpaperStyle.PHOTO) ChatWallpaperStyle.BOTANICAL else wallpaper).name)
+        .put("wallpaper", (if (!includeLocalPhoto && wallpaper == ChatWallpaperStyle.PHOTO) ChatWallpaperStyle.PLAIN else wallpaper).name)
         .put("wallpaperOpacity", wallpaperOpacity).put("bubbles", bubbles.name).put("fontSize", fontSize)
         .put("avatarStyle", avatarStyle.name).put("avatarSize", avatarSize).put("compact", compact)
         .put("showPreviews", showPreviews).put("showPresence", showPresence).put("groupBubbles", groupBubbles)

@@ -6,6 +6,8 @@ import androidx.activity.compose.BackHandler
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +18,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -66,23 +69,32 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
     otherDevice: () -> Unit = {}, hideShare: () -> Unit = {}, startLiveness: () -> Unit = {}) {
     BackHandler { if (s.review != null) dismiss() else back() }
     val locale = LocalConfiguration.current.locales[0]
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().imePadding()) {
         ScreenHeader(stringResource(R.string.p2pk_title), back)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(stringResource(R.string.p2pk_wallet, s.owner), style = MaterialTheme.typography.bodyMedium)
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SelectionContainer { Text(stringResource(R.string.p2pk_wallet, s.owner), style = MaterialTheme.typography.bodyMedium) }
             Text(stringResource(R.string.p2pk_market, java.util.Locale("", s.country).getDisplayCountry(locale)))
-            Text(stringResource(R.string.p2pk_notice))
-            Text(stringResource(R.string.p2pk_capture))
-            Text(stringResource(kycStageLabel(s.stage)), modifier = Modifier.testTag("p2pk-stage"))
+            Text(stringResource(R.string.p2pk_notice), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(R.string.p2pk_capture), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Divider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text(stringResource(kycStageLabel(s.stage)), style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.testTag("p2pk-stage"))
             if (s.stage !in setOf("CONFIRMED", "ALREADY_VERIFIED")) s.expiresAt?.let { Text(stringResource(R.string.p2pk_expiry,
                 java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT, locale).format(java.util.Date(it * 1000)))) }
-            s.hash?.let { Text(stringResource(R.string.p2pk_hash, it)) }
+            s.hash?.let { SelectionContainer { Text(stringResource(R.string.p2pk_hash, it), style = MaterialTheme.typography.bodySmall) } }
             s.account?.let { Text(stringResource(R.string.p2po_account_limit, p2pDecimal(it.buyLimit))) }
             if (s.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             s.error?.let { Text(it.asString(), color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("p2pk-error")) }
             if (s.stage in setOf("IDLE", "EXPIRED", "CANCELLED", "REVERTED", "INTERRUPTED")) {
                 var consent by remember(s.stage) { mutableStateOf(false) }
-                Row { Checkbox(consent, { consent = it }, enabled = !s.busy); Text(stringResource(R.string.p2pk_consent)) }
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    .toggleable(consent, enabled = !s.busy, role = Role.Checkbox, onValueChange = { consent = it }),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(consent, onCheckedChange = null, enabled = !s.busy)
+                    Spacer(Modifier.width(12.dp))
+                    Text(stringResource(R.string.p2pk_consent), modifier = Modifier.weight(1f))
+                }
                 PrimaryButton(stringResource(R.string.p2pk_start), consent && !s.busy && s.capabilities?.enabled == true &&
                     s.country in s.capabilities.countries, start)
                 if (s.capabilities?.enabled == false || s.capabilities?.countries?.contains(s.country) == false)
@@ -99,7 +111,7 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
                 if (s.shareUrl == null) OutlinedButton(otherDevice, enabled = !s.busy, modifier = Modifier.testTag("p2pk-other-device")) {
                     Text(stringResource(R.string.p2pk_other_device)) }
                 s.shareUrl?.let { url ->
-                    Card(Modifier.fillMaxWidth().testTag("p2pk-share")) {
+                    Surface(Modifier.fillMaxWidth().testTag("p2pk-share"), color = MaterialTheme.colorScheme.surface) {
                         Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(stringResource(R.string.p2pk_other_device_hint))
                             QrCodeImage(url, 240)
@@ -110,7 +122,9 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
             }
             if (s.stage == "READY" && s.review == null) PrimaryButton(stringResource(R.string.p2pk_prepare), !s.busy, prepare)
             s.review?.let { r ->
-                Card(Modifier.fillMaxWidth().testTag("p2pk-review")) { Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedCard(Modifier.fillMaxWidth().testTag("p2pk-review"),
+                    colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(stringResource(R.string.p2pk_review_notice))
                     Text(stringResource(R.string.p2po_gas, BigDecimal(r.gas).movePointLeft(18).stripTrailingZeros().toPlainString()))
                     PrimaryButton(stringResource(R.string.p2pk_submit), !s.busy, submit)
@@ -120,7 +134,7 @@ internal fun P2pKycContent(s: P2pKycState, back: () -> Unit, start: () -> Unit, 
             if (s.stage in setOf("SUBMITTING", "UNKNOWN") && s.hash == null) {
                 var hash by remember { mutableStateOf("") }
                 OutlinedTextField(hash, { if (it.length <= 66) hash = it }, label = { Text(stringResource(R.string.p2po_hash)) },
-                    singleLine = true, modifier = Modifier.testTag("p2pk-recovery-hash"))
+                    singleLine = true, modifier = Modifier.fillMaxWidth().testTag("p2pk-recovery-hash"))
                 OutlinedButton({ recover(hash) }, enabled = !s.busy && hash.matches(Regex("0x[a-fA-F0-9]{64}"))) {
                     Text(stringResource(R.string.p2po_recover)) }
             }

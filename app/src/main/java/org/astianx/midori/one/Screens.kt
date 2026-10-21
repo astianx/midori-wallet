@@ -94,7 +94,7 @@ fun WelcomeScreen(vm: WalletViewModel, themeMode: ThemeMode, onThemeChange: (The
 
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         val shortWindow = maxHeight < 520.dp
-        val artworkHeight = if (shortWindow) 230.dp else (maxHeight * 0.34f).coerceIn(160.dp, 320.dp)
+        val artworkHeight = if (shortWindow) 140.dp else (maxHeight * 0.28f).coerceIn(140.dp, 220.dp)
         Column(
             modifier = Modifier.widthIn(max = 560.dp).fillMaxSize()
                 .then(if (shortWindow) Modifier.verticalScroll(rememberScrollState()) else Modifier),
@@ -109,7 +109,7 @@ fun WelcomeScreen(vm: WalletViewModel, themeMode: ThemeMode, onThemeChange: (The
                 Text(stringResource(R.string.app_name), fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.weight(1f))
-                ThemePicker(themeMode, onThemeChange)
+                ThemePicker(themeMode, onThemeChange, compact = true)
             }
 
             HorizontalPager(
@@ -129,16 +129,15 @@ fun WelcomeScreen(vm: WalletViewModel, themeMode: ThemeMode, onThemeChange: (The
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            stringResource(if (slide == IntroSlide.MESSAGING) R.string.in_development else slide.tag),
-                            color = MaterialTheme.colorScheme.primary, fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp
+                            stringResource(slide.tag),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge
                         )
                         Spacer(Modifier.height(10.dp))
-                        Text(stringResource(slide.title), fontSize = 30.sp, lineHeight = 35.sp,
-                            fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp,
+                        Text(stringResource(slide.title), style = MaterialTheme.typography.headlineLarge,
                             textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(12.dp))
-                        Text(stringResource(slide.body), fontSize = 15.sp, lineHeight = 22.sp,
+                        Text(stringResource(slide.body), style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         if (slide == IntroSlide.MESSAGING) {
                             TextButton(onClick = { vm.navigate(Screen.Messaging) }, enabled = !s.isLoading) {
@@ -161,19 +160,19 @@ fun WelcomeScreen(vm: WalletViewModel, themeMode: ThemeMode, onThemeChange: (The
             ) {
                 Button(
                     onClick = vm::enterApp,
-                    enabled = !s.isLoading, shape = RoundedCornerShape(28.dp),
+                    enabled = !s.isLoading, shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)
                 ) {
                     Text(stringResource(if (s.hasEnteredApp) R.string.go_to_chats else R.string.get_started),
                         fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.height(10.dp))
-                FilledTonalButton(
+                OutlinedButton(
                     onClick = {
                         if (s.hasEnteredApp) vm.navigate(Screen.Home)
                         else { vm.resetImport(); vm.navigate(Screen.Import) }
                     },
-                    enabled = !s.isLoading, shape = RoundedCornerShape(28.dp),
+                    enabled = !s.isLoading, shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)
                 ) {
                     Text(stringResource(if (s.hasEnteredApp) R.string.open_wallet else R.string.import_existing_wallet),
@@ -197,23 +196,23 @@ fun MoreScreen(vm: WalletViewModel, chat: ChatViewModel) {
         MainHeader(stringResource(R.string.more), onScan = { vm.openFeature(AppFeature.SCANNER) },
             onProfile = { vm.navigate(Screen.Profile) })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            Row(Modifier.padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.primaryContainer)
-                .clickable { vm.navigate(Screen.Profile) }.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp))) {
+            Row(Modifier.fillMaxWidth()
+                .clickable { vm.navigate(Screen.Profile) }.padding(horizontal = 16.dp, vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(60.dp).clip(androidx.compose.foundation.shape.CircleShape)) {
                     org.astianx.midori.one.chat.ChatAvatar(chatState.profile.name.ifBlank { chatState.account.ifBlank { "M" } }, Modifier.fillMaxSize())
                     org.astianx.midori.one.chat.LocalArtwork(chatState.profile.photo, Modifier.fillMaxSize())
                 }
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
                     Text(chatState.profile.name.ifBlank { stringResource(R.string.profile) }, style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        color = MaterialTheme.colorScheme.onSurface)
                     Text(chatState.account.ifBlank { stringResource(R.string.chat_account_title) },
                         style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Icon(Icons.Outlined.ChevronRight, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                Icon(Icons.Outlined.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             SectionLabel(R.string.preferences)
             ShortcutRow(Icons.Outlined.Lock, stringResource(R.string.chat_privacy),
                 stringResource(R.string.chat_encrypted), { vm.navigate(Screen.Messaging) })

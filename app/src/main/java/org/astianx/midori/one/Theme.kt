@@ -45,31 +45,31 @@ internal class ThemePreferences(context: Context) {
 internal val LocalDarkTheme = staticCompositionLocalOf { false }
 
 private val MidoriLightColors = lightColorScheme(
-    primary = Color(0xFF236B56), onPrimary = Color.White,
-    primaryContainer = Color(0xFFDAEDDF), onPrimaryContainer = Color(0xFF193C2F),
-    secondary = Color(0xFF51685D), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE2EAE2), onSecondaryContainer = Color(0xFF283F33),
+    primary = Color(0xFF006B52), onPrimary = Color.White,
+    primaryContainer = Color(0xFFE4F2EC), onPrimaryContainer = Color(0xFF164B3B),
+    secondary = Color(0xFF52616B), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFEDF0F2), onSecondaryContainer = Color(0xFF26343D),
     tertiary = Color(0xFF805600), onTertiary = Color.White,
     tertiaryContainer = Color(0xFFFFE8B8), onTertiaryContainer = Color(0xFF4F3500),
-    background = Color(0xFFF7F8F2), onBackground = Color(0xFF202B25),
-    surface = Color(0xFFFFFFFF), onSurface = Color(0xFF202B25),
-    surfaceVariant = Color(0xFFEDF0E8), onSurfaceVariant = Color(0xFF5E6B62),
-    outline = Color(0xFF77867B), outlineVariant = Color(0xFFDEE5DB),
+    background = Color(0xFFFFFFFF), onBackground = Color(0xFF172027),
+    surface = Color(0xFFFFFFFF), onSurface = Color(0xFF172027),
+    surfaceVariant = Color(0xFFF1F3F5), onSurfaceVariant = Color(0xFF59656E),
+    outline = Color(0xFF75818A), outlineVariant = Color(0xFFE3E7EA),
     error = Color(0xFFBA1A1A), onError = Color.White,
     errorContainer = Color(0xFFFFDAD6), onErrorContainer = Color(0xFF410002)
 )
 
 private val MidoriDarkColors = darkColorScheme(
-    primary = Color(0xFFA3D8B8), onPrimary = Color(0xFF123B29),
-    primaryContainer = Color(0xFF294B3A), onPrimaryContainer = Color(0xFFDAEDDF),
-    secondary = Color(0xFFBCD0C1), onSecondary = Color(0xFF25392C),
-    secondaryContainer = Color(0xFF344B3C), onSecondaryContainer = Color(0xFFE2EAE2),
+    primary = Color(0xFF70D6B0), onPrimary = Color(0xFF003829),
+    primaryContainer = Color(0xFF183D33), onPrimaryContainer = Color(0xFFBAEAD7),
+    secondary = Color(0xFFB8C5CE), onSecondary = Color(0xFF23313A),
+    secondaryContainer = Color(0xFF2C363E), onSecondaryContainer = Color(0xFFDCE4E9),
     tertiary = Color(0xFFFFCC80), onTertiary = Color(0xFF452F00),
     tertiaryContainer = Color(0xFF574219), onTertiaryContainer = Color(0xFFFFE8B8),
-    background = Color(0xFF141C18), onBackground = Color(0xFFE5ECE3),
-    surface = Color(0xFF1E2922), onSurface = Color(0xFFE5ECE3),
-    surfaceVariant = Color(0xFF2A352D), onSurfaceVariant = Color(0xFFB6C4B9),
-    outline = Color(0xFF85978B), outlineVariant = Color(0xFF3C4B40),
+    background = Color(0xFF111518), onBackground = Color(0xFFE8EDF0),
+    surface = Color(0xFF171D21), onSurface = Color(0xFFE8EDF0),
+    surfaceVariant = Color(0xFF222A30), onSurfaceVariant = Color(0xFFAAB6BF),
+    outline = Color(0xFF7E8B95), outlineVariant = Color(0xFF303A42),
     error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
     errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6)
 )
@@ -86,13 +86,13 @@ private fun type(size: Int, height: Int, weight: FontWeight = FontWeight.Normal,
     TextStyle(fontFamily = MidoriFont, fontSize = size.sp, lineHeight = height.sp,
         fontWeight = weight, letterSpacing = tracking.sp, fontFeatureSettings = "tnum")
 private val MidoriTypography = Typography(
-    displayLarge = type(48, 56, FontWeight.Bold, -1.6),
-    displayMedium = type(40, 48, FontWeight.Bold, -1.2),
-    displaySmall = type(34, 42, FontWeight.Bold, -1.0),
-    headlineLarge = type(30, 38, FontWeight.Bold, -0.8),
-    headlineMedium = type(26, 34, FontWeight.Bold, -0.6),
-    headlineSmall = type(23, 30, FontWeight.SemiBold, -0.4),
-    titleLarge = type(21, 28, FontWeight.SemiBold, -0.3),
+    displayLarge = type(44, 52, FontWeight.SemiBold, -1.0),
+    displayMedium = type(38, 46, FontWeight.SemiBold, -0.8),
+    displaySmall = type(32, 40, FontWeight.SemiBold, -0.5),
+    headlineLarge = type(28, 36, FontWeight.SemiBold, -0.3),
+    headlineMedium = type(26, 34, FontWeight.SemiBold, -0.2),
+    headlineSmall = type(24, 32, FontWeight.SemiBold),
+    titleLarge = type(20, 28, FontWeight.Medium),
     titleMedium = type(16, 24, FontWeight.SemiBold),
     titleSmall = type(14, 20, FontWeight.SemiBold),
     bodyLarge = type(16, 24), bodyMedium = type(14, 21), bodySmall = type(12, 18),
@@ -122,8 +122,8 @@ fun MidoriTheme(darkTheme: Boolean = isSystemInDarkTheme(), style: AppStyle = Ap
         androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(density.density, density.fontScale * style.textScale / 100f)) {
         MaterialTheme(colorScheme = if (darkTheme && style.pureBlack) colors.copy(background = Color.Black) else colors,
             typography = typography,
-            shapes = Shapes(extraSmall = RoundedCornerShape(8.dp), small = RoundedCornerShape(12.dp),
-                medium = RoundedCornerShape(18.dp), large = RoundedCornerShape(24.dp), extraLarge = RoundedCornerShape(28.dp))) {
+            shapes = Shapes(extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(8.dp),
+                medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(24.dp))) {
             CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onBackground,
                 content = content)
         }

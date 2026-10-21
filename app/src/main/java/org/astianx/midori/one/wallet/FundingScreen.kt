@@ -26,6 +26,7 @@ fun FundingScreen(wallet: WalletViewModel) {
         onP2p = { wallet.navigate(Screen.P2p) }, onProviders = { wallet.openFiat(state.fiatOperation) })
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FundingContent(operation: FiatOperation, back: () -> Unit, choose: (FiatOperation) -> Unit,
     onCrypto: () -> Unit, onP2p: () -> Unit, onProviders: () -> Unit) {
@@ -35,11 +36,14 @@ internal fun FundingContent(operation: FiatOperation, back: () -> Unit, choose: 
         ScreenHeader(stringResource(if (deposit) R.string.wallet_deposit else R.string.wallet_withdraw), back)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(stringResource(if (deposit) R.string.funding_intro else R.string.funding_withdraw_intro),
-                style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 22.dp))
-            Row(Modifier.padding(horizontal = 22.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            FlowRow(Modifier.padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FiatOperation.entries.forEach { value -> FilterChip(value == operation, onClick = { choose(value) },
+                    modifier = Modifier.heightIn(min = 48.dp),
                     label = { Text(stringResource(if (value == FiatOperation.BUY) R.string.wallet_deposit else R.string.wallet_withdraw)) }) }
             }
+            Divider(color = MaterialTheme.colorScheme.outlineVariant)
             ShortcutRow(Icons.Outlined.QrCode, stringResource(if (deposit) R.string.funding_crypto else R.string.funding_crypto_send),
                 stringResource(if (deposit) R.string.funding_crypto_body else R.string.funding_crypto_send_body), onCrypto)
             ShortcutRow(Icons.Outlined.People, stringResource(R.string.funding_p2p),
@@ -47,7 +51,7 @@ internal fun FundingContent(operation: FiatOperation, back: () -> Unit, choose: 
             ShortcutRow(Icons.Outlined.Payments, stringResource(R.string.funding_providers),
                 stringResource(R.string.funding_providers_body), onProviders)
             Text(stringResource(R.string.funding_availability), style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(22.dp))
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(20.dp))
         }
     }
 }

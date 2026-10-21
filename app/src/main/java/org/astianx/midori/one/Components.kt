@@ -135,7 +135,7 @@ fun ThemePicker(mode: ThemeMode, onChange: (ThemeMode) -> Unit, compact: Boolean
 @Composable
 fun ScreenHeader(title: String, onBack: () -> Unit) {
     Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
-        .padding(start = 8.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
+        .heightIn(min = 56.dp).padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
@@ -161,7 +161,7 @@ fun PrimaryButton(title: String, enabled: Boolean = true, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 54.dp)
     ) {
-        Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(title, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     }
 }
 
@@ -174,7 +174,7 @@ fun OutlineActionButton(title: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 54.dp)
     ) {
-        Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(title, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     }
 }
 
@@ -197,13 +197,18 @@ internal enum class IntroSlide(
 
 @Composable
 internal fun OnboardingArtwork(slide: IntroSlide, modifier: Modifier = Modifier) {
+    val icon = when (slide) {
+        IntroSlide.INTRO -> Icons.AutoMirrored.Outlined.Chat
+        IntroSlide.ASSETS -> Icons.Outlined.AccountBalanceWallet
+        IntroSlide.RECOVERY -> Icons.Outlined.Key
+        IntroSlide.MESSAGING -> Icons.Outlined.Lock
+    }
     Box(modifier, contentAlignment = Alignment.Center) {
-        Image(
-            painter = painterResource(slide.artwork),
-            contentDescription = stringResource(slide.imageDescription),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 8.dp)
-        )
+        Box(Modifier.size(104.dp).clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary)
+        }
     }
 }
 
@@ -249,7 +254,7 @@ fun AppNavigation(selected: Screen, onNavigate: (Screen) -> Unit, unread: Int = 
         Triple(Screen.Chats, R.string.chats, Icons.AutoMirrored.Outlined.Chat),
         Triple(Screen.Home, R.string.wallet, Icons.Outlined.AccountBalanceWallet),
         Triple(Screen.Markets, R.string.markets, Icons.Outlined.BarChart),
-        Triple(Screen.More, R.string.more, Icons.Outlined.GridView)
+        Triple(Screen.More, R.string.more, Icons.Outlined.MoreHoriz)
     )
     Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
         Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f))
@@ -258,7 +263,7 @@ fun AppNavigation(selected: Screen, onNavigate: (Screen) -> Unit, unread: Int = 
             destinations.forEach { (screen, label, icon) ->
                 NavigationBarItem(selected = selected == screen, onClick = { onNavigate(screen) },
                     colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                        indicatorColor = Color.Transparent,
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         selectedTextColor = MaterialTheme.colorScheme.primary,
                         unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -270,7 +275,7 @@ fun AppNavigation(selected: Screen, onNavigate: (Screen) -> Unit, unread: Int = 
                                 contentColor = MaterialTheme.colorScheme.onPrimary) {
                                 Text(if (unread > 99) "99+" else unread.toString())
                             }
-                        }) { Icon(icon, contentDescription = null, modifier = Modifier.size(23.dp)) }
+                        }) { Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp)) }
                     }, label = { Text(stringResource(label), style = MaterialTheme.typography.labelMedium,
                         color = if (selected == screen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1) })
             }
@@ -280,23 +285,17 @@ fun AppNavigation(selected: Screen, onNavigate: (Screen) -> Unit, unread: Int = 
 
 @Composable
 fun MainHeader(title: String, onSearch: (() -> Unit)? = null, onScan: () -> Unit, onProfile: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(start = 22.dp, end = 10.dp, top = 14.dp, bottom = 14.dp),
+    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.brand_name), style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary, letterSpacing = 1.5.sp)
-            Text(title, style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface)
-        }
+        Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface)
         if (onSearch != null) IconButton(onClick = onSearch) {
             Icon(Icons.Outlined.Search, stringResource(R.string.search))
         }
         IconButton(onClick = onScan) {
             Icon(Icons.Outlined.QrCodeScanner, stringResource(R.string.scan_qr), Modifier.size(23.dp))
         }
-        IconButton(onClick = onProfile, colors = IconButtonDefaults.iconButtonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer)) {
+        IconButton(onClick = onProfile) {
             Icon(Icons.Outlined.PersonOutline, stringResource(R.string.profile), Modifier.size(23.dp))
         }
     }
@@ -315,7 +314,7 @@ fun AppSearchField(query: String, onChange: (String) -> Unit, @StringRes label: 
             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
-        shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
+        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
             ,
         textStyle = MaterialTheme.typography.bodyLarge)
 }
@@ -324,16 +323,18 @@ fun AppSearchField(query: String, onChange: (String) -> Unit, @StringRes label: 
 fun ShortcutRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit,
     trailing: String? = null) {
     Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick)
-        .padding(horizontal = 22.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+        .heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(32.dp),
             contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(25.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
         }
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(4.dp))
-            Text(subtitle, fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            if (subtitle.isNotBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         Spacer(Modifier.width(8.dp))
         if (trailing != null) Text(trailing, fontSize = 11.sp, textAlign = TextAlign.End,
@@ -346,8 +347,8 @@ fun ShortcutRow(icon: ImageVector, title: String, subtitle: String, onClick: () 
 @Composable
 fun SectionLabel(@StringRes text: Int) {
     Text(stringResource(text), style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 4.dp))
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp))
 }
 
 internal fun featureIcon(feature: AppFeature): ImageVector = when (feature) {

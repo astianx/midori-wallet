@@ -41,6 +41,7 @@ class LiveUiPeerTest {
         require(second.matches(Regex("midori-ui-b-[a-z0-9]+@localhost")))
         Security.insertProviderAt(BouncyCastleProvider(), 1)
         Java7SmackInitializer().initialize()
+        val mediaSince = System.currentTimeMillis()
         val events = Events()
         val incoming = CopyOnWriteArrayList<Message>()
         val outgoing = CopyOnWriteArrayList<Message>()
@@ -54,6 +55,10 @@ class LiveUiPeerTest {
         try {
             peer.connect(ChatAccount(second, config.getString("password"), "127.0.0.1"), events)
             assertTrue(events.fingerprint.isNotBlank())
+            if (config.optBoolean("richChat")) {
+                peer.publishProfile(PublishedChatProfile("Interlocutor local de Midori", "Cuenta de pruebas creada en ejabberd"))
+                assertEquals("Interlocutor local de Midori", peer.loadProfile(second).name)
+            }
             publish(File(directory, "peer-ready.json"), JSONObject().put("account", second)
                 .put("fingerprint", events.fingerprint).toString())
             await("phone authenticated", 180) { File(directory, "phone-ready.json").exists() }
@@ -90,8 +95,73 @@ class LiveUiPeerTest {
                 .put("account", second).put("phone", first).put("incomingId", received.id)
                 .put("replyId", replyId).put("incomingEncrypted", true).put("replyEncrypted", true)
                 .put("isolatedPeerStorage", "AES-256-GCM encrypted host file; no app vault or wallet access").toString(2))
-            await("UI acceptance finished", 180) { File(directory, "finish").exists() }
+            if (config.optBoolean("richChat")) {
+                val checked = org.json.JSONArray()
+                val seen = mutableSetOf<String>()
+                val deadline = System.nanoTime() + 900_000_000_000L
+                while (!File(directory, "finish").exists() && System.nanoTime() < deadline) {
+                    events.messages.filter { it.peer == first && !it.outgoing && it.timestamp >= mediaSince &&
+                        it.attachment != null && it.id !in seen }.forEach { media ->
+                        assertEquals(MessageProtection.ENCRYPTED, media.protection)
+                        val file = requireNotNull(media.attachment)
+                        val bytes = downloadLaboratoryMedia(file, config.getString("pin"))
+                        try {
+                            if (file.mime.startsWith("image/")) {
+                                // Android unit-test compilation omits java.desktop from its boot classpath;
+                                // the opt-in peer runs on the host JDK and decodes the actual received photo.
+                                val imageIo = Class.forName("javax.imageio.ImageIO")
+                                assertNotNull(imageIo.getMethod("read", java.io.InputStream::class.java).invoke(null, bytes.inputStream()))
+                            } else {
+                                assertTrue(bytes.size > 12)
+                                assertEquals("ftyp", String(bytes, 4, 4, Charsets.US_ASCII))
+                            }
+                            val prefix = when {
+                                file.mime.startsWith("audio/") -> "Audio"
+                                file.mime.startsWith("video/") -> "Video"
+                                file.mime.startsWith("image/") -> "Imagen"
+                                else -> error("Unexpected laboratory media type")
+                            }
+                            peer.markRead(first, media.id)
+                            // Keep the exact acknowledgement meaningful and bound to this message.
+                            val ack = if (prefix == "Imagen") "Imagen recibida y descifrada · ${media.id}"
+                                else "$prefix recibido y descifrado · ${media.id}"
+                            peer.send(first, ack, UUID.randomUUID().toString())
+                            checked.put(JSONObject().put("id", media.id).put("mime", file.mime)
+                                .put("size", bytes.size).put("videoNote", file.videoNote).put("sha256Verified", true))
+                            seen.add(media.id)
+                        } finally { bytes.fill(0) }
+                    }
+                    Thread.sleep(100)
+                }
+                val report = JSONObject(File(directory, "peer-report.json").readText())
+                report.put("media", checked).put("profilePublishedAndRead", true)
+                publish(File(directory, "peer-report.json"), report.toString(2))
+                assertTrue("Voice, video note and photo must reach and decrypt at the real peer", checked.length() >= 3)
+            } else await("UI acceptance finished", 180) { File(directory, "finish").exists() }
         } finally { peer.disconnect() }
+    }
+
+    private fun downloadLaboratoryMedia(file: ChatAttachment, pin: String): ByteArray {
+        val url = java.net.URL(file.url)
+        require(url.protocol == "https" && url.host == "localhost" && url.port == 5443 && url.userInfo == null && url.ref == null)
+        val trust = object : javax.net.ssl.X509TrustManager {
+            override fun getAcceptedIssuers() = emptyArray<java.security.cert.X509Certificate>()
+            override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, type: String) = error("Client certificate not expected")
+            override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, type: String) {
+                val certificate = chain.first(); certificate.checkValidity()
+                require(ChatFileCrypto.hash(certificate.encoded).equals(pin, ignoreCase = true))
+            }
+        }
+        val connection = url.openConnection() as javax.net.ssl.HttpsURLConnection
+        connection.sslSocketFactory = javax.net.ssl.SSLContext.getInstance("TLS").apply { init(null, arrayOf(trust), SecureRandom()) }.socketFactory
+        connection.connectTimeout = 15_000; connection.readTimeout = 30_000
+        connection.instanceFollowRedirects = false
+        try {
+            assertEquals(200, connection.responseCode)
+            require(file.size in 1..ChatFileCrypto.MAX_BYTES)
+            val encrypted = connection.inputStream.use { it.readNBytes((file.size + 17).toInt()) }
+            return ChatFileCrypto.decrypt(encrypted, file)
+        } finally { connection.disconnect() }
     }
 
     private fun await(label: String, seconds: Int, predicate: () -> Boolean) {

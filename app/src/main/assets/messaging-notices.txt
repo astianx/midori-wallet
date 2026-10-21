@@ -268,3 +268,11 @@ PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS 
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+Emoji and contact QR libraries
+AndroidX Emoji2 / Emoji Picker / bundled adapter 1.5.0 — Apache License 2.0.
+Bundled Noto Color Emoji — SIL Open Font License 1.1; Copyright 2022 Google Inc.
+Font notice: licenses/NotoColorEmoji-OFL.txt. Adapter notice: licenses/Emoji2-Bundled-LICENSE.txt.
+JourneyApps ZXing Android Embedded 4.3.0 and ZXing Core 3.5.3 — Apache License 2.0.
+https://github.com/journeyapps/zxing-android-embedded
+https://github.com/zxing/zxing

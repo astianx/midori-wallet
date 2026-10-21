@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -74,45 +75,6 @@ internal fun ChatAvatar(name: String, modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable
-internal fun ConversationRow(contact: ChatContact, last: ChatMessage?, unread: Int, draft: String = "",
-    options: ConversationOptions = ConversationOptions(), onLongClick: () -> Unit = {}, onClick: () -> Unit) {
-    val menuLabel = stringResource(R.string.chat_options)
-    val style = LocalChatAppearance.current
-    val name = options.alias.ifBlank { contact.name }
-    Row(Modifier.fillMaxWidth().heightIn(min = 72.dp)
-        .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = menuLabel)
-        .padding(horizontal = 16.dp, vertical = if (style.compact) 8.dp else 12.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        ChatAvatar(name)
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(name, fontSize = 16.sp, fontWeight = if (unread > 0) FontWeight.SemiBold else FontWeight.Medium,
-                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(4.dp))
-            Text(if (!style.showPreviews) contact.address else if (draft.isNotBlank()) stringResource(R.string.chat_draft, draft) else last?.displayBody() ?: contact.address, maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                fontSize = 14.sp, color = if (draft.isNotBlank() && style.showPreviews) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Spacer(Modifier.width(10.dp))
-        Column(horizontalAlignment = Alignment.End) {
-            last?.let { Text(chatTime(it.timestamp), fontSize = 12.sp,
-                color = if (unread > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (options.pinned) Icon(Icons.Outlined.PushPin, stringResource(R.string.chat_pinned), Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (options.muted) Icon(Icons.Outlined.NotificationsOff, stringResource(R.string.chat_muted), Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            if (unread > 0) {
-                Spacer(Modifier.height(5.dp))
-                androidx.compose.material3.Badge(containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary) { Text(if (unread > 99) "99+" else unread.toString()) }
-            }
-        }
-    }
-}
-
 @Composable
 internal fun ChatMessage.displayBody(): String = when (protection) {
     MessageProtection.ENCRYPTED -> if (body.startsWith("/me ")) {
@@ -129,6 +91,10 @@ internal fun chatTime(timestamp: Long): String = java.text.DateFormat.getTimeIns
 @Composable
 internal fun MessageBubble(message: ChatMessage, audio: ChatAudioController, onImage: (String) -> Unit, onDownload: () -> Unit = {}, localPath: String? = null,
     onContact: (String) -> Unit = {}, joinsPrevious: Boolean = false, joinsNext: Boolean = false, onRetry: () -> Unit) {
+    if (message.attachment?.videoNote == true && message.protection == MessageProtection.ENCRYPTED) {
+        ChatVideoNoteMessage(message, audio, localPath, onDownload, joinsPrevious, onRetry)
+        return
+    }
     val style = LocalChatAppearance.current
     val radius = style.bubbles.radius.dp
     val outgoing = message.outgoing
@@ -259,12 +225,13 @@ internal fun ChatComposer(
 }
 
 @Composable
-internal fun ChatAttachmentTray(onPhoto: () -> Unit, onCamera: () -> Unit, onFile: () -> Unit, onContact: () -> Unit, onLocation: () -> Unit) {
+internal fun ChatAttachmentTray(onPhoto: () -> Unit, onCamera: () -> Unit, onFile: () -> Unit, onContact: () -> Unit, onLocation: () -> Unit, onVideoNote: () -> Unit) {
     val actions = listOf(Triple(Icons.Outlined.Image, R.string.chat_photos, onPhoto),
             Triple(Icons.Outlined.PhotoCamera, R.string.chat_camera, onCamera),
             Triple(Icons.Outlined.FolderOpen, R.string.chat_files, onFile),
             Triple(Icons.Outlined.PeopleOutline, R.string.chat_contact, onContact),
-            Triple(Icons.Outlined.LocationOn, R.string.chat_location, onLocation))
+            Triple(Icons.Outlined.LocationOn, R.string.chat_location, onLocation),
+            Triple(Icons.Outlined.Videocam, R.string.chat_video_note, onVideoNote))
     Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 12.dp, vertical = 8.dp)) {
         actions.chunked(3).forEach { row ->
             Row(Modifier.fillMaxWidth()) {
@@ -284,18 +251,6 @@ internal fun ChatAttachmentTray(onPhoto: () -> Unit, onCamera: () -> Unit, onFil
 }
 
 @Composable
-internal fun ChatEmojiTray(onSelect: (String) -> Unit) {
-    val emoji = listOf("😀", "😊", "😂", "🥰", "😎", "🤔", "😢", "🎉", "👍", "❤️", "🙏", "👋", "🔥", "✨", "✅", "👏")
-    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(12.dp)) {
-        emoji.chunked(6).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                row.forEach { value -> TextButton(onClick = { onSelect(value) }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text(value, fontSize = LocalChatAppearance.current.emojiSize.sp) } }
-            }
-        }
-    }
-}
-
-@Composable
 internal fun ChatFileContent(file: ChatAttachment, path: String?, audio: ChatAudioController,
     onImage: (String) -> Unit, onDownload: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -303,6 +258,10 @@ internal fun ChatFileContent(file: ChatAttachment, path: String?, audio: ChatAud
         value = if (path != null && file.mime.startsWith("image/")) kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching { ChatPhotoEditor.decode(context, android.net.Uri.fromFile(java.io.File(path)), 1000) }.getOrNull()
         } else null
+    }
+    if (path != null && file.mime.startsWith("video/")) {
+        ChatVideoContent(android.net.Uri.fromFile(java.io.File(path)), file.videoNote) { audio.pause() }
+        return
     }
     if (path != null && file.mime.startsWith("audio/")) {
         ChatAudioPlayer(path, audio)
@@ -419,6 +378,10 @@ private fun ChatLinkedText(value: String, color: Color) {
 
 @Composable
 internal fun ChatSelectionPreview(selection: MediaSelection, audio: ChatAudioController) {
+    if (selection.mime.startsWith("video/")) {
+        ChatVideoContent(android.net.Uri.parse(selection.uri), selection.videoNote) { audio.pause() }
+        return
+    }
     val context = androidx.compose.ui.platform.LocalContext.current
     val image by androidx.compose.runtime.produceState<Bitmap?>(null, selection.uri) {
         if (selection.mime.startsWith("image/")) value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {

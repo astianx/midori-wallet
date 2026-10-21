@@ -64,16 +64,25 @@ class MainActivity : ComponentActivity() {
     private var notificationPeer by mutableStateOf<String?>(null)
     private var openConnectionSettings by mutableStateOf(false)
     private var verificationReturn by mutableStateOf(false)
+    private var contactLink by mutableStateOf<String?>(null)
+    private fun incomingContact(intent: android.content.Intent): String? = intent.data?.let {
+        if (it.scheme == "xmpp" || (it.scheme == "midori" && it.host == "contact")) it.toString().takeIf { value -> value.length <= 2048 } else null
+    }
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        contactLink = incomingContact(intent)
         verificationReturn = org.astianx.midori.one.wallet.p2p.isP2pVerificationReturn(intent.dataString)
         notificationPeer = intent.getStringExtra(ChatNotifications.PEER_EXTRA)
         openConnectionSettings = intent.action == org.astianx.midori.one.chat.ChatConnectionService.OPEN_CONNECTION
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!androidx.emoji2.text.EmojiCompat.isConfigured()) {
+            androidx.emoji2.text.EmojiCompat.init(androidx.emoji2.bundled.BundledEmojiCompatConfig(applicationContext))
+        }
         enableEdgeToEdge()
+        contactLink = incomingContact(intent)
         verificationReturn = org.astianx.midori.one.wallet.p2p.isP2pVerificationReturn(intent.dataString)
         notificationPeer = intent.getStringExtra(ChatNotifications.PEER_EXTRA)
         openConnectionSettings = intent.action == org.astianx.midori.one.chat.ChatConnectionService.OPEN_CONNECTION
@@ -99,6 +108,14 @@ class MainActivity : ComponentActivity() {
                 val chat = androidx.compose.runtime.remember { org.astianx.midori.one.chat.ChatSession.get(applicationContext) }
                 val chatStatus by chat.state.collectAsState()
                 val walletStatus by vm.state.collectAsState()
+                LaunchedEffect(contactLink, chatStatus.restoringSession, walletStatus.isLoading) {
+                    val link = contactLink
+                    if (link != null && !chatStatus.restoringSession && !walletStatus.isLoading) {
+                        contactLink = null
+                        chat.prepareContact(link)
+                        vm.navigate(Screen.Chats)
+                    }
+                }
                 LaunchedEffect(verificationReturn, walletStatus.isWdkInitialized, walletStatus.isLoading) {
                     if (verificationReturn && walletStatus.isWdkInitialized && !walletStatus.isLoading) {
                         vm.openP2pVerification(); verificationReturn = false
@@ -153,6 +170,7 @@ class MainActivity : ComponentActivity() {
 fun WdkApp(vm: WalletViewModel, chat: ChatViewModel, themeMode: ThemeMode, onStyleChange: (AppStyle) -> Unit, onThemeChange: (ThemeMode) -> Unit) {
     val s by vm.state.collectAsState()
     val chatState by chat.state.collectAsState()
+    val scanContact = rememberContactScanner { chat.prepareContact(it); vm.navigate(Screen.Chats) }
 
     Box(
         modifier = Modifier
@@ -178,7 +196,7 @@ fun WdkApp(vm: WalletViewModel, chat: ChatViewModel, themeMode: ThemeMode, onSty
                     Screen.Invest -> org.astianx.midori.one.wallet.swap.InvestmentScreen(vm)
                     Screen.Sign -> SignMessageScreen(vm)
                     Screen.Messaging -> MessagingScreen(chat, vm::navigate, s.messagingReturnScreen)
-                    Screen.Chats -> ChatsScreen(chat, vm::navigate, { vm.openFeature(AppFeature.SCANNER) })
+                    Screen.Chats -> ChatsScreen(chat, vm::navigate, scanContact)
                     Screen.Markets -> MarketsScreen(vm)
                     Screen.More -> MoreScreen(vm, chat)
                     Screen.Feature -> FeatureScreen(vm)

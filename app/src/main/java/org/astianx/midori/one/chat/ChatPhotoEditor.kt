@@ -34,9 +34,8 @@ internal data class PhotoEdits(val crop: PhotoRect = PhotoRect(), val marks: Lis
 internal object ChatPhotoEditor {
     fun decode(context: Context, uri: Uri, maxSide: Int = 2048): Bitmap =
         ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, info, _ ->
-            require(info.size.width.toLong() * info.size.height <= 100_000_000)
-            val scale = minOf(1f, maxSide.toFloat() / maxOf(info.size.width, info.size.height))
-            decoder.setTargetSize((info.size.width * scale).roundToInt().coerceAtLeast(1), (info.size.height * scale).roundToInt().coerceAtLeast(1))
+            val (width, height) = fitPhotoDimensions(info.size.width, info.size.height, maxSide)
+            decoder.setTargetSize(width, height)
             decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
         }
 
@@ -83,11 +82,12 @@ internal object ChatPhotoEditor {
         draw(Canvas(target), source, edits, target.width.toFloat(), target.height.toFloat())
         return target
     }
-    fun export(context: Context, source: Bitmap, edits: PhotoEdits): File {
+    fun export(context: Context, source: Bitmap, edits: PhotoEdits, quality: PhotoQuality = PhotoQuality.STANDARD): File {
         val bitmap = render(source, edits)
         val file = ChatPlatform.captureFile(context, if (source.hasAlpha()) "png" else "jpg")
         try {
-            file.outputStream().use { require(bitmap.compress(if (source.hasAlpha()) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 92, it)) }
+            file.outputStream().use { require(bitmap.compress(if (source.hasAlpha()) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, quality.jpegQuality, it)) }
+            if (file.length() !in 1..ChatFileCrypto.MAX_BYTES) throw ChatException(org.astianx.midori.one.UiText(org.astianx.midori.one.R.string.chat_file_too_large))
             return file
         } catch (e: Exception) { file.delete(); throw e }
         finally { bitmap.recycle() }

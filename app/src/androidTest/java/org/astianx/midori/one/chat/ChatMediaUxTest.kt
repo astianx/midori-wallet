@@ -10,6 +10,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.sin
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +19,107 @@ import org.junit.runner.RunWith
 class ChatMediaUxTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
+
+    @Test fun pickerResultsCannotMoveToAnotherConversationOrAccount() = runBlocking {
+        // Isolated records and dispatcher: no live chat account, network or wallet access.
+        val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+        val dispatcher = executor.asCoroutineDispatcher()
+        val records = object : ChatRecords {
+            private val values = mutableMapOf<String, String>()
+            override fun get(key: String) = values[key]
+            override fun put(key: String, value: String?) { if (value == null) values.remove(key) else values[key] = value }
+            override fun keys(prefix: String) = values.keys.filter { it.startsWith(prefix) }.toSet()
+        }
+        lateinit var vm: ChatViewModel
+        val store = androidx.lifecycle.ViewModelStore()
+        val created = mutableListOf<File>()
+        fun capture() = ChatPlatform.captureFile(context, "txt").apply { writeText("isolated attachment selection") }.also(created::add)
+        instrumentation.runOnMainSync {
+            vm = ChatViewModel(records, { error("This isolated test must not create a transport") }, io = dispatcher, media = ChatMedia(context))
+            store.put("media-selection", vm)
+        }
+        try {
+            val a = "selection-a@example.org"
+            val b = "selection-b@example.org"
+            vm.open(a).join()
+            val selected = capture()
+            vm.selectMedia(Uri.fromFile(selected), expectedPeer = a).join()
+            assertNotNull(vm.state.value.pendingMedia)
+            vm.open(b).join()
+            assertNull(vm.state.value.pendingMedia)
+            assertFalse("Leaving A must discard its unsent capture", selected.exists())
+
+            val late = capture()
+            vm.selectMedia(Uri.fromFile(late), expectedPeer = a).join()
+            assertNull(vm.state.value.pendingMedia)
+            assertFalse("A late callback for A must not install into B", late.exists())
+
+            vm.open(a).join()
+            val gate = java.util.concurrent.CountDownLatch(1)
+            executor.submit { gate.await(5, java.util.concurrent.TimeUnit.SECONDS) }
+            val switch = vm.open(b)
+            val queued = capture()
+            val selection = vm.selectMedia(Uri.fromFile(queued)) // Defaults capture A before queued IO runs.
+            gate.countDown()
+            switch.join(); selection.join()
+            assertEquals(b, vm.state.value.selectedPeer)
+            assertNull(vm.state.value.pendingMedia)
+            assertFalse(queued.exists())
+
+            val anotherAccount = capture()
+            vm.selectMedia(Uri.fromFile(anotherAccount), expectedPeer = b, expectedAccount = "prior-account@example.org").join()
+            assertNull(vm.state.value.pendingMedia)
+            assertFalse(anotherAccount.exists())
+        } finally {
+            instrumentation.runOnMainSync { store.clear() }
+            dispatcher.close()
+            created.forEach { it.delete() }
+        }
+    }
+
+    @Test fun discardingCaptureCannotDeleteAnExternalOrDownloadedFile() {
+        val media = ChatMedia(context)
+        val capture = ChatPlatform.captureFile(context, "mp4").apply { writeBytes(byteArrayOf(1)) }
+        val providerCapture = ChatPlatform.captureFile(context, "jpg").apply { writeBytes(byteArrayOf(1)) }
+        val external = File.createTempFile("user-document-", ".jpg", context.cacheDir).apply { writeBytes(byteArrayOf(1)) }
+        val downloaded = File(context.cacheDir, "chat-media/${java.util.UUID.randomUUID()}").apply { mkdirs() }
+            .resolve("download.mp4").apply { writeBytes(byteArrayOf(1)) }
+        fun selection(uri: Uri) = MediaSelection(uri.toString(), "selection", "application/octet-stream", 1)
+        try {
+            assertFalse(media.removeOwnCapture(selection(Uri.fromFile(external))))
+            assertFalse(media.removeOwnCapture(selection(Uri.fromFile(downloaded))))
+            assertFalse(media.removeOwnCapture(selection(Uri.parse("content://unrelated.provider/chat_preview/capture/${providerCapture.name}"))))
+            assertTrue(external.exists()); assertTrue(downloaded.exists()); assertTrue(providerCapture.exists())
+            assertTrue(media.removeOwnCapture(selection(Uri.fromFile(capture))))
+            assertTrue(media.removeOwnCapture(selection(ChatPlatform.uri(context, providerCapture))))
+            assertFalse(capture.exists()); assertFalse(providerCapture.exists())
+        } finally { capture.delete(); providerCapture.delete(); external.delete(); downloaded.delete(); downloaded.parentFile?.delete() }
+    }
+
+    @Test fun selectablePhotoQualityUsesOriginalPixelsAndLeavesSourceUntouched() {
+        val source = Bitmap.createBitmap(3000, 2000, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.BLUE); setHasAlpha(false) }
+        val original = ChatPlatform.captureFile(context, "jpg")
+        val exports = mutableListOf<File>()
+        try {
+            original.outputStream().use { assertTrue(source.compress(Bitmap.CompressFormat.JPEG, 95, it)) }
+            val before = ChatFileCrypto.hash(original.readBytes())
+            val media = ChatMedia(context)
+            val selected = media.describe(Uri.fromFile(original))
+            val standard = media.exportImage(selected, PhotoEdits(), PhotoQuality.STANDARD).also(exports::add)
+            val hd = media.exportImage(selected, PhotoEdits(), PhotoQuality.HD).also(exports::add)
+            val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            android.graphics.BitmapFactory.decodeFile(standard.absolutePath, bounds)
+            assertEquals(1280, bounds.outWidth)
+            assertEquals(853, bounds.outHeight)
+            android.graphics.BitmapFactory.decodeFile(hd.absolutePath, bounds)
+            assertEquals(2560, bounds.outWidth)
+            assertEquals(1707, bounds.outHeight)
+            assertEquals(before, ChatFileCrypto.hash(original.readBytes()))
+            assertTrue(standard.length() in 1..ChatFileCrypto.MAX_BYTES)
+            assertTrue(hd.length() in 1..ChatFileCrypto.MAX_BYTES)
+            assertTrue(media.describe(Uri.fromFile(original), asDocument = true).asDocument)
+        } finally { exports.forEach { it.delete() }; original.delete(); source.recycle() }
+    }
 
     @Test fun photoExportCropsAndCompositesMarksWithoutChangingOriginal() {
         val original = Bitmap.createBitmap(400, 200, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.BLUE) }

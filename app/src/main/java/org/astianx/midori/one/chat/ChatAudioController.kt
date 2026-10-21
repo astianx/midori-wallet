@@ -26,6 +26,7 @@ internal class ChatAudioController(context: Context) {
         .setAudioAttributes(attributes).setOnAudioFocusChangeListener { if (it != AudioManager.AUDIOFOCUS_GAIN) pause() }.build()
 
     fun toggle(source: String) {
+        pauseChatVideoPlayback()
         if (source == path && !failed) {
             if (playing || loading) pause() else if (prepared) start()
             return

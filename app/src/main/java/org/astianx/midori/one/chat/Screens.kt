@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -84,7 +86,6 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
     var filter by rememberSaveable { mutableStateOf(ChatListFilter.ALL) }
     var query by rememberSaveable { mutableStateOf("") }
     var newChat by rememberSaveable { mutableStateOf(false) }
-    var chooseNew by rememberSaveable { mutableStateOf(false) }
     var newGroup by rememberSaveable { mutableStateOf(false) }
     var contextPeer by rememberSaveable { mutableStateOf<String?>(null) }
     var deletePeer by rememberSaveable { mutableStateOf<String?>(null) }
@@ -147,26 +148,26 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
                         textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (query.isBlank() && filter == ChatListFilter.ALL) {
                         Spacer(Modifier.height(20.dp))
-                        Button(onClick = { if (s.account.isBlank()) onNavigate(Screen.Messaging) else chooseNew = true },
+                        Button(onClick = { if (s.account.isBlank()) onNavigate(Screen.Messaging) else newChat = true },
                             modifier = Modifier.heightIn(min = 48.dp)) {
                             Text(stringResource(if (s.account.isBlank()) R.string.chat_connect else R.string.new_chat))
                         }
                     }
                 }
             } else {
-                androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize(),
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize().testTag("chat-conversation-list"),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 88.dp)) {
                     items(rows.size, key = { rows[it].address }) { index ->
                         val contact = rows[index]
                         ConversationRow(contact, s.messages.lastOrNull { it.peer == contact.address },
                             s.messages.count { it.peer == contact.address && !it.read && !it.outgoing }, s.drafts[contact.address].orEmpty(),
-                            s.conversationOptions[contact.address] ?: ConversationOptions(), onLongClick = { contextPeer = contact.address }) {
+                            s.conversationOptions[contact.address] ?: ConversationOptions(), profile = s.contactProfiles[contact.address], onLongClick = { contextPeer = contact.address }) {
                             scope.launch { chat.open(contact.address).join(); onNavigate(Screen.Conversation) }
                         }
                     }
                 }
             }
-            if (s.account.isNotBlank() && (rows.isNotEmpty() || query.isNotBlank() || filter != ChatListFilter.ALL)) androidx.compose.material3.FloatingActionButton(onClick = { chooseNew = true },
+            if (s.account.isNotBlank() && (rows.isNotEmpty() || query.isNotBlank() || filter != ChatListFilter.ALL)) androidx.compose.material3.FloatingActionButton(onClick = { newChat = true },
                 containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(18.dp), modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
                 Icon(Icons.Outlined.AddComment, stringResource(R.string.new_chat))
@@ -193,14 +194,14 @@ fun ChatsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit, onScan: () ->
         text = { Text(stringResource(R.string.chat_delete_local_body)) },
         confirmButton = { TextButton(onClick = { chat.deleteConversation(address); deletePeer = null }) { Text(stringResource(R.string.chat_delete_local)) } },
         dismissButton = { TextButton(onClick = { deletePeer = null }) { Text(stringResource(R.string.cancel)) } }) }
-    if (chooseNew) androidx.compose.material3.ModalBottomSheet(onDismissRequest = { chooseNew = false }) {
-        Text(stringResource(R.string.new_chat), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.titleLarge)
-        ChatContextAction(Icons.Outlined.ChatBubbleOutline, R.string.new_chat) { chooseNew = false; newChat = true }
-        ChatContextAction(Icons.Outlined.GroupAdd, R.string.chat_group_new) { chooseNew = false; newGroup = true }
-        Spacer(Modifier.height(24.dp))
-    }
     if (newGroup) CreateGroupDialog(chat, onClose = { newGroup = false }, onCreated = { newGroup = false; onNavigate(Screen.Conversation) })
-    if (newChat) NewChatDialog(chat, onDismiss = { newChat = false }, onOpen = { onNavigate(Screen.Conversation) })
+    if (newChat) NewChatSheet(chat, onDismiss = { newChat = false }, onOpen = { onNavigate(Screen.Conversation) },
+        onGroup = { newChat = false; newGroup = true }, onScan = { newChat = false; onScan() })
+    if (s.account.isNotBlank()) s.pendingContactAddress?.let { address ->
+        NewContactDialog(chat, address, onDismiss = chat::dismissContactRequest, onOpen = {
+            chat.dismissContactRequest(); onNavigate(Screen.Conversation)
+        })
+    }
 }
 
 @Composable
@@ -216,27 +217,6 @@ private fun ChatConnectionStatus(connection: ChatConnection, onClick: () -> Unit
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Icon(Icons.Outlined.ChevronRight, stringResource(R.string.chat_account_title), Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-@Composable
-private fun NewChatDialog(chat: ChatViewModel, onDismiss: () -> Unit, onOpen: () -> Unit) {
-    var address by androidx.compose.runtime.remember { mutableStateOf("") }
-    var invalid by androidx.compose.runtime.remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.new_chat)) }, text = {
-        Column {
-            androidx.compose.material3.OutlinedTextField(value = address, onValueChange = { address = it; invalid = false },
-                label = { Text(stringResource(R.string.profile_contact_handle)) }, singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), isError = invalid)
-            if (invalid) Text(stringResource(R.string.chat_invalid_address), color = MaterialTheme.colorScheme.error)
-        }
-    }, confirmButton = { TextButton(onClick = {
-        val peer = runCatching { resolveChatHandle(address, chat.state.value.account) }.getOrNull()
-        if (peer == null) invalid = true else scope.launch {
-            chat.open(peer).join(); onDismiss(); onOpen()
-        }
-    }) { Text(stringResource(R.string.chat_start_conversation)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
 
 @Composable
@@ -396,41 +376,78 @@ fun ConversationScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
     val focus = androidx.compose.ui.platform.LocalFocusManager.current
     val scope = rememberCoroutineScope()
     var emojis by androidx.compose.runtime.remember { mutableStateOf(false) }
+    val emojiHistory = androidx.compose.runtime.remember(s.account, peer) { SessionEmojiHistory() }
     var shareContact by androidx.compose.runtime.remember { mutableStateOf(false) }
-    var recordVoice by androidx.compose.runtime.remember { mutableStateOf(false) }
+    var recordVoice by androidx.compose.runtime.remember(peer) { mutableStateOf(false) }
+    var recordVideo by androidx.compose.runtime.remember(s.account, peer) { mutableStateOf(false) }
+    var showProfile by androidx.compose.runtime.remember(peer) { mutableStateOf(false) }
     var shareLocation by androidx.compose.runtime.remember { mutableStateOf(false) }
     var cameraUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var cameraPeer by rememberSaveable { mutableStateOf<String?>(null) }
+    var cameraAccount by rememberSaveable { mutableStateOf("") }
+    var photosPeer by rememberSaveable { mutableStateOf<String?>(null) }
+    var photosAccount by rememberSaveable { mutableStateOf("") }
+    var filesPeer by rememberSaveable { mutableStateOf<String?>(null) }
+    var filesAccount by rememberSaveable { mutableStateOf("") }
     val camera = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { ok ->
-        if (ok) cameraUri?.let { chat.selectMedia(Uri.parse(it)) }
+        cameraUri?.let { value ->
+            if (ok) chat.selectMedia(Uri.parse(value), expectedPeer = cameraPeer, expectedAccount = cameraAccount)
+            else runCatching { context.contentResolver.delete(Uri.parse(value), null, null) }
+        }
+        cameraUri = null; cameraPeer = null; cameraAccount = ""
+    }
+    val cameraPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted && cameraPeer == chat.state.value.selectedPeer && cameraAccount == chat.state.value.account) {
+            val file = ChatPlatform.captureFile(context, "jpg")
+            val uri = ChatPlatform.uri(context, file)
+            cameraUri = uri.toString()
+            runCatching { camera.launch(uri) }.onFailure {
+                file.delete(); cameraUri = null; chat.showError(UiText(R.string.chat_file_unavailable))
+            }
+        } else if (!granted) chat.showError(UiText(R.string.chat_permission_denied))
     }
     val photos = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { chat.selectMedia(it) }
+        uri?.let { chat.selectMedia(it, expectedPeer = photosPeer, expectedAccount = photosAccount) }
+        photosPeer = null; photosAccount = ""
     }
     val files = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let { chat.selectMedia(it) }
+        uri?.let { chat.selectMedia(it, asDocument = true, expectedPeer = filesPeer, expectedAccount = filesAccount) }
+        filesPeer = null; filesAccount = ""
     }
     val microphone = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) recordVoice = true else chat.showError(UiText(R.string.chat_permission_denied))
+        if (granted) { focus.clearFocus(); keyboard?.hide(); recordVoice = true } else chat.showError(UiText(R.string.chat_permission_denied))
     }
     val locationPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.values.any { it }) shareLocation = true else chat.showError(UiText(R.string.chat_permission_denied))
     }
     val closeTray = { attachments = false; emojis = false }
-    val openPhotos = { closeTray(); photos.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+    val openPhotos = { closeTray(); photosPeer = peer; photosAccount = s.account; photos.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
     val back = { chat.closeConversation(); onNavigate(Screen.Chats) }
-    BackHandler { if (attachments || emojis) closeTray() else back() }
-    LaunchedEffect(messages.firstOrNull()?.id) { if (list.firstVisibleItemIndex < 2) list.animateScrollToItem(0) }
+    BackHandler {
+        if (recordVideo) recordVideo = false
+        else if (s.pendingMedia?.videoNote == true && !s.busy) chat.dismissMedia()
+        else if (recordVoice) recordVoice = false
+        else if (attachments || emojis) closeTray()
+        else back()
+    }
+    var previousNewestKey by androidx.compose.runtime.remember(peer) { mutableStateOf<String?>(null) }
+    LaunchedEffect(peer, messages.firstOrNull()?.mediaKey) {
+        val anchorKey = list.layoutInfo.visibleItemsInfo.firstOrNull { it.index == list.firstVisibleItemIndex }?.key as? String
+        val follow = shouldFollowConversationUpdate(messages, previousNewestKey, anchorKey)
+        previousNewestKey = messages.firstOrNull()?.mediaKey
+        if (follow) list.animateScrollToItem(0)
+    }
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
     ChatWallpaper(Modifier.fillMaxSize())
     Column(Modifier.fillMaxSize().imePadding()) {
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).background(MaterialTheme.colorScheme.surface).padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) }
-            ChatAvatar(contact.name, Modifier.size(38.dp))
+            PublishedProfileAvatar(s.contactProfiles[peer], contact.name, Modifier.size(38.dp))
             Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f).heightIn(min = 48.dp).clickable { onNavigate(Screen.ChatSecurity) }.padding(vertical = 4.dp),
+            Column(Modifier.weight(1f).testTag("chat-contact-profile").heightIn(min = 48.dp).clickable { if (group != null) onNavigate(Screen.GroupDetails) else showProfile = true }.padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.Center) {
-                Text(s.conversationOptions[peer]?.alias?.ifBlank { contact.name } ?: contact.name, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(s.conversationOptions[peer]?.alias?.takeIf { it.isNotBlank() } ?: s.contactProfiles[peer]?.name?.takeIf { it.isNotBlank() } ?: contact.name, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(if (s.connection != ChatConnection.ONLINE) stringResource(s.connection.label()) else if (group != null) stringResource(R.string.chat_group_private, group.members.size) else if (LocalChatAppearance.current.showPresence && contact.online) stringResource(R.string.chat_online) else contact.address,
                     fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -458,9 +475,9 @@ fun ConversationScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 TextButton(onClick = { onNavigate(Screen.ChatSecurity) }) { Text(stringResource(R.string.chat_encrypted)) }
             }
-        } else androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, reverseLayout = true,
+        } else androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("chat-conversation-history"), state = list, reverseLayout = true,
             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)) {
-            items(messages.size, key = { "${messages[it].sender}:${messages[it].outgoing}:${messages[it].id}" }) { index ->
+            items(messages.size, key = { messages[it].mediaKey }) { index ->
                 val message = messages[index]
                 val day = java.time.Instant.ofEpochMilli(message.timestamp).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
                 val olderDay = messages.getOrNull(index + 1)?.let { java.time.Instant.ofEpochMilli(it.timestamp).atZone(java.time.ZoneId.systemDefault()).toLocalDate() }
@@ -483,46 +500,41 @@ fun ConversationScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
             androidx.compose.material3.LinearProgressIndicator(progress = progress / 100f, modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.chat_media_progress, progress), fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterHorizontally))
         }
-        ChatComposer(draft, chat::updateDraft, canSend, attachments,
+        if (recordVideo) ChatVideoNoteRecorder(onCancel = { recordVideo = false }, onReady = { file ->
+            recordVideo = false; chat.selectMedia(Uri.fromFile(file), videoNote = true, expectedPeer = peer, expectedAccount = s.account)
+        })
+        else if (s.pendingMedia?.videoNote == true) ChatVideoNoteReview(s.pendingMedia!!, s.busy, audio,
+            onDiscard = chat::dismissMedia, onSend = { chat.sendSelectedMedia("") })
+        else if (recordVoice) ChatVoiceRecorderBar(chat, peer, canSend, onClose = { recordVoice = false })
+        else ChatComposer(draft, chat::updateDraft, canSend, attachments,
             onExpand = { emojis = false; attachments = !attachments; focus.clearFocus(); keyboard?.hide() },
             onEmoji = { attachments = false; emojis = !emojis; focus.clearFocus(); keyboard?.hide() },
-            onVoice = { audio.pause(); closeTray(); microphone.launch(android.Manifest.permission.RECORD_AUDIO) },
+            onVoice = { audio.pause(); closeTray(); focus.clearFocus(); keyboard?.hide(); microphone.launch(android.Manifest.permission.RECORD_AUDIO) },
             onSend = { chat.send(draft) }, onTyping = closeTray)
         androidx.compose.animation.AnimatedVisibility(attachments) {
             ChatAttachmentTray(onPhoto = openPhotos, onCamera = {
-                closeTray()
-                val uri = ChatPlatform.uri(context, ChatPlatform.captureFile(context, "jpg"))
-                cameraUri = uri.toString()
-                runCatching { camera.launch(uri) }.onFailure { chat.showError(UiText(R.string.chat_file_unavailable)) }
-            }, onFile = { closeTray(); files.launch(arrayOf("*/*")) },
+                closeTray(); cameraPeer = peer; cameraAccount = s.account
+                cameraPermission.launch(android.Manifest.permission.CAMERA)
+            }, onFile = { closeTray(); filesPeer = peer; filesAccount = s.account; files.launch(arrayOf("*/*")) },
                 onContact = { closeTray(); shareContact = true },
-                onLocation = { closeTray(); locationPermission.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)) })
+                onLocation = { closeTray(); locationPermission.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)) },
+                onVideoNote = { audio.pause(); closeTray(); focus.clearFocus(); keyboard?.hide(); recordVideo = true })
         }
-        androidx.compose.animation.AnimatedVisibility(emojis) { ChatEmojiTray { chat.updateDraft(draft + it) } }
+        androidx.compose.animation.AnimatedVisibility(emojis) { ChatEmojiTray(emojiHistory) { chat.updateDraft(draft + it) } }
     }
     }
     viewedImage?.let { ChatImageViewer(it) { viewedImage = null } }
-    s.pendingMedia?.let { selection ->
-        if (selection.mime.startsWith("image/")) ChatImageEditor(selection, draft, s.busy, s.mediaProgress, s.error,
+    s.pendingMedia?.takeIf { !it.videoNote }?.let { selection ->
+        if (selection.mime.startsWith("image/") && !selection.asDocument) ChatImageEditor(selection, draft, s.busy, s.mediaProgress, s.error,
             onClearError = chat::clearError, onClose = chat::dismissMedia,
-            onSend = { image, edits, caption -> chat.sendSelectedMedia(caption, image, edits) })
+            onSend = { image, edits, caption, quality -> chat.sendSelectedMedia(caption, image, edits, quality) })
         else {
-        var caption by androidx.compose.runtime.remember(selection.uri) { mutableStateOf(draft) }
-        AlertDialog(onDismissRequest = { if (!s.busy) chat.dismissMedia() }, title = { Text(stringResource(R.string.chat_attachment_review)) },
-            text = { Column {
-                ChatSelectionPreview(selection, audio)
-                Text(selection.name, fontWeight = FontWeight.Medium)
-                Text(if (selection.size >= 0) android.text.format.Formatter.formatShortFileSize(context, selection.size) else selection.mime, fontSize = 12.sp)
-                Spacer(Modifier.height(16.dp))
-                androidx.compose.material3.OutlinedTextField(caption, { caption = it.take(8_000) }, label = { Text(stringResource(R.string.chat_attachment_caption)) }, maxLines = 4)
-                s.mediaProgress?.let { Text(stringResource(R.string.chat_media_progress, it), Modifier.padding(top = 12.dp)) }
-                ChatError(s.error, chat::clearError)
-            } }, confirmButton = { TextButton(enabled = !s.busy, onClick = { chat.sendSelectedMedia(caption) }) { Text(stringResource(R.string.send)) } },
-            dismissButton = { TextButton(enabled = !s.busy, onClick = { chat.dismissMedia() }) { Text(stringResource(R.string.cancel)) } })
+        ChatAttachmentReviewSheet(selection, draft, s.busy, s.mediaProgress, s.error, audio,
+            onDismiss = chat::dismissMedia, onSend = { chat.sendSelectedMedia(it) }, onClearError = chat::clearError)
     }
     }
+    if (showProfile) ContactProfileSheet(chat, peer) { showProfile = false }
     if (shareContact) ContactShareDialog(chat) { shareContact = false }
-    if (recordVoice) VoiceCaptureDialog(chat, onClose = { recordVoice = false })
     if (shareLocation) LocationShareDialog(chat) { shareLocation = false }
 }
 
@@ -660,18 +672,47 @@ fun GroupDetailsScreen(chat: ChatViewModel, onNavigate: (Screen) -> Unit) {
         dismissButton = { TextButton(onClick = { deleting = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun ContactShareDialog(chat: ChatViewModel, onClose: () -> Unit) {
     val s by chat.state.collectAsState()
     var selected by androidx.compose.runtime.remember { mutableStateOf<ChatContact?>(null) }
-    AlertDialog(onDismissRequest = onClose, title = { Text(stringResource(R.string.chat_share_contact)) },
-        text = { if (selected == null) Column(Modifier.verticalScroll(rememberScrollState())) {
-            s.contacts.filter { !it.group && it.address !in s.blocked }.forEach { contact ->
-                TextButton(onClick = { selected = contact }) { Text(contact.name) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val contacts = s.contacts.filter { !it.group && it.address !in s.blocked &&
+        (it.name.contains(query, true) || it.address.contains(query, true) || s.conversationOptions[it.address]?.alias.orEmpty().contains(query, true)) }
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onClose,
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(.72f).imePadding().padding(horizontal = 16.dp)) {
+            Text(stringResource(R.string.chat_share_contact), style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(vertical = 8.dp))
+            if (selected == null) {
+                androidx.compose.material3.OutlinedTextField(query, { query = it }, singleLine = true,
+                    label = { Text(stringResource(R.string.contacts_search)) }, modifier = Modifier.fillMaxWidth())
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f)) {
+                    items(contacts.size) { index ->
+                        val contact = contacts[index]
+                        Row(Modifier.fillMaxWidth().heightIn(min = 68.dp).clickable { selected = contact }.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            PublishedProfileAvatar(s.contactProfiles[contact.address], contact.name, Modifier.size(44.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(s.conversationOptions[contact.address]?.alias?.takeIf { it.isNotBlank() }
+                                    ?: s.contactProfiles[contact.address]?.name?.takeIf { it.isNotBlank() } ?: contact.name,
+                                    style = MaterialTheme.typography.titleMedium)
+                                Text(contact.address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                    if (contacts.isEmpty()) item { Text(stringResource(R.string.no_results), Modifier.padding(vertical = 20.dp)) }
+                }
+            } else {
+                Text(stringResource(R.string.chat_share_contact_confirm, selected!!.address), Modifier.padding(vertical = 24.dp))
+                androidx.compose.material3.Button(onClick = { chat.shareContact(selected!!.address); onClose() },
+                    enabled = !s.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.send)) }
+                TextButton(onClick = { selected = null }) { Text(stringResource(R.string.back)) }
             }
-        } else Text(stringResource(R.string.chat_share_contact_confirm, selected!!.address)) },
-        confirmButton = { if (selected != null) TextButton(onClick = { chat.shareContact(selected!!.address); onClose() }) { Text(stringResource(R.string.send)) } },
-        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.cancel)) } })
+        }
+    }
 }
 
 @Composable
@@ -686,59 +727,6 @@ private fun LocationShareDialog(chat: ChatViewModel, onClose: () -> Unit) {
             else if (location == null) Text(stringResource(R.string.chat_location_failed))
             else { Text(stringResource(R.string.chat_location_confirm)); Spacer(Modifier.height(12.dp)); Text(location!!.removePrefix("geo:")) }
         } }, confirmButton = { TextButton(enabled = location != null, onClick = { location?.let(chat::shareLocation); onClose() }) { Text(stringResource(R.string.send)) } },
-        dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.cancel)) } })
-}
-
-@Composable
-private fun VoiceCaptureDialog(chat: ChatViewModel, onClose: () -> Unit) {
-    val context = LocalContext.current
-    val file = androidx.compose.runtime.remember { ChatPlatform.captureFile(context, "m4a") }
-    val recorder = androidx.compose.runtime.remember { android.media.MediaRecorder(context) }
-    var seconds by androidx.compose.runtime.remember { mutableStateOf(0) }
-    var finished by androidx.compose.runtime.remember { mutableStateOf(false) }
-    val discard = {
-        if (!finished) {
-            finished = true
-            runCatching { recorder.stop() }
-            recorder.release()
-            file.delete()
-        }
-    }
-    val finish = {
-        if (!finished) {
-            finished = true
-            runCatching { recorder.stop() }.also { recorder.release() }
-                .onSuccess { chat.selectMedia(Uri.fromFile(file)) }
-                .onFailure { file.delete(); chat.showError(UiText(R.string.chat_record_failed)) }
-            onClose()
-        }
-    }
-    val lifecycle = androidx.compose.ui.platform.LocalLifecycleOwner.current.lifecycle
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) { discard(); onClose() }
-        }
-        lifecycle.addObserver(observer)
-        runCatching {
-            recorder.setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
-            recorder.setOutputFormat(android.media.MediaRecorder.OutputFormat.MPEG_4)
-            recorder.setAudioEncoder(android.media.MediaRecorder.AudioEncoder.AAC)
-            recorder.setAudioEncodingBitRate(64_000)
-            recorder.setAudioSamplingRate(22_050)
-            recorder.setOutputFile(file.absolutePath)
-            recorder.prepare(); recorder.start()
-        }.onFailure { chat.showError(UiText(R.string.chat_record_failed)); onClose() }
-        onDispose {
-            lifecycle.removeObserver(observer)
-            discard()
-        }
-    }
-    LaunchedEffect(Unit) { while (seconds < 120) { delay(1000); seconds++ }; finish() }
-    AlertDialog(onDismissRequest = onClose, title = { Text(stringResource(R.string.chat_record)) },
-        text = { Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.Mic, null, tint = MaterialTheme.colorScheme.error)
-            Spacer(Modifier.width(12.dp)); Text(stringResource(R.string.chat_recording, seconds))
-        } }, confirmButton = { TextButton(onClick = finish, enabled = seconds > 0) { Text(stringResource(R.string.chat_record_stop)) } },
         dismissButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.cancel)) } })
 }
 
@@ -787,8 +775,9 @@ private fun ChatImageViewer(path: String, onClose: () -> Unit) {
 
 @Composable
 private fun ChatImageEditor(selection: MediaSelection, initialCaption: String, busy: Boolean, progress: Int?, error: UiText?,
-    onClearError: () -> Unit, onClose: () -> Unit, onSend: (android.graphics.Bitmap, PhotoEdits, String) -> Unit) {
+    onClearError: () -> Unit, onClose: () -> Unit, onSend: (android.graphics.Bitmap, PhotoEdits, String, PhotoQuality) -> Unit) {
     val context = LocalContext.current
+    var quality by rememberSaveable(selection.uri) { mutableStateOf(PhotoQuality.STANDARD) }
     var failed by androidx.compose.runtime.remember(selection.uri) { mutableStateOf(false) }
     val bitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, selection.uri) {
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -821,8 +810,9 @@ private fun ChatImageEditor(selection: MediaSelection, initialCaption: String, b
                 IconButton(onClick = { cursor--; tool = PhotoTool.PREVIEW }, enabled = cursor > 0 && !busy) { Icon(Icons.Outlined.Undo, stringResource(R.string.chat_image_undo)) }
                 IconButton(onClick = { cursor++; tool = PhotoTool.PREVIEW }, enabled = cursor < history.lastIndex && !busy) { Icon(Icons.Outlined.Redo, stringResource(R.string.chat_image_redo)) }
                 Spacer(Modifier.weight(1f))
-                TextButton(enabled = bitmap != null && !busy && tool == PhotoTool.PREVIEW, onClick = { bitmap?.let { onSend(it, edits, caption) } }) { Text(stringResource(R.string.send)) }
+                TextButton(modifier = Modifier.testTag("chat-image-send"), enabled = bitmap != null && !busy && tool == PhotoTool.PREVIEW, onClick = { bitmap?.let { onSend(it, edits, caption, quality) } }) { Text(stringResource(R.string.send)) }
             }
+            ChatPhotoQualitySelector(quality, !busy) { quality = it }
             ChatError(error, onClearError)
             progress?.let { androidx.compose.material3.LinearProgressIndicator(it / 100f, Modifier.fillMaxWidth())
                 Text(stringResource(R.string.chat_media_progress, it), fontSize = 12.sp, modifier = Modifier.align(Alignment.CenterHorizontally)) }

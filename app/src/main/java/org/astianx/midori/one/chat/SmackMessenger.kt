@@ -242,6 +242,18 @@ internal class SmackMessenger(
         if (trusted) manager.trustOmemoIdentity(identity, current) else manager.distrustOmemoIdentity(identity, current)
     }
 
+    override fun loadProfile(peer: String): PublishedChatProfile {
+        val conn = connection ?: throw ChatException(UiText(R.string.chat_offline_error))
+        check(ready && conn.isAuthenticated)
+        return SmackProfiles.load(conn, peer)
+    }
+
+    override fun publishProfile(value: PublishedChatProfile) {
+        val conn = connection ?: throw ChatException(UiText(R.string.chat_offline_error))
+        check(ready && conn.isAuthenticated)
+        SmackProfiles.publish(conn, value)
+    }
+
     override fun addContact(peer: String) {
         val conn = connection ?: throw ChatException(UiText(R.string.chat_offline_error))
         Roster.getInstanceFor(conn).createItemAndRequestSubscription(JidCreate.entityBareFrom(peer), peer.substringBefore('@'), null)

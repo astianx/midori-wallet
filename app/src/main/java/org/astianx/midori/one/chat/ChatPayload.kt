@@ -26,12 +26,19 @@ internal object ChatPayload {
     }
     fun attachmentJson(file: ChatAttachment) = JSONObject().put("url", file.url).put("key", file.key).put("iv", file.iv)
         .put("name", file.name).put("mime", file.mime).put("size", file.size).put("sha256", file.sha256)
+        .apply {
+            if (file.videoNote) put("videoNote", true)
+            file.durationMs?.let { put("durationMs", it) }
+        }
     fun readAttachment(json: JSONObject): ChatAttachment {
         val file = ChatAttachment(json.getString("url"), json.getString("key"), json.getString("iv"),
-            safeName(json.getString("name")), json.getString("mime"), json.getLong("size"), json.getString("sha256"))
+            safeName(json.getString("name")), json.getString("mime"), json.getLong("size"), json.getString("sha256"),
+            if (json.has("videoNote")) json.getBoolean("videoNote") else false,
+            if (json.has("durationMs")) json.getLong("durationMs") else null)
         require(file.key.matches(Regex("[0-9a-f]{64}")) && file.iv.matches(Regex("[0-9a-f]{24}")))
         require(file.sha256.matches(Regex("[0-9a-f]{64}")) && file.size in 1..ChatFileCrypto.MAX_BYTES)
         require(file.mime.matches(Regex("[a-zA-Z0-9.+_-]+/[a-zA-Z0-9.+_-]+")))
+        ChatMediaPolicy.validateVideoMetadata(file.mime, file.videoNote, file.durationMs)
         val uri = URI(file.url)
         require(uri.scheme == "https" && uri.host != null && uri.userInfo == null && uri.fragment == null)
         return file

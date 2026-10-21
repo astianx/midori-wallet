@@ -32,12 +32,14 @@ class ChatViewModelTest {
     private class Transport : ChatTransport {
         lateinit var events: ChatEvents
         var sends = 0
+        val sentAddresses = mutableListOf<String>()
+        val sentIds = mutableListOf<String>()
         var connects = 0
         var disconnects = 0
         var error: Exception? = null
         override fun connect(account: ChatAccount, events: ChatEvents) { connects++; this.events = events; error?.let { throw it }; events.connection(ChatConnection.ONLINE) }
         override fun disconnect() { disconnects++ }
-        override fun send(peer: String, body: String, id: String) { sends++; error?.let { throw it } }
+        override fun send(peer: String, body: String, id: String) { sends++; sentAddresses += peer; sentIds += id; error?.let { throw it } }
         override fun devices(peer: String) = emptyList<ChatDevice>()
         override fun trust(device: ChatDevice, trusted: Boolean) {}
         override fun addContact(peer: String) {}
@@ -84,6 +86,82 @@ class ChatViewModelTest {
         vm.setReadReceipts(false)
         advanceUntilIdle()
         assertFalse(vm.state.value.readReceipts)
+    }
+    @Test fun repeatedRetryClicksReuseOneMessageAndLeaveTheNewDraftIntact() = runTest(dispatcher) {
+        val client = Transport()
+        val vm = ChatViewModel(Records(), { client }, io = dispatcher)
+        advanceUntilIdle(); vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        vm.open("bob@example.org"); advanceUntilIdle()
+        client.error = ChatException(UiText(R.string.chat_encryption_error))
+        vm.send("Original message"); advanceUntilIdle()
+        val failed = vm.state.value.messages.single()
+        vm.updateDraft("A different unfinished message"); advanceUntilIdle()
+        client.error = null
+        vm.retryMessage(failed)
+        vm.retryMessage(failed)
+        advanceUntilIdle()
+        assertEquals(2, client.sends)
+        assertEquals(listOf(failed.id, failed.id), client.sentIds)
+        assertEquals(failed.id, vm.state.value.messages.single().id)
+        assertEquals(MessageDelivery.SENT, vm.state.value.messages.single().delivery)
+        assertEquals("A different unfinished message", vm.state.value.drafts[failed.peer])
+        vm.retryMessage(failed); advanceUntilIdle()
+        assertEquals(2, client.sends)
+    }
+
+    @Test fun delayedReceiptAfterRetryUpdatesTheOriginalRecordAndNeverRegresses() = runTest(dispatcher) {
+        val client = Transport()
+        val vm = ChatViewModel(Records(), { client }, io = dispatcher)
+        advanceUntilIdle(); vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        vm.open("bob@example.org"); advanceUntilIdle()
+        client.error = ChatException(UiText(R.string.chat_encryption_error))
+        vm.send("Original message"); advanceUntilIdle()
+        val failed = vm.state.value.messages.single()
+        client.error = null
+        vm.retryMessage(failed); advanceUntilIdle()
+        client.events.receipt(failed.peer, failed.id, MessageDelivery.READ)
+        client.events.receipt(failed.peer, failed.id, MessageDelivery.DELIVERED)
+        advanceUntilIdle()
+        assertEquals(failed.id, vm.state.value.messages.single().id)
+        assertEquals(MessageDelivery.READ, vm.state.value.messages.single().delivery)
+        vm.retryMessage(failed); advanceUntilIdle()
+        assertEquals(2, client.sends)
+    }
+
+    @Test fun changingConversationBeforeQueuedRetryCannotSendToTheNewPeer() = runTest(dispatcher) {
+        val client = Transport()
+        val vm = ChatViewModel(Records(), { client }, io = dispatcher)
+        advanceUntilIdle(); vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        vm.open("bob@example.org"); advanceUntilIdle()
+        client.error = ChatException(UiText(R.string.chat_encryption_error))
+        vm.send("For Bob"); advanceUntilIdle()
+        val failed = vm.state.value.messages.single()
+        client.error = null
+        vm.open("carol@example.org")
+        vm.retryMessage(failed)
+        advanceUntilIdle()
+        assertEquals("carol@example.org", vm.state.value.selectedPeer)
+        assertEquals(1, client.sends)
+        assertEquals(listOf("bob@example.org"), client.sentAddresses)
+        assertEquals(MessageDelivery.FAILED, vm.state.value.messages.single().delivery)
+    }
+
+    @Test fun contactAndLocationSendsStayBoundToTheTappedConversationAndPreserveText() = runTest(dispatcher) {
+        val client = Transport()
+        val vm = ChatViewModel(Records(), { client }, io = dispatcher)
+        advanceUntilIdle(); vm.connect("alice@example.org", "test", "example.org", "5222"); advanceUntilIdle()
+        vm.open("bob@example.org"); advanceUntilIdle()
+        vm.updateDraft("Still writing to Bob"); advanceUntilIdle()
+        // Navigation is queued before the sends execute, but both send taps still belong to Bob.
+        vm.open("carol@example.org")
+        vm.shareContact("dave@example.org")
+        vm.shareLocation("geo:4.711,-74.072")
+        advanceUntilIdle()
+        assertEquals("carol@example.org", vm.state.value.selectedPeer)
+        assertEquals(listOf("bob@example.org", "bob@example.org"), client.sentAddresses)
+        assertEquals("dave@example.org", vm.state.value.messages.first().sharedContact)
+        assertEquals("geo:4.711,-74.072", vm.state.value.messages.last().location)
+        assertEquals("Still writing to Bob", vm.state.value.drafts["bob@example.org"])
     }
     @Test fun storageFailureDoesNotSendOrLeaveMessageStuckSending() = runTest(dispatcher) {
         val records = Records(); val client = Transport(); val vm = ChatViewModel(records, { client }, io = dispatcher)

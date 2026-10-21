@@ -118,6 +118,73 @@ class ChatViewModel internal constructor(
         before.profile.photo?.takeIf { it != profile.photo }?.let { artwork?.file(it)?.delete() }
     }
 
+    fun publishProfile() = task {
+        requireOnline()
+        mutableState.update { it.copy(profileLoading = true, error = null) }
+        try {
+            val editable = state.value.profile
+            val photo = editable.photo?.let { publicProfilePhoto(requireNotNull(artwork).file(it)) }
+            val value = PublishedChatProfile(editable.name, editable.bio, photo, photo?.let { "image/jpeg" })
+            transport!!.publishProfile(value)
+            mutableState.update { it.copy(publishedProfile = value) }
+            saveHistory()
+        } catch (_: Exception) { throw ChatException(UiText(R.string.profile_publish_error)) }
+        finally { mutableState.update { it.copy(profileLoading = false) } }
+    }
+    fun withdrawProfile() = task {
+        requireOnline()
+        mutableState.update { it.copy(profileLoading = true, error = null) }
+        try {
+            transport!!.publishProfile(PublishedChatProfile())
+            mutableState.update { it.copy(publishedProfile = null) }
+            saveHistory()
+        } catch (_: Exception) { throw ChatException(UiText(R.string.profile_publish_error)) }
+        finally { mutableState.update { it.copy(profileLoading = false) } }
+    }
+    fun refreshPublishedProfile() = task {
+        requireOnline()
+        mutableState.update { it.copy(profileLoading = true, error = null) }
+        try {
+            val value = transport!!.loadProfile(state.value.account)
+            mutableState.update { it.copy(publishedProfile = value.takeUnless { profile -> profile.name.isBlank() && profile.bio.isBlank() && profile.photoBase64 == null }) }
+            saveHistory()
+        } catch (_: Exception) { throw ChatException(UiText(R.string.profile_load_error)) }
+        finally { mutableState.update { it.copy(profileLoading = false) } }
+    }
+    fun loadContactProfile(peer: String) = task {
+        val address = chatAddress(peer)
+        if (address in state.value.blocked) return@task
+        requireOnline()
+        mutableState.update { it.copy(profileLoading = true, error = null) }
+        try {
+            val value = transport!!.loadProfile(address)
+            mutableState.update { it.copy(contactProfiles = cacheContactProfile(it.contactProfiles, address, value)) }
+            saveHistory()
+        } catch (_: Exception) { throw ChatException(UiText(R.string.profile_load_error)) }
+        finally { mutableState.update { it.copy(profileLoading = false) } }
+    }
+    fun prepareContact(input: String) {
+        val address = runCatching { parseChatContactLink(input) }.getOrNull()
+        mutableState.update { it.copy(pendingContactAddress = address, error = if (address == null) UiText(R.string.chat_invalid_address) else null) }
+    }
+    fun dismissContactRequest() { mutableState.update { it.copy(pendingContactAddress = null) } }
+    fun saveContactDetails(peer: String, name: String, phone: String) = task {
+        val details = validatedContactDetails(name, phone)
+        changeConversation(chatAddress(peer)) { it.copy(alias = details.first, phone = details.second) }
+    }
+    fun addContactDetails(input: String, name: String, phone: String) = task {
+        val address = runCatching { parseChatContactLink(input) }.getOrElse { throw ChatException(UiText(R.string.chat_invalid_address)) }
+        val details = validatedContactDetails(name, phone)
+        requireOnline()
+        transport!!.addContact(address)
+        val before = state.value
+        val options = before.conversationOptions[address] ?: ConversationOptions()
+        mutableState.update { it.copy(contacts = (it.contacts + ChatContact(address)).distinctBy { contact -> contact.address },
+            conversationOptions = it.conversationOptions + (address to options.copy(alias = details.first, phone = details.second)),
+            error = null) }
+        try { saveHistory() } catch (e: Exception) { mutableState.value = before; throw e }
+    }
+
     private fun connectAccount(account: ChatAccount) {
         retryJob?.cancel()
         retryJob = null
@@ -309,13 +376,25 @@ class ChatViewModel internal constructor(
     fun clearError() { mutableState.update { it.copy(error = null) } }
     fun open(peer: String) = task {
         val address = runCatching { resolveChatHandle(peer, state.value.account) }.getOrElse { throw ChatException(UiText(R.string.chat_invalid_address)) }
-        mutableState.update { it.copy(selectedPeer = address, devices = emptyList(), error = null,
+        var discarded: MediaSelection? = null
+        mutableState.update {
+            discarded = it.pendingMedia.takeIf { _ -> it.selectedPeer != address }
+            it.copy(selectedPeer = address, devices = emptyList(), error = null,
+            pendingMedia = if (it.selectedPeer == address) it.pendingMedia else null,
             conversationOptions = it.conversationOptions + (address to (it.conversationOptions[address] ?: ConversationOptions()).copy(hidden = false)),
             contacts = if (it.contacts.any { c -> c.address == address }) it.contacts else it.contacts + ChatContact(address)) }
+        discarded?.let(::releaseSelectedCapture)
         markVisibleRead(address)
         saveHistory()
     }
-    fun closeConversation() { mutableState.update { it.copy(selectedPeer = null, devices = emptyList(), error = null) } }
+    fun closeConversation() {
+        var discarded: MediaSelection? = null
+        mutableState.update {
+            discarded = it.pendingMedia
+            it.copy(selectedPeer = null, pendingMedia = null, devices = emptyList(), error = null)
+        }
+        discarded?.let { selection -> task { releaseSelectedCapture(selection) } }
+    }
     fun pinConversation(peer: String, pinned: Boolean) = task {
         changeConversation(peer) { it.copy(pinned = pinned) }
     }
@@ -365,9 +444,9 @@ class ChatViewModel internal constructor(
         sendContent(body)
     }
     private fun sendContent(body: String, attachment: ChatAttachment? = null, contact: String? = null, location: String? = null,
-        clearDraft: Boolean = true) {
+        clearDraft: Boolean = true, targetPeer: String? = null) {
         val s = state.value
-        val peer = s.selectedPeer ?: return
+        val peer = targetPeer ?: s.selectedPeer ?: return
         if (body.length > 8_000) throw ChatException(UiText(R.string.chat_message_too_long))
         requireOnline()
         if (peer in s.blocked) throw ChatException(UiText(R.string.chat_contact_blocked))
@@ -381,7 +460,7 @@ class ChatViewModel internal constructor(
             mutableState.update { current -> current.copy(messages = current.messages.map {
                 it.withReceipt(peer, message.id, MessageDelivery.SENT)
             }, drafts = if (clearDraft && current.drafts[peer] == s.drafts[peer]) current.drafts - peer else current.drafts,
-                pendingMedia = null, busy = false, mediaProgress = null) }
+                pendingMedia = if (clearDraft) null else current.pendingMedia, busy = false, mediaProgress = null) }
         } catch (e: Exception) {
             mutableState.update { current -> current.copy(messages = current.messages.map {
                 if (it.id == message.id) it.copy(delivery = MessageDelivery.FAILED) else it
@@ -390,33 +469,133 @@ class ChatViewModel internal constructor(
         saveHistory()
     }
     fun retryMessage(message: ChatMessage) = task {
-        if (message.peer != state.value.selectedPeer || !message.outgoing || message.delivery != MessageDelivery.FAILED) return@task
-        sendContent(message.body, message.attachment, message.sharedContact, message.location, clearDraft = false)
-    }
-    fun selectMedia(uri: android.net.Uri) = task {
-        mutableState.update { it.copy(pendingMedia = requireNotNull(media).describe(uri), error = null) }
-    }
-    fun dismissMedia() { mutableState.update { it.copy(pendingMedia = null) } }
-    internal fun sendSelectedMedia(caption: String, image: android.graphics.Bitmap? = null, edits: PhotoEdits = PhotoEdits()) = task {
+        val s = state.value
+        val original = s.messages.find { it.id == message.id && it.peer == message.peer && it.outgoing } ?: return@task
+        if (original.peer != s.selectedPeer || original.delivery != MessageDelivery.FAILED) return@task
         requireOnline()
-        val original = state.value.pendingMedia ?: return@task
-        var exported: java.io.File? = null
-        mutableState.update { it.copy(busy = true, mediaProgress = 0, error = null) }
+        if (original.peer in s.blocked) throw ChatException(UiText(R.string.chat_contact_blocked))
+        if (s.groups.any { it.address == original.peer && !it.joined }) throw ChatException(UiText(R.string.chat_group_not_joined))
+        // Reuse the same ID and record so duplicate taps and delayed receipts cannot create a second message.
+        mutableState.update { current -> current.copy(busy = true, error = null, messages = current.messages.map {
+            if (it.id == original.id && it.peer == original.peer && it.outgoing) it.copy(delivery = MessageDelivery.SENDING) else it
+        }) }
         try {
+            saveHistory()
+            transport!!.send(original.peer, ChatPayload.encode(original), original.id)
+            mutableState.update { current -> current.copy(messages = current.messages.map {
+                it.withReceipt(original.peer, original.id, MessageDelivery.SENT)
+            }) }
+        } catch (e: Exception) {
+            mutableState.update { current -> current.copy(error = errorText(e), messages = current.messages.map {
+                if (it.id == original.id && it.peer == original.peer && it.outgoing) it.copy(delivery = MessageDelivery.FAILED) else it
+            }) }
+        } finally { mutableState.update { it.copy(busy = false) } }
+        saveHistory()
+    }
+    fun selectMedia(uri: android.net.Uri, videoNote: Boolean = false, asDocument: Boolean = false,
+        expectedPeer: String? = state.value.selectedPeer, expectedAccount: String = state.value.account): kotlinx.coroutines.Job {
+        // Arguments bind picker/camera results to the conversation and account that launched them.
+        return task {
             val service = requireNotNull(media)
-            val selected = if (image != null) {
-                exported = service.exportImage(image, edits)
-                service.describe(android.net.Uri.fromFile(exported))
-            } else original
-            val file = service.upload(selected, transport!!) { progress -> mutableState.update { it.copy(mediaProgress = progress) } }
-            sendContent(caption, attachment = file)
-            state.value.messages.lastOrNull { it.outgoing && it.attachment == file }?.let { message ->
-                runCatching { service.previewCopy(selected).absolutePath }.getOrNull()?.let { path ->
-                    mutableState.update { it.copy(mediaFiles = it.mediaFiles + (message.mediaKey to path)) }
-                    saveHistory()
-                }
+            val current = state.value
+            if (expectedPeer == null || current.selectedPeer != expectedPeer || current.account != expectedAccount) {
+                releaseSelectedCapture(MediaSelection(uri.toString(), "", "application/octet-stream", -1))
+                return@task
             }
-        } finally { exported?.delete(); mutableState.update { it.copy(busy = false, mediaProgress = null) } }
+            // File/provider IO must never run inside StateFlow's retryable CAS callback.
+            val selection = service.describe(uri, videoNote, asDocument)
+            var installed = false
+            var replaced: MediaSelection? = null
+            mutableState.update {
+                installed = it.selectedPeer == expectedPeer && it.account == expectedAccount
+                replaced = if (installed) it.pendingMedia else null
+                if (installed) it.copy(pendingMedia = selection, error = null) else it
+            }
+            if (!installed) releaseSelectedCapture(selection)
+            else replaced?.takeIf { it.uri != selection.uri }?.let(::releaseSelectedCapture)
+        }
+    }
+    fun dismissMedia() {
+        val selected = state.value.pendingMedia
+        mutableState.update { it.copy(pendingMedia = if (it.pendingMedia == selected) null else it.pendingMedia) }
+        // The same mutex as uploads defers removal until an in-flight send has saved its preview.
+        if (selected != null) task { releaseSelectedCapture(selected) }
+    }
+    private fun releaseSelectedCapture(selection: MediaSelection) {
+        val service = media ?: return
+        val path = service.ownCapturePath(selection) ?: return
+        if (state.value.pendingMedia?.uri != selection.uri && path !in state.value.mediaFiles.values) {
+            service.removeOwnCapture(selection)
+        }
+    }
+    internal fun sendSelectedMedia(caption: String, image: android.graphics.Bitmap? = null, edits: PhotoEdits = PhotoEdits(),
+        quality: PhotoQuality = PhotoQuality.STANDARD): kotlinx.coroutines.Job {
+        // Bind the intended recipient and file at the user's tap, before waiting for serialized IO.
+        val selectedState = state.value
+        val original = selectedState.pendingMedia
+        val peer = selectedState.selectedPeer
+        return task {
+            if (original == null || peer == null || state.value.pendingMedia != original) return@task
+            requireOnline()
+            var exportedSelection: MediaSelection? = null
+            mutableState.update { it.copy(busy = true, mediaProgress = 0, error = null) }
+            try {
+                val service = requireNotNull(media)
+                val selected = if (image != null) {
+                    val file = service.exportImage(original, edits, quality)
+                    service.describe(android.net.Uri.fromFile(file)).also { exportedSelection = it }
+                } else original
+                val attachment = service.upload(selected, transport!!) { progress -> mutableState.update { it.copy(mediaProgress = progress) } }
+                sendContent(caption, attachment = attachment, clearDraft = !original.videoNote, targetPeer = peer)
+                state.value.messages.lastOrNull { it.outgoing && it.peer == peer && it.attachment == attachment }?.let { message ->
+                    mutableState.update { it.copy(pendingMedia = if (it.pendingMedia == original) null else it.pendingMedia) }
+                    val path = runCatching { service.previewCopy(selected).absolutePath }.getOrNull()
+                        // If copying fails, keep the original app capture as the message preview.
+                        // This never claims an edited photo preview is its unedited source.
+                        ?: service.ownCapturePath(selected)
+                    if (path != null) {
+                        mutableState.update { it.copy(mediaFiles = it.mediaFiles + (message.mediaKey to path)) }
+                        saveHistory()
+                        releaseSelectedCapture(original)
+                    }
+                }
+            } finally {
+                exportedSelection?.let(::releaseSelectedCapture)
+                mutableState.update { it.copy(busy = false, mediaProgress = null) }
+            }
+        }
+    }
+    /** The inline recorder keeps its private file on upload failure and never consumes the text draft. */
+    internal fun sendVoiceRecording(peer: String, source: java.io.File, onComplete: (Boolean) -> Unit): kotlinx.coroutines.Job {
+        val expectedAccount = state.value.account
+        val expectedGeneration = generation
+        val accepted = java.util.concurrent.atomic.AtomicBoolean(false)
+        return task {
+            if (expectedAccount.isBlank() || state.value.account != expectedAccount || generation != expectedGeneration) return@task
+            requireOnline()
+            val initial = state.value
+            if (peer in initial.blocked) throw ChatException(UiText(R.string.chat_contact_blocked))
+            if (initial.groups.any { it.address == peer && !it.joined }) throw ChatException(UiText(R.string.chat_group_not_joined))
+            mutableState.update { it.copy(busy = true, mediaProgress = 0, error = null) }
+            try {
+                val service = requireNotNull(media)
+                val selection = service.describe(android.net.Uri.fromFile(source))
+                require(selection.mime == "audio/mp4")
+                val attachment = service.upload(selection, transport!!) { progress -> mutableState.update { it.copy(mediaProgress = progress) } }
+                try { sendContent("", attachment = attachment, clearDraft = false, targetPeer = peer) }
+                finally {
+                    // Once a message exists, another tap must not create a duplicate after a persistence error.
+                    accepted.set(state.value.messages.any { it.peer == peer && it.outgoing && it.attachment == attachment })
+                }
+                state.value.messages.lastOrNull { it.peer == peer && it.outgoing && it.attachment == attachment }?.let { message ->
+                    // A FAILED message is retried through its existing action, never automatically.
+                    runCatching { service.previewCopy(selection).absolutePath }.getOrNull()?.let { path ->
+                        mutableState.update { it.copy(mediaFiles = it.mediaFiles + (message.mediaKey to path)) }
+                        saveHistory()
+                    }
+                }
+            } finally { mutableState.update { it.copy(busy = false, mediaProgress = null) } }
+        }.also { job -> job.invokeOnCompletion { onComplete(accepted.get()) } }
     }
     fun downloadMedia(message: ChatMessage) = task {
         val file = message.attachment ?: return@task
@@ -429,8 +608,12 @@ class ChatViewModel internal constructor(
             saveHistory()
         } finally { mutableState.update { it.copy(busy = false, mediaProgress = null) } }
     }
-    fun shareContact(address: String) = task { sendContent("", contact = chatAddress(address)) }
-    fun shareLocation(value: String) = task { ChatPayload.validateLocation(value); sendContent("", location = value) }
+    fun shareContact(address: String) = state.value.selectedPeer.let { peer ->
+        task { if (peer != null) sendContent("", contact = chatAddress(address), clearDraft = false, targetPeer = peer) }
+    }
+    fun shareLocation(value: String) = state.value.selectedPeer.let { peer ->
+        task { if (peer != null) { ChatPayload.validateLocation(value); sendContent("", location = value, clearDraft = false, targetPeer = peer) } }
+    }
     fun showError(text: UiText) { mutableState.update { it.copy(error = text) } }
     fun createGroup(name: String, members: Set<String>) = task {
         requireOnline()
@@ -525,13 +708,15 @@ class ChatViewModel internal constructor(
         if (s.account.isBlank()) return
         val json = JSONObject().put("readReceipts", s.readReceipts).put("blocked", JSONArray(s.blocked.toList()))
             .put("requests", JSONArray(s.requests.toList())).put("profile", s.profile.toJson())
+            .put("publishedProfile", s.publishedProfile?.toJson())
+            .put("contactProfiles", JSONObject(s.contactProfiles.mapValues { it.value.toJson() }))
             .put("contacts", JSONArray(s.contacts.map { JSONObject().put("address", it.address).put("name", it.name).put("group", it.group) }))
             .put("drafts", JSONObject(s.drafts))
             .put("mediaFiles", JSONObject(s.mediaFiles))
             .put("conversationOptions", JSONObject(s.conversationOptions.mapValues { (_, o) -> JSONObject()
                 .put("pinned", o.pinned).put("muted", o.muted).put("hidden", o.hidden).put("deletedBefore", o.deletedBefore)
                 .put("deletedIds", JSONArray(o.deletedIds.toList())).put("appearance", o.appearance?.toJson())
-                .put("alias", o.alias) }))
+                .put("alias", o.alias).put("phone", o.phone) }))
             .put("groups", JSONArray(s.groups.map { JSONObject().put("address", it.address).put("name", it.name)
                 .put("members", JSONArray(it.members.toList())).put("owner", it.owner).put("joined", it.joined) }))
             .put("invitations", JSONArray(s.invitations.map { JSONObject().put("room", it.room).put("inviter", it.inviter) }))
@@ -551,14 +736,17 @@ class ChatViewModel internal constructor(
         val requests = json.optJSONArray("requests") ?: JSONArray()
         val options = json.optJSONObject("conversationOptions") ?: JSONObject()
         val files = json.optJSONObject("mediaFiles") ?: JSONObject()
+        val profiles = json.optJSONObject("contactProfiles") ?: JSONObject()
         return ChatUiState(readReceipts = json.optBoolean("readReceipts", true),
             profile = json.optJSONObject("profile")?.let(ChatProfile::fromJson) ?: ChatProfile(),
+            publishedProfile = json.optJSONObject("publishedProfile")?.let(PublishedChatProfile::fromJson),
+            contactProfiles = profiles.keys().asSequence().take(200).associateWith { PublishedChatProfile.fromJson(profiles.getJSONObject(it)) },
             mediaFiles = files.keys().asSequence().associateWith { files.getString(it) }.filterValues { media?.hasPreview(it) == true },
             conversationOptions = options.keys().asSequence().associateWith { key -> options.getJSONObject(key).let {
                 val ids = it.optJSONArray("deletedIds") ?: JSONArray()
                 ConversationOptions(it.optBoolean("pinned"), it.optBoolean("muted"), it.optBoolean("hidden"), it.optLong("deletedBefore"),
                     (0 until ids.length()).map { index -> ids.getString(index) }.toSet(),
-                    it.optJSONObject("appearance")?.let { value -> runCatching { ChatAppearance.fromJson(value) }.getOrNull() }, it.optString("alias")) } },
+                    it.optJSONObject("appearance")?.let { value -> runCatching { ChatAppearance.fromJson(value) }.getOrNull() }, it.optString("alias"), it.optString("phone")) } },
             drafts = drafts.keys().asSequence().associateWith { drafts.getString(it) },
             groups = (0 until groups.length()).map { groups.getJSONObject(it).let { g ->
                 val members = g.getJSONArray("members")

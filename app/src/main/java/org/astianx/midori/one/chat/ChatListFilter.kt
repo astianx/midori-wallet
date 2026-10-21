@@ -12,7 +12,7 @@ internal fun ChatUiState.visibleConversations(query: String, filter: ChatListFil
     val latest = messages.groupBy { it.peer }.mapValues { (_, values) -> values.maxOf { it.timestamp } }
     return contacts.filter { contact ->
         conversationOptions[contact.address]?.hidden != true &&
-            "${contact.name} ${contact.address} ${conversationOptions[contact.address]?.alias.orEmpty()}".contains(query.trim(), ignoreCase = true) &&
+            "${contact.name} ${contact.address} ${conversationOptions[contact.address]?.alias.orEmpty()} ${contactProfiles[contact.address]?.name.orEmpty()}".contains(query.trim(), ignoreCase = true) &&
             when (filter) {
                 ChatListFilter.ALL -> true
                 ChatListFilter.UNREAD -> contact.address in unread

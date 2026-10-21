@@ -21,7 +21,7 @@ import org.astianx.midori.one.UiText
 /** User-selected files only. Ciphertext on the server; authenticated decryption before preview/share. */
 internal class ChatMedia(private val context: Context,
     private val pin: String = if (BuildConfig.DEBUG) BuildConfig.CHAT_DEV_CERT_SHA256 else "") {
-    fun describe(uri: Uri): MediaSelection {
+    fun describe(uri: Uri, videoNote: Boolean = false, asDocument: Boolean = false): MediaSelection {
         require(uri.scheme in setOf("content", "file"))
         var name = "attachment"; var size = -1L
         if (uri.scheme == "content") context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)?.use {
@@ -36,16 +36,34 @@ internal class ChatMedia(private val context: Context,
         }
         if (size > ChatFileCrypto.MAX_BYTES || size == 0L) throw ChatException(UiText(R.string.chat_file_too_large))
         val mime = context.contentResolver.getType(uri) ?: when (name.substringAfterLast('.').lowercase()) {
-            "jpg", "jpeg" -> "image/jpeg"; "png" -> "image/png"; "m4a" -> "audio/mp4"; else -> "application/octet-stream"
+            "jpg", "jpeg" -> "image/jpeg"; "png" -> "image/png"; "m4a" -> "audio/mp4"; "mp4" -> "video/mp4"; "webm" -> "video/webm"; else -> "application/octet-stream"
         }
         val ownCapture = (uri.scheme == "file" || uri.authority == "${context.packageName}.chat.files") &&
             uri.path.orEmpty().contains("/capture/")
-        if (ownCapture && mime in setOf("image/jpeg", "audio/mp4")) {
-            val label = context.getString(if (mime.startsWith("audio/")) R.string.chat_voice else R.string.chat_camera)
+        if (videoNote && !ownCapture) throw ChatException(UiText(R.string.chat_video_unavailable))
+        if (ownCapture && mime in setOf("image/jpeg", "audio/mp4", "video/mp4")) {
+            val label = context.getString(when {
+                videoNote -> R.string.chat_video_note
+                mime.startsWith("video/") -> R.string.chat_video
+                mime.startsWith("audio/") -> R.string.chat_voice
+                else -> R.string.chat_camera
+            })
             val time = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.ROOT).format(java.util.Date())
-            name = "$label $time.${if (mime.startsWith("audio/")) "m4a" else "jpg"}"
+            name = "$label $time.${when { mime.startsWith("audio/") -> "m4a"; mime.startsWith("video/") -> "mp4"; else -> "jpg" }}"
         }
-        return MediaSelection(uri.toString(), ChatPayload.safeName(name), mime, size)
+        val duration = if (mime.startsWith("video/")) {
+            try {
+                android.media.MediaMetadataRetriever().use { retriever ->
+                    retriever.setDataSource(context, uri)
+                    require(retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO) == "yes")
+                    retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()?.also { require(it > 0) }
+                        ?: throw IllegalArgumentException()
+                }
+            } catch (_: Exception) { throw ChatException(UiText(R.string.chat_video_unavailable)) }
+        } else null
+        try { ChatMediaPolicy.validateVideoMetadata(mime, videoNote, duration) }
+        catch (_: Exception) { throw ChatException(UiText(R.string.chat_video_note_limit)) }
+        return MediaSelection(uri.toString(), ChatPayload.safeName(name), mime, size, videoNote, duration, asDocument)
     }
     fun previewCopy(selection: MediaSelection): File {
         val bytes = context.contentResolver.openInputStream(Uri.parse(selection.uri))?.use { limitedRead(it, ChatFileCrypto.MAX_BYTES) }
@@ -55,7 +73,10 @@ internal class ChatMedia(private val context: Context,
             try { it.writeBytes(bytes) } finally { bytes.fill(0) }
         }
     }
-    fun exportImage(source: android.graphics.Bitmap, edits: PhotoEdits) = ChatPhotoEditor.export(context, source, edits)
+    fun exportImage(selection: MediaSelection, edits: PhotoEdits, quality: PhotoQuality): File {
+        val source = ChatPhotoEditor.decode(context, Uri.parse(selection.uri), quality.maxSide)
+        return try { ChatPhotoEditor.export(context, source, edits, quality) } finally { source.recycle() }
+    }
     fun hasPreview(path: String): Boolean = runCatching {
         val file = File(path)
         file.isFile && file.canonicalPath.startsWith(File(context.cacheDir, "chat-media").canonicalPath + File.separator)
@@ -64,7 +85,24 @@ internal class ChatMedia(private val context: Context,
         val file = File(path)
         if (file.canonicalPath.startsWith(File(context.cacheDir, "chat-media").canonicalPath + File.separator)) file.delete()
     }
+    /** Only disposable app camera/recorder captures; never a gallery/document provider file. */
+    fun ownCapturePath(selection: MediaSelection): String? = runCatching {
+        val uri = Uri.parse(selection.uri)
+        val directory = File(context.cacheDir, "chat-media/capture").canonicalFile
+        val file = when {
+            uri.scheme == "file" -> File(requireNotNull(uri.path)).canonicalFile
+            uri.scheme == "content" && uri.authority == "${context.packageName}.chat.files" -> {
+                val parts = uri.pathSegments
+                if (parts.size != 3 || parts[0] != "chat_preview" || parts[1] != "capture") return@runCatching null
+                File(directory, parts[2]).canonicalFile
+            }
+            else -> return@runCatching null
+        }
+        file.path.takeIf { file.parentFile == directory && file.isFile }
+    }.getOrNull()
+    fun removeOwnCapture(selection: MediaSelection): Boolean = ownCapturePath(selection)?.let { File(it).delete() } ?: false
     fun upload(selection: MediaSelection, client: ChatTransport, progress: (Int) -> Unit): ChatAttachment {
+        ChatMediaPolicy.validateVideoMetadata(selection.mime, selection.videoNote, selection.durationMs)
         val bytes = context.contentResolver.openInputStream(Uri.parse(selection.uri))?.use { limitedRead(it, ChatFileCrypto.MAX_BYTES) }
             ?: throw ChatException(UiText(R.string.chat_file_unavailable))
         val encrypted = try { ChatFileCrypto.encrypt(bytes) } finally { bytes.fill(0) }
@@ -90,7 +128,7 @@ internal class ChatMedia(private val context: Context,
             if (connection.responseCode !in 200..299) throw ChatException(UiText(R.string.chat_upload_failed))
         } finally { connection.disconnect() }
         return ChatAttachment(slot.getUrl, encrypted.key, encrypted.iv, selection.name, selection.mime,
-            (encrypted.bytes.size - 16).toLong(), encrypted.sha256)
+            (encrypted.bytes.size - 16).toLong(), encrypted.sha256, selection.videoNote, selection.durationMs)
     }
     fun download(file: ChatAttachment, client: ChatTransport, progress: (Int) -> Unit): File {
         client.validateMediaUrl(file.url)
@@ -150,4 +188,5 @@ internal class ChatMedia(private val context: Context,
     }
 }
 
-data class MediaSelection(val uri: String, val name: String, val mime: String, val size: Long)
+data class MediaSelection(val uri: String, val name: String, val mime: String, val size: Long,
+    val videoNote: Boolean = false, val durationMs: Long? = null, val asDocument: Boolean = false)

@@ -148,8 +148,12 @@ dependencies {
     implementation 'androidx.compose.foundation:foundation'
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.compose.material:material-icons-extended'
+    // Compatible with the current Compose/AGP baseline; all emoji assets are bundled.
+    implementation 'androidx.emoji2:emoji2-emojipicker:1.5.0'
+    implementation 'androidx.emoji2:emoji2-bundled:1.5.0'
 
     implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
     // Pure secp256k1/Keccak primitives for the P2P.me relay protocol; no global provider replacement.
     implementation 'org.bouncycastle:bcprov-jdk18on:1.80.2'
 

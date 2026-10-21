@@ -17,7 +17,7 @@ data class ChatGroup(val address: String, val name: String, val members: Set<Str
     val joined: Boolean = true)
 data class GroupInvitation(val room: String, val inviter: String)
 data class ChatAttachment(val url: String, val key: String, val iv: String, val name: String, val mime: String,
-    val size: Long, val sha256: String) {
+    val size: Long, val sha256: String, val videoNote: Boolean = false, val durationMs: Long? = null) {
     override fun toString() = "ChatAttachment(name=$name, size=$size, key=<redacted>)"
 }
 data class UploadSlot(val putUrl: String, val getUrl: String, val headers: Map<String, String> = emptyMap())
@@ -38,7 +38,7 @@ data class ChatMessage(
 )
 data class ChatDevice(val address: String, val id: Int, val fingerprint: String, val trusted: Boolean)
 data class ConversationOptions(val pinned: Boolean = false, val muted: Boolean = false,
-    val hidden: Boolean = false, val deletedBefore: Long = 0, val deletedIds: Set<String> = emptySet(), val appearance: ChatAppearance? = null, val alias: String = "")
+    val hidden: Boolean = false, val deletedBefore: Long = 0, val deletedIds: Set<String> = emptySet(), val appearance: ChatAppearance? = null, val alias: String = "", val phone: String = "")
 data class ChatUiState(
     val restoringSession: Boolean = false,
     val connection: ChatConnection = ChatConnection.DISCONNECTED,
@@ -47,6 +47,10 @@ data class ChatUiState(
     val wallpaper: Boolean = false,
     val appearance: ChatAppearance = ChatAppearance(),
     val profile: ChatProfile = ChatProfile(),
+    val publishedProfile: PublishedChatProfile? = null,
+    val contactProfiles: Map<String, PublishedChatProfile> = emptyMap(),
+    val profileLoading: Boolean = false,
+    val pendingContactAddress: String? = null,
     val account: String = "",
     val contacts: List<ChatContact> = emptyList(),
     val messages: List<ChatMessage> = emptyList(),
@@ -92,6 +96,8 @@ internal interface ChatTransport {
     fun block(peer: String, blocked: Boolean)
     fun markRead(peer: String, id: String)
     fun setActive(active: Boolean)
+    fun loadProfile(peer: String): PublishedChatProfile = throw UnsupportedOperationException()
+    fun publishProfile(value: PublishedChatProfile): Unit = throw UnsupportedOperationException()
     fun requestUpload(size: Long): UploadSlot = throw UnsupportedOperationException()
     fun validateMediaUrl(url: String): Unit = throw UnsupportedOperationException()
     fun createGroup(name: String, members: Set<String>): ChatGroup = throw UnsupportedOperationException()

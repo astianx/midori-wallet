@@ -70,6 +70,12 @@ class WalletRecoveryTest {
         var tokenBalance = "0"
         var usdtBalance = "0"
         val sentTokens = mutableListOf<String>()
+        val feeTokens = mutableListOf<String>()
+        val quotedFeeTokens = mutableListOf<String>()
+        val quotedAmounts = mutableListOf<String>()
+        var gaslessFee = "3000"
+        var gaslessAddress = "0x" + "1".repeat(40)
+        var userOperationReceipt: String? = null
         var broadcasts = 0
         val networks = mutableListOf<String>()
         override suspend fun initializeWDK(encryptionKey: String, encryptedSeed: String, config: String) {
@@ -78,7 +84,11 @@ class WalletRecoveryTest {
         }
         override suspend fun getAddress(network: String): String {
             networks += network
-            return if (network == "base") "0x" + "1".repeat(40) else "bc1q" + "q".repeat(38)
+            return when (network) {
+                "base" -> "0x" + "1".repeat(40)
+                "base-gasless" -> gaslessAddress
+                else -> "bc1q" + "q".repeat(38)
+            }
         }
         override suspend fun getBalance(network: String): String {
             check(!failBalance) { "Simulated balance outage" }
@@ -91,8 +101,36 @@ class WalletRecoveryTest {
         override suspend fun callMethod(methodName: String, network: String, accountIndex: Int, args: String): Any {
             check(!failBalance) { "Simulated balance outage" }
             if (methodName == "quoteSendTransaction") {
-                assertEquals("bitcoin", network)
+                assertTrue(network == "bitcoin" || network == "base")
                 return "100"
+            }
+            if (methodName == "sendTransaction") {
+                assertEquals("base", network)
+                broadcasts++
+                return "0x" + "e".repeat(64)
+            }
+            if (methodName == "getUserOperationReceipt") {
+                assertEquals("base-gasless", network)
+                assertEquals("\"" + "0x" + "a".repeat(64) + "\"", args)
+                return userOperationReceipt ?: "null"
+            }
+            if (network == "base-gasless") {
+                val call = org.json.JSONArray(args)
+                val transfer = call.getJSONObject(0)
+                val feeToken = call.getJSONObject(1)
+                assertFalse(feeToken.getBoolean("isSponsored"))
+                val feeAddress = feeToken.getJSONObject("paymasterToken").getString("address")
+                return when (methodName) {
+                    "quoteTransfer" -> {
+                        quotedFeeTokens += feeAddress; quotedAmounts += transfer.getString("amount")
+                        """{"fee":"$gaslessFee"}"""
+                    }
+                    "transfer" -> {
+                        sentTokens += transfer.getString("token"); feeTokens += feeAddress; broadcasts++
+                        "0x" + "a".repeat(64)
+                    }
+                    else -> error("Unexpected gasless method: $methodName")
+                }
             }
             assertEquals("base", network)
             return when (methodName) {
@@ -103,8 +141,6 @@ class WalletRecoveryTest {
                         else -> error("Wrong token contract")
                     }
                 }
-                "quoteTransfer" -> "100"
-                "transfer" -> { sentTokens += org.json.JSONObject(args).getString("token"); broadcasts++; "0x" + "a".repeat(64) }
                 else -> error("Unexpected method: $methodName")
             }
         }
@@ -335,15 +371,17 @@ class WalletRecoveryTest {
     }
 
     @Test
-    fun enoughEthForL2AloneDoesNotAuthorizeATokenBroadcast() = runTest(dispatcher) {
-        val client = Client().apply { nativeBalance = "1000000"; tokenBalance = "1000000" }
+    fun enoughEthForL2AloneDoesNotAuthorizeANativeEthBroadcast() = runTest(dispatcher) {
+        val client = Client().apply { nativeBalance = "1000000" }
         val vm = sendViewModel(client)
         advanceUntilIdle()
+        vm.updateSendAsset(Asset.ETH)
         vm.updateSendAddress("0x" + "2".repeat(40))
-        vm.updateSendAmount("1")
+        vm.updateSendAmount("0.000000000000000001")
         vm.prepareSend()
         advanceUntilIdle()
         assertNotNull(vm.state.value.sendReview)
+        assertNull(vm.state.value.sendReview?.feeAsset)
         // Funds disappear after review: the fresh check must still block submission.
         client.nativeBalance = "150"
         vm.doSend()
@@ -354,13 +392,194 @@ class WalletRecoveryTest {
     }
 
     @Test
-    fun failedL1LookupStopsBroadcastEvenWithEnoughEth() = runTest(dispatcher) {
-        val client = Client().apply { nativeBalance = "1000000"; tokenBalance = "1000000" }
-        var failL1 = false
-        val vm = sendViewModel(client) { failL1 }
+    fun stablecoinTransferNeedsNoEthAndPaysTheFeeInTheSentToken() = runTest(dispatcher) {
+        val client = Client().apply { nativeBalance = "0"; tokenBalance = "20000000" }
+        val vm = sendViewModel(client)
         advanceUntilIdle()
         vm.updateSendAddress("0x" + "2".repeat(40))
         vm.updateSendAmount("1")
+        vm.prepareSend()
+        advanceUntilIdle()
+        val review = vm.state.value.sendReview!!
+        assertEquals(Asset.USDC, review.feeAsset)
+        assertEquals("3000", review.estimatedFee)
+        assertEquals("0.003 USDC", review.feeDisplay)
+        assertEquals(listOf(BaseMainnet.USDC_CONTRACT), client.quotedFeeTokens)
+        vm.doSend()
+        advanceUntilIdle()
+        assertEquals(listOf(BaseMainnet.USDC_CONTRACT), client.sentTokens)
+        assertEquals(listOf(BaseMainnet.USDC_CONTRACT), client.feeTokens)
+        val tx = vm.state.value.pendingTransactions.single()
+        assertEquals(TxStatus.BROADCAST, tx.status)
+        assertEquals("0x" + "a".repeat(64), tx.userOperation)
+        assertNull("A UserOperation hash is not an explorer transaction", tx.hash)
+        assertNull(tx.explorerUrl)
+    }
+
+    @Test
+    fun includedUserOperationProvidesTheExplorerHashAndRefreshesBalances() = runTest(dispatcher) {
+        val bundleHash = "0x" + "c".repeat(64)
+        val client = Client().apply {
+            tokenBalance = "20000000"
+            userOperationReceipt = """{"success":true,"receipt":{"transactionHash":"$bundleHash"}}"""
+        }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.updateSendAmount("1")
+        vm.prepareSend()
+        advanceUntilIdle()
+        vm.doSend()
+        advanceUntilIdle()
+        val tx = vm.state.value.pendingTransactions.single()
+        assertEquals(TxStatus.INCLUDED, tx.status)
+        assertEquals(bundleHash, tx.hash)
+        assertEquals("https://basescan.org/tx/$bundleHash", tx.explorerUrl)
+    }
+
+    @Test
+    fun revertedUserOperationIsNotReportedAsSent() = runTest(dispatcher) {
+        val client = Client().apply {
+            tokenBalance = "20000000"
+            userOperationReceipt = """{"success":false,"receipt":{"transactionHash":"0x${"d".repeat(64)}"}}"""
+        }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.updateSendAmount("1")
+        vm.prepareSend()
+        advanceUntilIdle()
+        vm.doSend()
+        advanceUntilIdle()
+        assertEquals(TxStatus.FAILED_ON_CHAIN, vm.state.value.pendingTransactions.single().status)
+    }
+
+    @Test
+    fun maxOfOneStablecoinPaysTheFeeWithTheOtherOne() = runTest(dispatcher) {
+        val client = Client().apply { tokenBalance = "7000000"; usdtBalance = "1234567" }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAsset(Asset.USDT)
+        vm.setSendMax()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.prepareSend()
+        advanceUntilIdle()
+        assertEquals(Asset.USDC, vm.state.value.sendReview?.feeAsset)
+        assertEquals(listOf(BaseMainnet.USDC_CONTRACT), client.quotedFeeTokens)
+    }
+
+    @Test
+    fun sendingTheWholeBalanceAdjustsTheAmountVisiblyAndThenSends() = runTest(dispatcher) {
+        val client = Client().apply { tokenBalance = "20000000"; usdtBalance = "0" }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.setSendMax()
+        assertEquals("20", vm.state.value.sendAmount)
+        vm.prepareSend()
+        runCurrent()
+        assertNull("The user reviews the adjusted amount, never a silent one", vm.state.value.sendReview)
+        assertEquals(UiText(R.string.send_amount_adjusted), vm.state.value.toastMessage)
+        // Fee 3000 plus a 15% margin (450) is left out of the balance.
+        assertEquals("19.99655", vm.state.value.sendAmount)
+        assertEquals(listOf("19500000"), client.quotedAmounts)
+        vm.prepareSend()
+        runCurrent()
+        val review = vm.state.value.sendReview!!
+        assertEquals("19996550", review.units)
+        assertEquals(Asset.USDC, review.feeAsset)
+        vm.doSend()
+        advanceUntilIdle()
+        assertEquals(listOf(BaseMainnet.USDC_CONTRACT), client.sentTokens)
+    }
+
+    @Test
+    fun aBalanceThatCannotEvenPayTheFeeIsNotSent() = runTest(dispatcher) {
+        val client = Client().apply { tokenBalance = "3000"; usdtBalance = "0" }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.setSendMax()
+        vm.prepareSend()
+        runCurrent()
+        assertNull(vm.state.value.sendReview)
+        assertEquals(UiText(R.string.error_insufficient_fee_token), vm.state.value.toastMessage)
+        assertEquals("0.003", vm.state.value.sendAmount)
+        assertEquals(0, client.broadcasts)
+    }
+
+    @Test
+    fun anAdjustedAmountIsNeverAppliedToAReviewedFeeToken() = runTest(dispatcher) {
+        val client = Client().apply { tokenBalance = "20000000"; usdtBalance = "0" }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.updateSendAmount("19.99655")
+        vm.prepareSend()
+        runCurrent()
+        assertNotNull(vm.state.value.sendReview)
+        // The balance shrinks after review: the reviewed amount must be blocked, not rewritten.
+        client.tokenBalance = "19996600"
+        vm.doSend()
+        advanceUntilIdle()
+        assertEquals(0, client.broadcasts)
+        assertEquals("19.99655", vm.state.value.sendAmount)
+        assertEquals(TxStatus.FAILED_BEFORE_BROADCAST, vm.state.value.pendingTransactions.single().status)
+    }
+
+    @Test
+    fun unusuallyHighFeeIsRefusedAtTheQuote() = runTest(dispatcher) {
+        val client = Client().apply { tokenBalance = "20000000"; gaslessFee = BaseMainnet.GASLESS_MAX_FEE.toString() }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.updateSendAmount("1")
+        vm.prepareSend()
+        runCurrent()
+        assertNull(vm.state.value.sendReview)
+        assertEquals(UiText(R.string.error_fee_too_high), vm.state.value.toastMessage)
+    }
+
+    @Test
+    fun feeIncreaseAfterReviewStopsTheTransferBeforeSigning() = runTest(dispatcher) {
+        val client = Client().apply { tokenBalance = "20000000" }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.updateSendAmount("1")
+        vm.prepareSend()
+        advanceUntilIdle()
+        client.gaslessFee = "3001"
+        vm.doSend()
+        advanceUntilIdle()
+        assertEquals(0, client.broadcasts)
+        assertEquals(UiText(R.string.send_fee_changed), vm.state.value.pendingTransactions.single().error)
+    }
+
+    @Test
+    fun aGaslessAccountThatIsNotTheWalletAddressFailsClosed() = runTest(dispatcher) {
+        val client = Client().apply { tokenBalance = "20000000"; gaslessAddress = "0x" + "9".repeat(40) }
+        val vm = sendViewModel(client)
+        advanceUntilIdle()
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.updateSendAmount("1")
+        vm.prepareSend()
+        runCurrent()
+        assertNull(vm.state.value.sendReview)
+        assertEquals(UiText(R.string.error_gasless_account), vm.state.value.toastMessage)
+        assertTrue(client.quotedFeeTokens.isEmpty())
+        assertEquals(0, client.broadcasts)
+    }
+
+    @Test
+    fun failedL1LookupStopsBroadcastEvenWithEnoughEth() = runTest(dispatcher) {
+        val client = Client().apply { nativeBalance = "1000000" }
+        var failL1 = false
+        val vm = sendViewModel(client) { failL1 }
+        advanceUntilIdle()
+        vm.updateSendAsset(Asset.ETH)
+        vm.updateSendAddress("0x" + "2".repeat(40))
+        vm.updateSendAmount("0.000000000000000001")
         vm.prepareSend()
         advanceUntilIdle()
         assertNotNull(vm.state.value.sendReview)
@@ -402,6 +621,7 @@ class WalletRecoveryTest {
         vm.doSend()
         advanceUntilIdle()
         assertEquals(listOf(BaseMainnet.USDT_CONTRACT), client.sentTokens)
+        assertEquals("Sending all USDT leaves nothing for the fee, which USDC covers", listOf(BaseMainnet.USDC_CONTRACT), client.feeTokens)
         assertEquals(Asset.USDT, vm.state.value.pendingTransactions.single().asset)
         assertEquals(TxStatus.BROADCAST, vm.state.value.pendingTransactions.single().status)
     }

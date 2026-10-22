@@ -29,7 +29,12 @@ import org.astianx.midori.one.BuildConfig
 import org.astianx.midori.one.wallet.fiat.*
 import org.astianx.midori.one.wallet.p2p.*
 
-enum class TxStatus { PENDING, BROADCAST, UNKNOWN, FAILED_BEFORE_BROADCAST }
+enum class TxStatus { PENDING, BROADCAST, INCLUDED, FAILED_ON_CHAIN, UNKNOWN, FAILED_BEFORE_BROADCAST }
+
+private const val USER_OPERATION_POLL_MS = 3_000L
+private const val USER_OPERATION_POLLS = 40
+
+private data class SendQuote(val fee: String, val feeAsset: Asset? = null)
 
 internal fun isValidVerificationResult(result: Any): Boolean = result is Boolean && result
 
@@ -59,7 +64,9 @@ data class PendingTx(
     val amount: String,
     val status: TxStatus = TxStatus.PENDING,
     val hash: String? = null,
-    val error: UiText? = null
+    val error: UiText? = null,
+    /** ERC-4337 operation hash; it only becomes an explorer transaction hash once a bundle includes it. */
+    val userOperation: String? = null
 ) {
     val explorerUrl: String?
         get() = when {
@@ -71,6 +78,8 @@ data class PendingTx(
         get() = when (status) {
             TxStatus.PENDING -> UiText(R.string.tx_submitting)
             TxStatus.BROADCAST -> UiText(R.string.tx_broadcast)
+            TxStatus.INCLUDED -> UiText(R.string.tx_included)
+            TxStatus.FAILED_ON_CHAIN -> UiText(R.string.tx_failed_onchain)
             TxStatus.UNKNOWN -> UiText(R.string.tx_unknown)
             TxStatus.FAILED_BEFORE_BROADCAST -> UiText(R.string.tx_failed)
         }
@@ -609,33 +618,37 @@ class WalletViewModel internal constructor(
         return valueInSmallestUnit
     }
 
-    private fun sendArgs(asset: Asset, address: String, units: String): String = if (asset.isToken) {
-        JSONObject().put("token", requireNotNull(asset.contract)).put("recipient", address).put("amount", units).toString()
-    } else JSONObject().put("to", address).put("value", units).toString()
+    private fun sendArgs(address: String, units: String): String =
+        JSONObject().put("to", address).put("value", units).toString()
 
-    private suspend fun quoteSend(s: WalletUiState, units: String): String {
+    /** Stablecoins go through the paymaster account (no ETH); native ETH and BTC pay their own fee. */
+    private suspend fun quoteSend(s: WalletUiState, units: String, feeAsset: Asset? = null): SendQuote {
         val asset = s.sendAsset
         val client = requireNotNull(wdkCore)
         if (asset.isToken) {
-            val fresh = client.callMethod("getTokenBalance", asset.network.wdkName, 0,
-                JSONObject.quote(requireNotNull(asset.contract))).toString().toBigIntegerOrNull()
-            if (fresh == null || fresh < units.toBigInteger()) throw WalletException(
+            val amount = units.toBigInteger()
+            verifyGaslessAccount(client, s.ethAddress)
+            val balances = freshStableBalances(client)
+            val balance = balances[asset]
+            if (balance == null || balance < amount) throw WalletException(
                 UiText(R.string.error_balance_insufficient, listOf(asset.name)))
+            val quote = quoteGaslessTransfer(client, asset, s.sendAddress.trim(), amount, balances, feeAsset)
+            return SendQuote(quote.fee.toString(), quote.feeAsset)
         }
         if (asset.network == Network.BTC) bitcoinNetworkVerifier.verify()
-        val quoted = client.callMethod(if (asset.isToken) "quoteTransfer" else "quoteSendTransaction",
-            asset.network.wdkName, 0, sendArgs(asset, s.sendAddress.trim(), units))
+        val quoted = client.callMethod("quoteSendTransaction", asset.network.wdkName, 0,
+            sendArgs(s.sendAddress.trim(), units))
         val executionFee = quotedFee(quoted)?.toBigIntegerOrNull()
             ?: throw WalletException(UiText(R.string.error_gas_quote))
         walletRequire(executionFee.signum() > 0, R.string.error_gas_quote)
-        if (asset.network == Network.BTC) return executionFee.toString()
+        if (asset.network == Network.BTC) return SendQuote(executionFee.toString())
         val transaction = baseTransaction(asset, s.ethAddress, s.sendAddress.trim(), units.toBigInteger())
         val fee = quoteBaseTotalFee(transaction, executionFee, baseFeeProvider)
         val gasBalance = client.getBalance(Network.BASE.wdkName)
         update { copy(ethBalance = gasBalance) }
         walletRequire(gasBalance.toBigIntegerOrNull()?.let { it >= fee + transaction.value } == true,
             R.string.error_insufficient_gas)
-        return fee.toString()
+        return SendQuote(fee.toString())
     }
 
     fun dismissSendReview() {
@@ -652,9 +665,16 @@ class WalletViewModel internal constructor(
         update { copy(isLoading = true) }
         viewModelScope.launch {
             try {
-                val fee = quoteSend(s, units)
+                val quote = quoteSend(s, units)
                 if (sendRevision == revision) update { copy(sendReview = SendReview(
-                    s.sendAsset, s.sendAddress.trim(), s.sendAmount.trim(), units, fee, clock() + 60_000)) }
+                    s.sendAsset, s.sendAddress.trim(), s.sendAmount.trim(), units, quote.fee, clock() + 60_000,
+                    quote.feeAsset)) }
+            } catch (e: GaslessAmountAdjustment) {
+                if (sendRevision == revision) {
+                    update { copy(sendAmount = BigDecimal(e.maxAmount).movePointLeft(s.sendAsset.decimals)
+                        .stripTrailingZeros().toPlainString()) }
+                    showToast(UiText(R.string.send_amount_adjusted))
+                }
             } catch (e: Exception) {
                 showToast(e.toUiText(R.string.error_prepare_transfer))
             } finally { update { copy(isLoading = false) } }
@@ -686,21 +706,29 @@ class WalletViewModel internal constructor(
         viewModelScope.launch {
             var submissionStarted = false
             try {
-                val argsJson = sendArgs(asset, address, valueInSmallestUnit)
-                val fee = quoteSend(s, valueInSmallestUnit)
+                val quote = quoteSend(s, valueInSmallestUnit, review.feeAsset)
                 walletRequire(sendRevision == revision && review.matches(s.sendAsset, s.sendAddress, s.sendAmount, clock()),
                     R.string.send_review_expired)
-                walletRequire(fee.toBigInteger() <= review.estimatedFee.toBigInteger(), R.string.send_fee_changed)
+                walletRequire(quote.fee.toBigInteger() <= review.estimatedFee.toBigInteger(), R.string.send_fee_changed)
                 dismissSendReview()
                 submissionStarted = true
-                val result = wdkCore!!.callMethod(
-                    methodName = if (asset.isToken) "transfer" else "sendTransaction",
+                val feeAsset = quote.feeAsset
+                val result = if (feeAsset != null) wdkCore!!.callMethod(
+                    methodName = "transfer",
+                    network = BaseMainnet.GASLESS_NETWORK,
+                    accountIndex = 0,
+                    args = gaslessArgs(asset, address, valueInSmallestUnit, feeAsset)
+                ) else wdkCore!!.callMethod(
+                    methodName = "sendTransaction",
                     network = networkRpc,
                     accountIndex = 0,
-                    args = argsJson
+                    args = sendArgs(address, valueInSmallestUnit)
                 )
                 val hash = extractTxHash(result)
-                updateTx(txId, TxStatus.BROADCAST, hash = hash)
+                if (feeAsset != null) {
+                    updateTx(txId, TxStatus.BROADCAST, userOperation = hash)
+                    trackUserOperation(txId, hash)
+                } else updateTx(txId, TxStatus.BROADCAST, hash = hash)
                 update { copy(sendAddress = "", sendAmount = "") }
                 showToast(UiText(R.string.broadcast_notice), success = true)
                 fetchBalance()
@@ -718,12 +746,35 @@ class WalletViewModel internal constructor(
         }
     }
 
-    private fun updateTx(id: String, status: TxStatus, hash: String? = null, error: UiText? = null) {
+    private fun updateTx(
+        id: String, status: TxStatus, hash: String? = null, error: UiText? = null, userOperation: String? = null
+    ) {
         val txList = _state.value.pendingTransactions.toMutableList()
         val index = txList.indexOfFirst { it.id == id }
         if (index >= 0) {
-            txList[index] = txList[index].copy(status = status, hash = hash, error = error)
+            txList[index] = txList[index].copy(status = status, hash = hash, error = error,
+                userOperation = userOperation ?: txList[index].userOperation)
             update { copy(pendingTransactions = txList) }
+        }
+    }
+
+    /** The bundler accepts a UserOperation first; only its receipt proves inclusion and yields the explorer hash. */
+    private fun trackUserOperation(txId: String, userOperation: String) {
+        viewModelScope.launch {
+            repeat(USER_OPERATION_POLLS) {
+                delay(USER_OPERATION_POLL_MS)
+                val client = wdkCore ?: return@launch
+                val outcome = try {
+                    parseUserOperationReceipt(client.callMethod("getUserOperationReceipt",
+                        BaseMainnet.GASLESS_NETWORK, 0, JSONObject.quote(userOperation)))
+                } catch (_: Exception) { null }
+                if (outcome != null) {
+                    updateTx(txId, if (outcome.success) TxStatus.INCLUDED else TxStatus.FAILED_ON_CHAIN,
+                        hash = outcome.transactionHash)
+                    fetchBalance()
+                    return@launch
+                }
+            }
         }
     }
 
@@ -877,6 +928,7 @@ class WalletViewModel internal constructor(
     val sendFee: UiText
         get() {
             val s = _state.value
+            if (s.sendAsset.isToken) return UiText(R.string.gasless_fee_hint)
             if (s.sendAsset.network == Network.BASE) return UiText(R.string.base_fee_hint)
             return UiText(R.string.btc_fee_hint)
         }

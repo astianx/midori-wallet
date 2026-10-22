@@ -530,6 +530,8 @@ private fun SendReviewDialog(review: SendReview, busy: Boolean, dismiss: () -> U
                 Divider(color = MaterialTheme.colorScheme.outlineVariant)
                 Text(network)
                 Text(fee)
+                if (review.feeAsset != null) Text(stringResource(R.string.send_review_gasless),
+                    style = MaterialTheme.typography.bodySmall)
                 Text(estimate, style = MaterialTheme.typography.bodySmall)
                 if (expired) Text(expiration, color = MaterialTheme.colorScheme.error)
             }
@@ -543,8 +545,8 @@ private fun SendReviewDialog(review: SendReview, busy: Boolean, dismiss: () -> U
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun TxCard(tx: PendingTx, vm: WalletViewModel, context: Context, balancesVisible: Boolean = true) {
-    val statusColor = if (tx.status == TxStatus.FAILED_BEFORE_BROADCAST) MaterialTheme.colorScheme.error
-        else MaterialTheme.colorScheme.onSurfaceVariant
+    val statusColor = if (tx.status == TxStatus.FAILED_BEFORE_BROADCAST || tx.status == TxStatus.FAILED_ON_CHAIN)
+        MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.ArrowUpward, contentDescription = null,

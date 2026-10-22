@@ -16,10 +16,26 @@ object BaseMainnet {
     // Bridged USDT from Ethereum via the Base standard bridge, not native USD₮ or USDT0.
     const val USDT_CONTRACT = "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"
 
+    // Stablecoin transfers with no ETH: the same EOA delegates (EIP-7702) to the audited eth-infinitism
+    // Simple7702Account for EntryPoint v0.8, and the Candide paymaster takes the fee in USDC/USDT.
+    const val GASLESS_NETWORK = "base-gasless"
+    const val GASLESS_BUNDLER_URL = "https://api.candide.dev/public/v3/$CHAIN_ID"
+    const val GASLESS_DELEGATION_ADDRESS = "0xe6Cae83BdE06E4c305530e199D7217f42808555B"
+    const val GASLESS_PAYMASTER_ADDRESS = "0xa8151918eac3818deb713d3dbbb7930329fe86ed"
+
+    // Stablecoin base units (6 decimals): 0.5. A quote at or above this is refused before signing.
+    const val GASLESS_MAX_FEE = 500_000L
+
     val wdkConfig = """
         {"networks": {
           "base": {"blockchain": "base", "config": {
             "chainId": $CHAIN_ID, "provider": "$RPC_URL"
+          }},
+          "$GASLESS_NETWORK": {"blockchain": "$GASLESS_NETWORK", "config": {
+            "chainId": $CHAIN_ID, "provider": "$RPC_URL", "entryPointVersion": "0.8",
+            "bundlerUrl": "$GASLESS_BUNDLER_URL", "delegationAddress": "$GASLESS_DELEGATION_ADDRESS",
+            "paymasterAddress": "$GASLESS_PAYMASTER_ADDRESS", "paymasterToken": {"address": "$USDC_CONTRACT"},
+            "transferMaxFee": $GASLESS_MAX_FEE
           }},
           "bitcoin": {"blockchain": "bitcoin", "config": {
             "client": {"type": "blockbook-http", "clientConfig": {

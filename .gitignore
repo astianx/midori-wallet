@@ -7,6 +7,7 @@
 /captures
 .externalNativeBuild
 .cxx
+/docs
 *.apk
 *.ap_
 *.aab

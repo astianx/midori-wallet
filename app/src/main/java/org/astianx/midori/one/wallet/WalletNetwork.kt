@@ -3,8 +3,7 @@ package org.astianx.midori.one.wallet
 import org.astianx.midori.one.UiText
 
 enum class Network(val wdkName: String, val label: String, val explorer: String) {
-    BASE("base", "Base", "https://basescan.org"),
-    BTC("bitcoin", "Bitcoin", "https://blockbook.btc.zelcore.io")
+    BASE("base", "Base", "https://basescan.org")
 }
 
 // Mainnet only. Contracts are pinned to their chain; see the read-only network verifier.
@@ -36,19 +35,9 @@ object BaseMainnet {
             "bundlerUrl": "$GASLESS_BUNDLER_URL", "delegationAddress": "$GASLESS_DELEGATION_ADDRESS",
             "paymasterAddress": "$GASLESS_PAYMASTER_ADDRESS", "paymasterToken": {"address": "$USDC_CONTRACT"},
             "transferMaxFee": $GASLESS_MAX_FEE
-          }},
-          "bitcoin": {"blockchain": "bitcoin", "config": {
-            "client": {"type": "blockbook-http", "clientConfig": {
-              "url": "${BitcoinMainnet.API_URL}"
-            }}, "network": "bitcoin"
           }}
         }}
     """.trimIndent()
-}
-
-object BitcoinMainnet {
-    const val API_URL = "https://blockbook.btc.zelcore.io/api"
-    const val GENESIS_HASH = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
 }
 
 enum class Asset(
@@ -59,28 +48,13 @@ enum class Asset(
     val unavailableReason: UiText? = null
 ) {
     USDC(Network.BASE, 6, isToken = true, contract = BaseMainnet.USDC_CONTRACT),
-    USDT(Network.BASE, 6, isToken = true, contract = BaseMainnet.USDT_CONTRACT),
-    BTC(Network.BTC, 8),
-    ETH(Network.BASE, 18);
+    USDT(Network.BASE, 6, isToken = true, contract = BaseMainnet.USDT_CONTRACT);
 
     val isAvailable: Boolean get() = unavailableReason == null && (!isToken || contract != null)
 }
 
-/** Exchanges may paste a payment URI literally. Receive QR codes contain only the wallet address. */
+/** Receive QR codes contain only the wallet address. */
 internal fun receiveRequest(asset: Asset, address: String): String? {
-    if (!asset.isAvailable || address.isBlank()) return null
-    return when (asset.network) {
-        Network.BASE -> {
-            if (!address.matches(Regex("0x[a-fA-F0-9]{40}"))) return null
-            address
-        }
-        // The mainnet address encodes the Bitcoin network. WDK validates its checksum on send.
-        Network.BTC -> if (isBitcoinMainnetAddress(address)) address else null
-    }
+    if (!asset.isAvailable || !address.matches(Regex("0x[a-fA-F0-9]{40}"))) return null
+    return address
 }
-
-/** Network/shape guard; checksum validation is performed by WDK when quoting a send. */
-internal fun isBitcoinMainnetAddress(address: String): Boolean =
-    address.matches(Regex("[13][a-km-zA-HJ-NP-Z1-9]{25,34}")) ||
-        address.matches(Regex("bc1[ac-hj-np-z02-9]{11,71}")) ||
-        address.matches(Regex("BC1[AC-HJ-NP-Z02-9]{11,71}"))

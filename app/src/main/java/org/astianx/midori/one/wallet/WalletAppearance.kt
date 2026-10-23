@@ -7,13 +7,13 @@ import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
 
 data class WalletAppearance(val hideBalances: Boolean = false, val showTexture: Boolean = false,
-    val compact: Boolean = false, val bitcoinFirst: Boolean = true, val showHelp: Boolean = true,
+    val compact: Boolean = false, val showHelp: Boolean = true,
     val preferredToken: Asset = Asset.USDC) {
     fun toJson() = JSONObject().put("hideBalances", hideBalances).put("showTexture", showTexture)
-        .put("compact", compact).put("bitcoinFirst", bitcoinFirst).put("showHelp", showHelp).put("preferredToken", preferredToken.name)
+        .put("compact", compact).put("showHelp", showHelp).put("preferredToken", preferredToken.name)
     companion object {
         fun fromJson(j: JSONObject) = WalletAppearance(j.getBoolean("hideBalances"), j.getBoolean("showTexture"),
-            j.getBoolean("compact"), j.getBoolean("bitcoinFirst"), j.getBoolean("showHelp"),
+            j.getBoolean("compact"), j.getBoolean("showHelp"),
             Asset.valueOf(j.getString("preferredToken")).also { require(it in setOf(Asset.USDC, Asset.USDT)) })
     }
 }

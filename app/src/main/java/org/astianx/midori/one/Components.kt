@@ -356,7 +356,6 @@ internal fun featureIcon(feature: AppFeature): ImageVector = when (feature) {
     AppFeature.PROFILE -> Icons.Outlined.AccountCircle
     AppFeature.SCANNER -> Icons.Outlined.QrCodeScanner
     AppFeature.BUY -> Icons.Outlined.Payments
-    AppFeature.TRADE -> Icons.Outlined.SwapHoriz
     AppFeature.ALERTS -> Icons.Outlined.NotificationsNone
     AppFeature.DESKTOP -> Icons.Outlined.Computer
 }

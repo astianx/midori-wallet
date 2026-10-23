@@ -27,7 +27,7 @@ class FiatViewModelTest {
         override suspend fun session(nonce: String, signature: String) = error("Unused")
     }
 
-    private fun vm(country: String) = FiatViewModel(FiatOperation.BUY, gateway, "0x" + "1".repeat(40), "bc1test",
+    private fun vm(country: String) = FiatViewModel(FiatOperation.BUY, gateway, "0x" + "1".repeat(40),
         { true }, { _, _, _ -> error("Unused") }, country).also { models.put("fiat", it) }
 
     @Test fun theWalletCountryIsSelectedAndCannotBeReplaced() = runTest(dispatcher) {

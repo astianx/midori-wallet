@@ -294,7 +294,7 @@ fun HomeScreen(vm: WalletViewModel) {
                     Spacer(Modifier.height(12.dp))
                     OutlineActionButton(stringResource(R.string.import_existing_wallet)) { vm.resetImport(); vm.navigate(Screen.Import) }
                     Spacer(Modifier.height(24.dp))
-                    Text("${stringResource(R.string.network_base)} · ${stringResource(R.string.network_bitcoin)} · ${stringResource(R.string.mainnet)}",
+                    Text("${stringResource(R.string.network_base)} · ${stringResource(R.string.mainnet)}",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
@@ -352,16 +352,6 @@ fun HomeScreen(vm: WalletViewModel) {
                 }
                 Spacer(Modifier.height(12.dp))
                 Divider(color = MaterialTheme.colorScheme.outlineVariant)
-                SectionLabel(R.string.dollars_crypto_assets)
-                val assets = if (appearance.bitcoinFirst) listOf(Asset.BTC, Asset.ETH) else listOf(Asset.ETH, Asset.BTC)
-                assets.forEach { asset ->
-                    if (asset == Asset.BTC) AssetRow("₿", Color(0xFFB36D19), stringResource(R.string.network_bitcoin), stringResource(R.string.mainnet),
-                        if (balancesVisible) vm.formattedBtcBalance else "•••• BTC") { vm.openReceive(Asset.BTC) }
-                    else AssetRow("Ξ", Color(0xFF5C6787), stringResource(R.string.eth_gas), stringResource(R.string.network_base),
-                        if (balancesVisible) vm.formattedEthBalance else "•••• ETH") { vm.openReceive(Asset.ETH) }
-                }
-                Text(stringResource(R.string.gas_explanation), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(20.dp))
                 SectionLabel(R.string.wallet_activity_title)
                 if (s.pendingTransactions.isEmpty()) {
                     Text(stringResource(R.string.wallet_activity_empty), style = MaterialTheme.typography.bodyMedium,
@@ -374,8 +364,6 @@ fun HomeScreen(vm: WalletViewModel) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
                 Spacer(Modifier.height(8.dp))
-                ShortcutRow(Icons.Outlined.SwapHoriz, stringResource(R.string.dollars_invest),
-                    stringResource(R.string.dollars_invest_pending), { vm.openFeature(AppFeature.TRADE) })
                 if (appearance.showHelp) ShortcutRow(Icons.AutoMirrored.Outlined.HelpOutline, stringResource(R.string.help_center),
                     stringResource(R.string.help_shortcut_body), { vm.navigate(Screen.Help) })
             }
@@ -607,18 +595,15 @@ fun ReceiveScreen(vm: WalletViewModel) {
         ScreenHeader(stringResource(R.string.receive)) { vm.navigate(s.receiveReturnScreen) }
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally) {
-            ReceiveAccountSelector(s.receiveAsset, vm::updateReceiveAsset)
-            Text(if (s.receiveAsset in DigitalDollarAccount.assets) stringResource(R.string.dollars_receive_title)
-                else vm.receiveLabel.asString(), style = MaterialTheme.typography.titleLarge,
+            Spacer(Modifier.height(12.dp))
+            Text(stringResource(R.string.dollars_receive_title), style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 20.dp))
             Spacer(Modifier.height(6.dp))
             Text("${s.receiveAsset.network.label} · ${stringResource(R.string.mainnet)}",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (s.receiveAsset in DigitalDollarAccount.assets) {
-                Spacer(Modifier.height(4.dp))
-                Text(stringResource(R.string.dollars_receive_tokens), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.dollars_receive_tokens), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(24.dp))
             val request = vm.receiveQrContent
             if (request != null) {
@@ -637,17 +622,12 @@ fun ReceiveScreen(vm: WalletViewModel) {
                         vm.showToast(UiText(R.string.address_copied, listOf(s.receiveAsset.network.label)))
                     }
                 }
-                Text(
-                    if (s.receiveAsset in DigitalDollarAccount.assets) stringResource(R.string.dollars_receive_warning)
-                    else if (s.receiveAsset == Asset.BTC) stringResource(R.string.receive_btc_warning)
-                    else stringResource(R.string.receive_base_warning, s.receiveAsset.name),
+                Text(stringResource(R.string.dollars_receive_warning),
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(20.dp)
                 )
-                if (s.receiveAsset in DigitalDollarAccount.assets) {
-                    Text(stringResource(R.string.usdt_bridge_description), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
-                }
+                Text(stringResource(R.string.usdt_bridge_description), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
             } else {
                 Text(s.receiveAsset.unavailableReason?.asString() ?: stringResource(R.string.address_unavailable),
                     textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -658,20 +638,8 @@ fun ReceiveScreen(vm: WalletViewModel) {
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-@Composable
-private fun ReceiveAccountSelector(selected: Asset, select: (Asset) -> Unit) {
-    androidx.compose.foundation.layout.FlowRow(Modifier.padding(horizontal = 20.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        NetworkPill(stringResource(R.string.digital_dollars), "$", selected in DigitalDollarAccount.assets) { select(Asset.USDC) }
-        NetworkPill("ETH", "Ξ", selected == Asset.ETH) { select(Asset.ETH) }
-        NetworkPill("BTC", "₿", selected == Asset.BTC) { select(Asset.BTC) }
-    }
-}
-
 // ===== SIGN MESSAGE SCREEN =====
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun SignMessageScreen(vm: WalletViewModel) {
     val s by vm.state.collectAsState()
@@ -683,10 +651,6 @@ fun SignMessageScreen(vm: WalletViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.sign_description), style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NetworkPill(stringResource(R.string.network_base), "Ξ", s.signNetwork == Network.BASE) { vm.updateSignNetwork(Network.BASE) }
-                NetworkPill(stringResource(R.string.network_bitcoin), "₿", s.signNetwork == Network.BTC) { vm.updateSignNetwork(Network.BTC) }
-            }
             OutlinedTextField(
                 value = s.signMessage,
                 onValueChange = vm::updateSignMessage,

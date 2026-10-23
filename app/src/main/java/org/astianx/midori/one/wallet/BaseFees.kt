@@ -12,15 +12,11 @@ import org.json.JSONObject
 internal data class BaseTransaction(val from: String, val to: String, val value: BigInteger, val data: String)
 
 internal fun baseTransaction(asset: Asset, from: String, recipient: String, amount: BigInteger): BaseTransaction {
-    require(asset.network == Network.BASE && asset.isAvailable)
+    require(asset.isToken && asset.isAvailable)
     require(from.matches(Regex("0x[a-fA-F0-9]{40}")) && recipient.matches(Regex("0x[a-fA-F0-9]{40}")))
     require(amount.signum() > 0 && amount.bitLength() <= 256)
-    return if (asset.isToken) {
-        BaseTransaction(from, requireNotNull(asset.contract), BigInteger.ZERO,
-            "0xa9059cbb" + recipient.removePrefix("0x").padStart(64, '0') + amount.toString(16).padStart(64, '0'))
-    } else {
-        BaseTransaction(from, recipient, amount, "0x")
-    }
+    return BaseTransaction(from, requireNotNull(asset.contract), BigInteger.ZERO,
+        "0xa9059cbb" + recipient.removePrefix("0x").padStart(64, '0') + amount.toString(16).padStart(64, '0'))
 }
 
 internal interface BaseFeeProvider {
@@ -30,7 +26,7 @@ internal interface BaseFeeProvider {
     suspend fun operatorFee(gas: BigInteger): BigInteger
 }
 
-/** For legacy/type-2 ETH, ERC-20 and contract transactions (no access list or authorization list). */
+/** For legacy/type-2 ERC-20 and contract transactions (no access list or authorization list). */
 internal suspend fun quoteBaseTotalFee(
     transaction: BaseTransaction,
     executionFee: BigInteger,

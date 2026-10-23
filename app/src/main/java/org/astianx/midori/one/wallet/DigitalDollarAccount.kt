@@ -44,18 +44,12 @@ data class SendReview(
     val units: String,
     val estimatedFee: String,
     val expiresAt: Long,
-    /** Stablecoin charged by the paymaster; null when the fee is paid in the network's native coin. */
-    val feeAsset: Asset? = null
+    /** Stablecoin charged by the paymaster. */
+    val feeAsset: Asset
 ) {
     fun matches(asset: Asset, address: String, amount: String, now: Long): Boolean =
         now < expiresAt && this.asset == asset && this.address == address.trim() && this.amount == amount.trim()
 
-    val feeDisplay: String get() {
-        val (decimals, symbol) = when {
-            feeAsset != null -> feeAsset.decimals to feeAsset.name
-            asset.network == Network.BASE -> 18 to "ETH"
-            else -> 8 to "BTC"
-        }
-        return BigDecimal(estimatedFee).movePointLeft(decimals).stripTrailingZeros().toPlainString() + " $symbol"
-    }
+    val feeDisplay: String get() =
+        BigDecimal(estimatedFee).movePointLeft(feeAsset.decimals).stripTrailingZeros().toPlainString() + " ${feeAsset.name}"
 }

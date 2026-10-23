@@ -27,7 +27,6 @@ internal fun WalletAppearanceScreen(back: () -> Unit) {
         }
         StyleToggle(R.string.hide_balances, style.hideBalances) { save(style.copy(hideBalances = it)) }
         StyleToggle(R.string.style_compact, style.compact) { save(style.copy(compact = it)) }
-        StyleToggle(R.string.style_btc_first, style.bitcoinFirst) { save(style.copy(bitcoinFirst = it)) }
         StyleToggle(R.string.style_help, style.showHelp) { save(style.copy(showHelp = it)) }
         StyleChoices(R.string.style_preferred_token, listOf(Asset.USDC, Asset.USDT), style.preferredToken, { it.name }) { save(style.copy(preferredToken = it)) }
         Text(stringResource(R.string.style_token_hint), style = MaterialTheme.typography.bodySmall)

@@ -53,10 +53,11 @@ internal class HttpFiatGateway(backendUrl: String) : FiatGateway {
         val assets = response.getJSONArray("assets")
         val fiats = response.getJSONArray("fiats")
         val countries = response.getJSONArray("countries")
-        return FiatCapabilities((0 until assets.length()).map { index ->
+        // The backend may list assets this app does not offer; only USDC and USDT on Base are accepted.
+        return FiatCapabilities((0 until assets.length()).mapNotNull { index ->
             val row = assets.getJSONObject(index)
-            val asset = Asset.valueOf(row.getString("asset"))
-            check(row.getString("network") == if (asset == Asset.BTC) "mainnet" else "base")
+            val asset = Asset.entries.firstOrNull { it.name == row.getString("asset") } ?: return@mapNotNull null
+            check(row.getString("network") == "base")
             check(row.getInt("decimals") == asset.decimals)
             FiatAsset(asset, row.getBoolean("buy"), row.getBoolean("sell"))
         }, (0 until fiats.length()).map { index ->

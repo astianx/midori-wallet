@@ -37,17 +37,16 @@ import org.astianx.midori.one.wallet.WalletViewModel
 internal fun FiatScreen(wallet: WalletViewModel) {
     val account by wallet.state.collectAsState()
     val identity = account.ethAddress
-    val bitcoin = account.btcAddress
     if (account.country.isBlank()) {
         WalletCountryGate(wallet) { wallet.openFunding(account.fiatOperation) }
         return
     }
-    val vm: FiatViewModel = viewModel(key = "fiat:$identity:$bitcoin:${account.fiatOperation}:${account.country}", factory =
+    val vm: FiatViewModel = viewModel(key = "fiat:$identity:${account.fiatOperation}:${account.country}", factory =
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T = FiatViewModel(account.fiatOperation,
-                runCatching { HttpFiatGateway(BuildConfig.FIAT_BACKEND_URL) }.getOrNull(), identity, bitcoin,
-                { wallet.state.value.let { it.isWdkInitialized && it.ethAddress == identity && it.btcAddress == bitcoin } },
+                runCatching { HttpFiatGateway(BuildConfig.FIAT_BACKEND_URL) }.getOrNull(), identity,
+                { wallet.state.value.let { it.isWdkInitialized && it.ethAddress == identity } },
                 wallet::signFiatChallenge, account.country) as T
         })
     val state by vm.state.collectAsState()
@@ -86,7 +85,7 @@ internal fun FiatScreen(wallet: WalletViewModel) {
             catch (_: Exception) { vm.browserFailed() }
         }
     }
-    FiatContent(state, if (state.asset == Asset.BTC) bitcoin else identity,
+    FiatContent(state, identity,
         onBack = back, onOperation = vm::operation, onAsset = vm::asset,
         onFiat = vm::fiat, onAmount = vm::amount, onRetry = vm::reload, onContinue = vm::checkout,
         onCountry = vm::country, onCompare = vm::compare, onOffer = vm::chooseOffer)

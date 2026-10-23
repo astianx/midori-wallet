@@ -3,7 +3,7 @@ package org.astianx.midori.one
 import android.content.Context
 import androidx.annotation.StringRes
 
-enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Funding, Fiat, P2p, Invest, Sign, Messaging, Chats, Markets, More, Feature, MarketAsset, Help, Conversation, ChatSecurity, Licenses, GroupDetails, Personalization, ChatAppearance, ConversationAppearance, WalletAppearance, Profile }
+enum class Screen { Welcome, RestoreError, Create, Import, Home, Send, Receive, Funding, Fiat, P2p, Sign, Messaging, Chats, Markets, More, Feature, MarketAsset, Help, Conversation, ChatSecurity, Licenses, GroupDetails, Personalization, ChatAppearance, ConversationAppearance, WalletAppearance, Profile }
 
 internal val mainScreens = setOf(Screen.Chats, Screen.Home, Screen.Markets, Screen.More)
 
@@ -12,7 +12,6 @@ enum class AppFeature(@StringRes val title: Int, @StringRes val description: Int
     PROFILE(R.string.profile, R.string.profile_pending),
     SCANNER(R.string.scan_qr, R.string.scan_pending),
     BUY(R.string.wallet_deposit, R.string.funding_intro),
-    TRADE(R.string.trade, R.string.trade_pending),
     ALERTS(R.string.price_alerts, R.string.alerts_pending),
     DESKTOP(R.string.link_desktop, R.string.desktop_pending)
 }

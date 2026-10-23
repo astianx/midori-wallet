@@ -4,7 +4,6 @@
     <string name="app_name" translatable="false">MiWallet</string>
     <string name="brand_name" translatable="false">MIDORI WALLET</string>
     <string name="network_base" translatable="false">Base</string>
-    <string name="network_bitcoin" translatable="false">Bitcoin</string>
     <string name="qr_label" translatable="false">QR</string>
     <string name="amount_hint" translatable="false">0.00</string>
     <string name="mw_logo">Midori Wallet MW logo</string>
@@ -41,12 +40,10 @@
     <string name="sign">Sign</string>
     <string name="other_assets">Other assets</string>
     <string name="mainnet">Mainnet</string>
-    <string name="eth_gas">ETH · gas</string>
-    <string name="gas_explanation">No ETH needed to send USDC or USDT: the network fee comes from that balance. ETH is only used to send ETH itself and for P2P orders.</string>
     <string name="delete">Delete</string>
     <string name="delete_wallet">Delete wallet</string>
     <string name="wallet">Wallet</string>
-    <string name="send_explanation">USDC and USDT on Base. USDT is bridged. Stablecoin transfers pay the network fee from your USDC or USDT, so you do not need ETH. Transfers use real assets.</string>
+    <string name="send_explanation">USDC and USDT on Base. USDT is bridged. The network fee is paid from your USDC or USDT balance. Transfers use real assets.</string>
     <string name="recipient_address">Recipient address</string>
     <string name="address_hint">Enter wallet address…</string>
     <string name="amount">Amount</string>
@@ -60,8 +57,6 @@
     <string name="copy">Copy</string>
     <string name="explorer">Explorer</string>
     <string name="usdt_bridge_description">USDT bridged from Ethereum · Base Standard Bridge</string>
-    <string name="receive_btc_warning">Receive only BTC on Bitcoin mainnet. Check the network in the sending wallet.</string>
-    <string name="receive_base_warning">Receive only %1$s on Base. Select the Base network in the sending app; the QR contains only your wallet address.</string>
     <string name="copy_address">Copy address</string>
     <string name="address_copied">Address copied · %1$s</string>
     <string name="address_unavailable">Address unavailable. Try restoring your wallet again.</string>
@@ -99,10 +94,8 @@
     <string name="error_amount">Invalid amount</string>
     <string name="error_base_address">Invalid Base address</string>
     <string name="error_zero_address">The zero address cannot receive this transfer</string>
-    <string name="error_btc_address">Use a Bitcoin mainnet address (bc1, 1 or 3)</string>
     <string name="error_balance_unavailable">%1$s balance unavailable. Refresh and try again.</string>
     <string name="error_balance_insufficient">Insufficient %1$s balance</string>
-    <string name="error_insufficient_gas">Insufficient ETH on Base for the amount and fees</string>
     <string name="broadcast_notice">Broadcast to network; confirmation not checked</string>
     <string name="unknown_submission_notice">Submission uncertain. Check your address on the network before trying again.</string>
     <string name="error_prepare_transfer">Could not prepare the transfer. Check the balance, fees and connection.</string>
@@ -114,23 +107,17 @@
     <string name="wallet_deleted">Wallet deleted</string>
     <string name="receive_usdc">USDC · Base</string>
     <string name="receive_usdt">Bridged USDT · Base</string>
-    <string name="receive_eth">Your ETH address · Base</string>
-    <string name="receive_btc">Your BTC address · Bitcoin</string>
-    <string name="base_fee_hint">ETH on Base · quoted when sending</string>
-    <string name="gasless_fee_hint">Paid in USDC or USDT · no ETH needed · quoted when sending</string>
+    <string name="gasless_fee_hint">Paid in USDC or USDT · quoted when sending</string>
     <string name="error_gasless_account">The fee-paying account does not match this wallet. Nothing was sent.</string>
     <string name="error_insufficient_fee_token">Not enough USDC or USDT left to cover the network fee. Try sending a little less.</string>
     <string name="error_fee_too_high">The network fee is unusually high right now. Try again later.</string>
     <string name="send_amount_adjusted">Amount adjusted to leave room for the network fee. Review the payment again.</string>
-    <string name="send_review_gasless">No ETH needed: the fee is taken from your USDC or USDT balance. The first transfer also enables this on your account (one time only).</string>
+    <string name="send_review_gasless">The fee is taken from your USDC or USDT balance. The first transfer also enables this on your account (one time only).</string>
     <string name="tx_included">Included in a Base block</string>
     <string name="tx_failed_onchain">Failed on Base · transfer not completed</string>
-    <string name="btc_fee_hint">Variable · calculated when sending</string>
     <string name="error_wrong_base">The provider does not match Base mainnet</string>
-    <string name="error_gas_quote">Could not estimate gas. Check your connection and try again.</string>
+    <string name="error_gas_quote">Could not estimate the network fee. Check your connection and try again.</string>
     <string name="error_invalid_base_response">Invalid response from the Base provider. Try again.</string>
-    <string name="error_wrong_bitcoin">The provider does not match Bitcoin mainnet</string>
-    <string name="error_bitcoin_provider">Bitcoin provider unavailable. Try again.</string>
     <string name="error_local_key">The local key is unavailable. Restore using your recovery phrase.</string>
     <string name="error_local_backup">The local backup could not be read. Keep your recovery phrase and try again.</string>
     <string name="error_save_wallet">Could not save the wallet on this device</string>
@@ -140,13 +127,13 @@
     <string name="onboarding_intro_title">Your money. Your conversations.</string>
     <string name="onboarding_intro_body">USDC and USDT on Base, with XMPP messaging. Welcome to MiWallet.</string>
     <string name="onboarding_assets_title">Digital dollars on Base</string>
-    <string name="onboarding_assets_body">Native USDC and bridged USDT come first. Bitcoin is also here, with ETH for Base fees.</string>
+    <string name="onboarding_assets_body">Native USDC and bridged USDT on Base, kept together as one digital dollar account.</string>
     <string name="onboarding_recovery_title">Your keys, your control</string>
     <string name="onboarding_recovery_body">Your recovery phrase restores your wallet. Keep its 12 words in a safe place and never share them.</string>
     <string name="onboarding_messaging_title">Conversations with XMPP</string>
     <string name="onboarding_messaging_body">Private messaging with the open XMPP protocol and mandatory OMEMO encryption.</string>
     <string name="onboarding_intro_image">A wallet, digital coins and conversation bubbles</string>
-    <string name="onboarding_assets_image">Digital dollar tokens alongside a Bitcoin coin</string>
+    <string name="onboarding_assets_image">Digital dollar tokens</string>
     <string name="onboarding_recovery_image">A recovery notebook with twelve empty spaces and a key</string>
     <string name="onboarding_messaging_image">Conversation bubbles connected through an open network</string>
     <string name="onboarding_previous">Previous slide</string>
@@ -177,7 +164,6 @@
     <string name="wallet_setup_title">Your wallet, when you need it</string>
     <string name="wallet_setup_body">Create a wallet or import your recovery phrase to manage your assets.</string>
     <string name="buy">Buy</string>
-    <string name="trade">Trade</string>
     <string name="assets">Assets</string>
     <string name="refresh_balances">Refresh balances</string>
     <string name="market_status">Price feed not connected</string>
@@ -186,8 +172,6 @@
     <string name="asset_details">Asset details</string>
     <string name="native_usdc">Native USDC on Base</string>
     <string name="bridged_usdt">USDT bridged from Ethereum</string>
-    <string name="bitcoin_asset">Bitcoin on its own network</string>
-    <string name="eth_asset">ETH for fees on Base</string>
     <string name="explore_features">Explore</string>
     <string name="preferences">Preferences</string>
     <string name="app_language">App language</string>
@@ -201,7 +185,6 @@
     <string name="profile_pending">Sign in to your messaging service. This account is separate from your wallet.</string>
     <string name="scan_pending">Camera scanning is in development. You can already show your wallet QR from Receive.</string>
     <string name="buy_pending">Buying with local currency is not available yet. A payment provider must be connected before showing offers, fees or payment methods.</string>
-    <string name="trade_pending">Swaps are in development. Quotes, liquidity and transaction details must be verified before a trade can be offered.</string>
     <string name="price_alerts">Price alerts</string>
     <string name="alerts_pending">Alerts need live market data and notification settings. They are not active yet.</string>
     <string name="link_desktop">Link desktop</string>
@@ -209,7 +192,7 @@
     <string name="help_recovery_title">Keep your recovery phrase</string>
     <string name="help_recovery_body">Your 12 words restore your wallet. Store them privately; a messaging account cannot recover them for you.</string>
     <string name="help_networks_title">Check the asset and network</string>
-    <string name="help_networks_body">USDC, bridged USDT and ETH use Base. BTC uses Bitcoin. Check both before sending or sharing a receive address.</string>
+    <string name="help_networks_body">USDC and bridged USDT use Base. Check the network before sending or sharing a receive address.</string>
     <string name="help_status_title">Sending is not confirmation</string>
     <string name="help_status_body">A transaction hash means the transfer was submitted. Check its status in the network explorer before trying again.</string>
 
@@ -464,7 +447,6 @@
     <string name="style_message_in">Shall we meet later?</string>
     <string name="style_message_out">Yes, see you there!</string>
     <string name="style_texture">Show wallet texture</string>
-    <string name="style_btc_first">Show Bitcoin before ETH</string>
     <string name="style_help">Show the wallet help shortcut</string>
     <string name="style_preferred_token">Preferred token</string>
     <string name="style_token_hint">Used when opening Send or Receive from the wallet. Always check the asset and network before a transaction.</string>
@@ -525,9 +507,6 @@
     <string name="dollars_balance_explanation">Reference of 1 USD per token. Exchange value and fees may vary.</string>
     <string name="dollars_breakdown">View balance details</string>
     <string name="dollars_hide_breakdown">Hide balance details</string>
-    <string name="dollars_crypto_assets">Crypto assets</string>
-    <string name="dollars_invest">Invest in crypto</string>
-    <string name="dollars_invest_pending">Conversion coming soon · ETH and BTC stay separate</string>
     <string name="dollars_destination_asset">Choose the token the recipient accepts on Base. A wallet address does not identify its token.</string>
     <string name="dollars_send_balance">Account: %1$s nominal USD · Available without conversion: %2$s</string>
     <string name="dollars_receive_title">One account, one QR</string>
@@ -543,18 +522,6 @@
     <string name="send_review_estimate">The recipient receives the token shown above. Network fees are paid separately. This estimate lasts 60 seconds; the final fee is determined by the network.</string>
     <string name="send_review_expired">Review the payment again before sending. The estimate has expired or the payment changed.</string>
     <string name="send_fee_changed">The estimated fee increased. Review the payment again before sending.</string>
-    <string name="invest_intro">Explore converting your digital dollars to ETH on Base. ETH and Bitcoin remain separate from your dollar balance.</string>
-    <string name="invest_btc_pending">Conversion to native Bitcoin is in development. It requires a separate route to the Bitcoin network; a BTC token on Base is a different asset.</string>
-    <string name="invest_source">Token to convert</string>
-    <string name="invest_quote_action">Get indicative quote</string>
-    <string name="invest_estimated_receive">Estimated amount to receive</string>
-    <string name="invest_gas_reference">Indicative network cost: %1$s USD</string>
-    <string name="invest_provider">Quote provider: Velora · Base mainnet</string>
-    <string name="invest_quote_reference">Current market route. Valid for display for 60 seconds; it does not reserve a price or include token approval costs.</string>
-    <string name="invest_execution_pending">Preview available. Conversion execution is in development.</string>
-    <string name="invest_risk">Crypto prices can fall. Rates, liquidity and fees change; this quote does not guarantee a return.</string>
-    <string name="invest_quote_expired">Quote expired. Request an updated quote.</string>
-    <string name="invest_quote_unavailable">A valid quote could not be obtained. Try again later.</string>
     <string name="wallet_deposit">Deposit</string>
     <string name="wallet_withdraw">Withdraw</string>
     <string name="funding_intro">Add digital dollars to your account. Choose how you want to deposit.</string>

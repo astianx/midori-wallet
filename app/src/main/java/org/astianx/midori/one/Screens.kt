@@ -236,7 +236,7 @@ fun MoreScreen(vm: WalletViewModel, chat: ChatViewModel) {
             ShortcutRow(Icons.Outlined.Explore, stringResource(R.string.presentation),
                 stringResource(R.string.onboarding_version, BuildConfig.VERSION_NAME), { vm.navigate(Screen.Welcome) })
             SectionLabel(R.string.explore_features)
-            listOf(AppFeature.BUY, AppFeature.TRADE, AppFeature.DESKTOP).forEach { feature ->
+            listOf(AppFeature.BUY, AppFeature.DESKTOP).forEach { feature ->
                 ShortcutRow(featureIcon(feature), stringResource(if (feature == AppFeature.BUY) R.string.fiat_title else feature.title),
                     stringResource(if (feature == AppFeature.BUY) R.string.fiat_intro else R.string.in_development),
                     { vm.openFeature(feature) })

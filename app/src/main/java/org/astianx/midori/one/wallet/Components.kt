@@ -237,8 +237,7 @@ fun AssetSelector(selected: Asset, onSelect: (Asset) -> Unit) {
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
         Asset.entries.forEach { asset ->
-            NetworkPill(asset.name, if (asset.isToken) "$" else if (asset == Asset.BTC) "₿" else "Ξ",
-                selected == asset) { onSelect(asset) }
+            NetworkPill(asset.name, "$", selected == asset) { onSelect(asset) }
         }
     }
 }
@@ -264,8 +263,6 @@ fun WalletAction(icon: ImageVector, @StringRes label: Int, onClick: () -> Unit, 
 internal fun Asset.descriptionResource(): Int = when (this) {
     Asset.USDC -> R.string.native_usdc
     Asset.USDT -> R.string.bridged_usdt
-    Asset.BTC -> R.string.bitcoin_asset
-    Asset.ETH -> R.string.eth_asset
 }
 
 @Composable

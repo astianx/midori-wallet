@@ -193,7 +193,6 @@ fun WdkApp(vm: WalletViewModel, chat: ChatViewModel, themeMode: ThemeMode, onSty
                     Screen.Funding -> org.astianx.midori.one.wallet.FundingScreen(vm)
                     Screen.Fiat -> org.astianx.midori.one.wallet.fiat.FiatScreen(vm)
                     Screen.P2p -> org.astianx.midori.one.wallet.p2p.P2pScreen(vm)
-                    Screen.Invest -> org.astianx.midori.one.wallet.swap.InvestmentScreen(vm)
                     Screen.Sign -> SignMessageScreen(vm)
                     Screen.Messaging -> MessagingScreen(chat, vm::navigate, s.messagingReturnScreen)
                     Screen.Chats -> ChatsScreen(chat, vm::navigate, scanContact)

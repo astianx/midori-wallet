@@ -66,12 +66,11 @@ internal fun fiatChallengeMessage(origin: String, challenge: FiatChallenge, requ
     require(request.identityAddress.matches(Regex("0x[a-fA-F0-9]{40}")))
     require(request.country.matches(Regex("[A-Z]{2}")) && request.provider.matches(Regex("[a-z][a-z0-9_-]{0,39}")) &&
         request.offerId.matches(Regex("[a-f0-9]{64}")))
-    if (request.asset == Asset.BTC) require(org.astianx.midori.one.wallet.isBitcoinMainnetAddress(request.address))
-    else require(request.address.equals(request.identityAddress, ignoreCase = true))
+    require(request.address.equals(request.identityAddress, ignoreCase = true))
     return listOf("Midori Wallet - Fiat checkout", "Origin: $origin", "Nonce: ${challenge.nonce}",
         "Expires: ${challenge.expiresAt}", "Account: ${request.identityAddress.lowercase()}",
         "Operation: ${request.operation}", "Asset: ${request.asset}",
-        "Network: ${if (request.asset == Asset.BTC) "mainnet" else "base"}", "Fiat: ${request.fiat}",
+        "Network: base", "Fiat: ${request.fiat}",
         "Amount units: ${request.amountUnits}", "Wallet: ${request.address}",
         "Country: ${request.country}", "Provider: ${request.provider}", "Offer: ${request.offerId}",
         "This authorizes one checkout session. It does not authorize a transfer.").joinToString("\n")

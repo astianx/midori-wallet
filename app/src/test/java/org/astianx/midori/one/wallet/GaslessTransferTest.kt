@@ -75,11 +75,9 @@ class GaslessTransferTest {
 
     @Test
     fun feeDisplayUsesTheFeeTokenInsteadOfEth() {
-        fun review(feeAsset: Asset?, asset: Asset, fee: String) =
+        fun review(feeAsset: Asset, asset: Asset, fee: String) =
             SendReview(asset, recipient, "1", "1000000", fee, 0, feeAsset)
         assertEquals("0.003 USDC", review(Asset.USDC, Asset.USDC, "3000").feeDisplay)
         assertEquals("0.012345 USDT", review(Asset.USDT, Asset.USDC, "12345").feeDisplay)
-        assertEquals("0.000001 ETH", review(null, Asset.ETH, "1000000000000").feeDisplay)
-        assertEquals("0.00000303 BTC", review(null, Asset.BTC, "303").feeDisplay)
     }
 }

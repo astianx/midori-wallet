@@ -45,17 +45,6 @@ class BaseFeesTest {
     }
 
     @Test
-    fun nativeEthKeepsTheNativeValueAndHasNoTokenCalldata() = runBlocking {
-        val provider = Provider()
-        val tx = baseTransaction(Asset.ETH, sender, recipient, BigInteger.TEN)
-        assertEquals(recipient, tx.to)
-        assertEquals(BigInteger.TEN, tx.value)
-        assertEquals("0x", tx.data)
-        quoteBaseTotalFee(tx, BigInteger.ONE, provider)
-        assertEquals(256, provider.size)
-    }
-
-    @Test
     fun wrongChainAndMissingL1QuoteFailInsteadOfUsingPartialFees() {
         val tx = baseTransaction(Asset.USDC, sender, recipient, BigInteger.ONE)
         val wrongChain = Provider().apply { network = BigInteger.valueOf(84532) }

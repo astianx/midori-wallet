@@ -34,7 +34,7 @@ internal data class FiatUiState(
 
 internal class FiatViewModel(
     operation: FiatOperation, private val gateway: FiatGateway?, private val identityAddress: String,
-    private val bitcoinAddress: String, private val isCurrentWallet: () -> Boolean,
+    private val isCurrentWallet: () -> Boolean,
     private val sign: suspend (FiatRequest, FiatChallenge, String) -> String,
     private val lockedCountry: String = ""
 ) : ViewModel() {
@@ -116,7 +116,7 @@ internal class FiatViewModel(
             try {
                 check(isCurrentWallet())
                 val request = FiatRequest(selection.operation, selection.asset, selection.fiat,
-                    checkNotNull(selection.amountUnits), if (selection.asset == Asset.BTC) bitcoinAddress else identityAddress,
+                    checkNotNull(selection.amountUnits), identityAddress,
                     identityAddress.lowercase(), selection.country, offer.provider, offer.id)
                 val challenge = gateway.challenge(request)
                 fiatChallengeMessage(gateway.origin, challenge, request)

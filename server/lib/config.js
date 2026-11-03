@@ -15,7 +15,8 @@ export function loadConfig(env = process.env) {
   for (const flag of ['MIDORI_TRANSACTIONS_ENABLED', 'MIDORI_SPONSORSHIP_ENABLED']) {
     if (env[flag] && env[flag] !== 'false') throw new Error(`${flag} is not implemented by F2`);
   }
-  const publicOrigin = env.MIDORI_PUBLIC_ORIGIN || 'http://localhost:5173';
+  const publicOrigin = env.MIDORI_PUBLIC_ORIGIN;
+  if (!publicOrigin) throw new Error('MIDORI_PUBLIC_ORIGIN is required');
   let origin;
   try { origin = new URL(publicOrigin); } catch { throw new Error('Invalid MIDORI_PUBLIC_ORIGIN'); }
   if (origin.origin !== publicOrigin || origin.username || origin.password || (origin.protocol !== 'https:' && !(origin.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(origin.hostname)))) throw new Error('MIDORI_PUBLIC_ORIGIN must be an HTTPS origin or local HTTP origin');
@@ -31,6 +32,16 @@ export function loadConfig(env = process.env) {
     const alternate = new URL(publicOrigin); alternate.hostname = origin.hostname === 'localhost' ? '127.0.0.1' : 'localhost';
     for (const value of [alternate.origin, `http://127.0.0.1:${port}`, `http://localhost:${port}`]) allowedOrigins.add(value);
   }
+  for (const value of (env.MIDORI_ALLOWED_ORIGINS || '').split(',').filter(Boolean)) {
+    const allowed = new URL(value);
+    if (allowed.origin !== value || !['https:', 'http:'].includes(allowed.protocol) || (allowed.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(allowed.hostname))) throw new Error('Invalid MIDORI_ALLOWED_ORIGINS');
+    allowedOrigins.add(value);
+  }
+  for (const value of (env.MIDORI_NATIVE_ORIGINS || '').split(',').filter(Boolean)) {
+    if (!['https://localhost', 'app://localhost'].includes(value)) throw new Error('Invalid MIDORI_NATIVE_ORIGINS');
+    allowedOrigins.add(value);
+  }
+  if (env.MIDORI_INDEX_ENABLED && !['true','false'].includes(env.MIDORI_INDEX_ENABLED)) throw new Error('Invalid MIDORI_INDEX_ENABLED');
   return Object.freeze({
     connectionString, publicOrigin, rpID, host, rpcUrl,
     allowedOrigins: Object.freeze([...allowedOrigins]),
@@ -42,6 +53,12 @@ export function loadConfig(env = process.env) {
     maxDevices: integer(env.MIDORI_MAX_DEVICES, 100, 1, 100, 'device limit'),
     maxAuthenticators: 10,
     maxBlobBytes: 1048576,
+    indexEnabled: env.MIDORI_INDEX_ENABLED === 'true',
+    indexStartBlock: integer(env.MIDORI_INDEX_START_BLOCK, 0, 0, Number.MAX_SAFE_INTEGER, 'index start block'),
+    indexRecentBlocks: integer(env.MIDORI_INDEX_RECENT_BLOCKS, 100, 1, 10000, 'recent blocks'),
+    indexBlockBatch: integer(env.MIDORI_INDEX_BLOCK_BATCH, 1000, 1, 10000, 'index batch'),
+    indexAccountBatch: integer(env.MIDORI_INDEX_ACCOUNT_BATCH, 10, 1, 100, 'account batch'),
+    indexConfirmations: integer(env.MIDORI_INDEX_CONFIRMATIONS, 12, 1, 10000, 'confirmations'),
     workerIntervalMs: integer(env.MIDORI_WORKER_INTERVAL_MS, 60000, 1000, 3600000, 'worker interval'),
   });
 }

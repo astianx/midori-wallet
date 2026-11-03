@@ -19,7 +19,7 @@
     "prototype:install": "node scripts/prototype-install.mjs",
     "prototype:check": "npm --prefix experiments/wdk-compat run check",
     "prototype:build": "npm --prefix experiments/wdk-compat run build",
-    "build:web": "node scripts/build.mjs web",
+    "build:web": "npm --prefix web run build",
     "build:electron": "node scripts/build.mjs electron",
     "build:android": "node scripts/build.mjs android",
     "build:ios": "node scripts/build.mjs ios",
@@ -45,7 +45,11 @@
     "test:f2": "npm --prefix server test",
     "verify:f2": "npm --prefix server run db:verify",
     "db:migrate": "npm --prefix server run db:migrate",
-    "db:backup": "npm --prefix server run db:backup"
+    "db:backup": "npm --prefix server run db:backup",
+    "test:onboarding": "node scripts/f3-ui-tests.mjs",
+    "test:f3": "node tests/f3.test.mjs",
+    "test:f3:ui": "node scripts/f3-ui-tests.mjs",
+    "test:f3:android": "node scripts/f3-android-tests.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.64.1"

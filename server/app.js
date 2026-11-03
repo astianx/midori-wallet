@@ -9,6 +9,8 @@ import { walletService } from './lib/wallets.js';
 import { webauthnService } from './lib/webauthn.js';
 import { readBlob, writeBlob } from './lib/storage.js';
 import { readBalances } from './lib/balances.js';
+import { history } from './lib/history.js';
+import { ownTag, tagOptions, registerTag, resolveTag } from './lib/tags.js';
 
 const route = action => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
@@ -36,7 +38,7 @@ export function createApp({ db, config, compatibilityApp, logger = () => {} }) {
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'unavailable', database: ready ? 'ready' : 'unavailable' });
   }));
   app.get('/api/v1/openapi.json', (req, res) => res.sendFile(new URL('./openapi.json', import.meta.url).pathname));
-  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: false, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenSymbol: 'USDT', enabled: false }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: false, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenSymbol: 'USDT', enabled: false }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
   app.get('/api/v1/assets', route(async (req, res) => res.json({ assets: await catalog(db) })));
 
   const publicPost = (path, action, status = 200) => app.post(path, route(async (req, res) => { await limitUnauthenticated(db, config, req); res.status(status).json(await action(req.body)); }));
@@ -60,6 +62,12 @@ export function createApp({ db, config, compatibilityApp, logger = () => {} }) {
   });
   protectedRoute('get', '/api/v1/accounts/:id', async (req, client, principal) => { uuid(req.params.id); return account(client, principal.wallet_id, req.params.id); });
   protectedRoute('get', '/api/v1/accounts/:id/balances', async (req, client, principal) => { uuid(req.params.id); return readBalances(db, config, principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/accounts/:id/history', (req, client, principal) => { uuid(req.params.id); return history(client, config, principal.wallet_id, req.params.id, req.query); });
+  protectedRoute('get', '/api/v1/accounts/:id/history/:eventId', async (req, client, principal) => { uuid(req.params.id); return (await history(client, config, principal.wallet_id, req.params.id, {}, req.params.eventId)).transactions[0]; });
+  protectedRoute('get', '/api/v1/tag', (req, client, principal) => ownTag(client, principal.wallet_id));
+  protectedRoute('post', '/api/v1/tag/options', (req, client, principal) => tagOptions(client, config, principal, req.body));
+  protectedRoute('post', '/api/v1/tag/verify', (req, client, principal) => registerTag(client, principal, req.body));
+  protectedRoute('post', '/api/v1/tags/resolve', (req, client, principal) => resolveTag(client, config, principal, req.body));
   protectedRoute('get', '/api/v1/devices', async (req, client, principal) => {
     const { rows } = await client.query('SELECT id,public_key,created_at,revoked_at FROM devices WHERE wallet_id=$1 ORDER BY created_at', [principal.wallet_id]);
     return { devices: rows.map(row => ({ id: row.id, publicKey: row.public_key, createdAt: row.created_at, revokedAt: row.revoked_at })) };

@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5174 --outDir ../server/dist",
     "lint": "node --check src/main.js"

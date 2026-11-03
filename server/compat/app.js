@@ -28,7 +28,7 @@ export function validateRpcRequest(body) {
 
 export function createCompatibilityApp({ requestRpc, networks = NETWORKS, webDirectory = path.join(ROOT, 'server/dist'), allowedOrigins = [], persistence = 'Not implemented; PostgreSQL scheduled in F2' } = {}) {
   const app = express();
-  const origins = new Set(['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:4173','http://localhost:4173','http://127.0.0.1:8080','http://localhost:8080','https://localhost','app://localhost', ...allowedOrigins]);
+  const origins = new Set(allowedOrigins);
   const started = new Date().toISOString();
   app.disable('x-powered-by');
   app.use((req, res, next) => {

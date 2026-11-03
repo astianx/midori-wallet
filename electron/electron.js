@@ -62,7 +62,7 @@ Sentry.init({
 // Set up Application Menu
 Menu.setApplicationMenu(menu);
 
-[...schemes, { scheme: 'coinspace' }].forEach((item) => {
+[...schemes, { scheme: 'midoriwallet' }].forEach((item) => {
   if (!app.isDefaultProtocolClient(item.scheme)) {
     // Define custom protocol handler.
     // Deep linking works on packaged versions of the application!

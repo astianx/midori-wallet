@@ -15,17 +15,20 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode }) => {
   const isHttps = process.argv.includes('--https');
   const env = loadEnv(mode, './');
+  const development = { ...loadEnv(mode, './', 'MIDORI_'), ...process.env };
+  const apiOrigin = development.MIDORI_DEV_API_ORIGIN || env.VITE_API_ORIGIN;
+  if (apiOrigin && !['http:', 'https:'].includes(new URL(apiOrigin).protocol)) throw new Error('Invalid API origin');
   return {
     cacheDir: process.env.MIDORI_VITE_CACHE_DIR || 'node_modules/.vite',
     resolve: { alias: [{ find: '@midori/wallet-core', replacement: path.resolve('../packages/wallet-core/src/index.js') }, ...uiRuntimeAliases, ...['buffer', 'global', 'process'].map(name => ({ find: `vite-plugin-node-polyfills/shims/${name}`, replacement: path.resolve(`node_modules/vite-plugin-node-polyfills/shims/${name}/dist/index.js`) }))] },
     server: {
-      host: '127.0.0.1',
-      port: 5173,
+      host: development.MIDORI_DEV_HOST || '127.0.0.1',
+      port: Number(development.MIDORI_DEV_PORT || 5173),
       fs: { allow: [path.resolve('..')] },
       open: false,
       strictPort: true,
       proxy: {
-        '/api': { target: 'http://localhost:8080', headers: isHttps ? { 'X-Forwarded-Proto': 'https' } : {} },
+        ...(apiOrigin ? { '/api': { target: apiOrigin, headers: isHttps ? { 'X-Forwarded-Proto': 'https' } : {} } } : {}),
       },
     },
     base: process.env.BASE_URL || '/',

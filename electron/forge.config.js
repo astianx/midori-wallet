@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import setLanguages from 'electron-packager-languages';
 const schemes = [
-  'coinspace',
+  'midoriwallet',
   ...(await import('./dist/schemes.js')).default.map((item) => item.scheme),
 ];
 import { languages } from '../web/src/lib/i18n/languages.js';
@@ -27,7 +27,7 @@ const protocols = {
   name: pkg.productName,
   schemes,
 };
-const appxPackageName = VITE_DISTRIBUTION === 'appx' ? 'CoinWallet' : 'CoinWalletDev';
+const appxPackageName = VITE_DISTRIBUTION === 'appx' ? 'MidoriWallet' : 'MidoriWalletDev';
 
 export default {
   packagerConfig: {

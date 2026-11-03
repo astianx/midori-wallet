@@ -65,6 +65,8 @@ export async function grantRuntime(db, runtime) {
   await db.query(`GRANT USAGE ON SCHEMA midori TO ${name}`);
   await db.query(`GRANT SELECT ON midori.schema_migrations,midori.asset_registry TO ${name}`);
   await db.query(`GRANT SELECT,INSERT ON midori.wallets,midori.chain_accounts,midori.account_assets TO ${name}`);
+  await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.chain_events,midori.event_participants,midori.index_cursors,midori.index_checkpoints,midori.wallet_tags,midori.tag_reservations,midori.tag_challenges,midori.tag_resolutions TO ${name}`);
+  await db.query(`GRANT USAGE,SELECT ON SEQUENCE midori.chain_events_id_seq TO ${name}`);
   await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.devices,midori.authenticators,midori.auth_challenges,midori.auth_attempts,midori.sessions,midori.request_nonces,midori.encrypted_blobs TO ${name}`);
 }
 

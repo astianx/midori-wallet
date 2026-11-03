@@ -34,9 +34,9 @@ else {
   const file = new URL(`../../.local/f2-verify-${suffix}.dump`, import.meta.url).pathname;
   await backup(sourceUrl, file);
   const restored = await restore(restoredUrl, file);
-  const source = createDatabase(loadConfig({ DATABASE_URL: sourceUrl }));
-  const target = createDatabase(loadConfig({ DATABASE_URL: restoredUrl }));
-  const tables = ['schema_migrations', 'wallets', 'devices', 'chain_accounts', 'asset_registry', 'account_assets', 'auth_challenges', 'authenticators', 'sessions', 'auth_attempts', 'request_nonces', 'encrypted_blobs'];
+  const source = createDatabase(loadConfig({ MIDORI_PUBLIC_ORIGIN: process.env.MIDORI_PUBLIC_ORIGIN || 'http://localhost:5173', DATABASE_URL: sourceUrl }));
+  const target = createDatabase(loadConfig({ MIDORI_PUBLIC_ORIGIN: process.env.MIDORI_PUBLIC_ORIGIN || 'http://localhost:5173', DATABASE_URL: restoredUrl }));
+  const tables = ['schema_migrations', 'wallets', 'devices', 'chain_accounts', 'asset_registry', 'account_assets', 'auth_challenges', 'authenticators', 'sessions', 'auth_attempts', 'request_nonces', 'encrypted_blobs', 'chain_events', 'event_participants', 'index_cursors', 'index_checkpoints', 'wallet_tags', 'tag_reservations', 'tag_challenges', 'tag_resolutions'];
   const reconciliation = {};
   try {
     for (const table of tables) {

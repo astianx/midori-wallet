@@ -12,7 +12,7 @@ export default {
   },
   makers: [
     { name: '@electron-forge/maker-zip', platforms: ['darwin','linux','win32'] },
-    { name: '@electron-forge/maker-deb', platforms: ['linux'], config: { options: { name: 'midori-wallet', maintainer: 'Midori Wallet', homepage: 'https://astian.org/midori-wallet/', categories: ['Office','Finance'] } } },
+    ...(process.env.MIDORI_DESKTOP_FORMAT === 'zip' ? [] : [{ name: '@electron-forge/maker-deb', platforms: ['linux'], config: { options: { name: 'midori-wallet', maintainer: 'Midori Wallet', homepage: 'https://astian.org/midori-wallet/', categories: ['Office','Finance'] } } }]),
     { name: '@electron-forge/maker-squirrel', platforms: ['win32'], config: { name: 'midori_wallet', authors: 'Midori Wallet', description: 'Midori Wallet' } },
     { name: '@electron-forge/maker-dmg', platforms: ['darwin'], config: { name: 'Midori Wallet', icon: 'resources/icon.icns' } },
   ],

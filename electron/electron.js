@@ -128,7 +128,7 @@ app.whenReady().then(() => {
       try { decoded = decodeURIComponent(pathname); } catch { return new Response('', { status: 400 }); }
       const resource = decoded === '/' ? '/index.html' : decoded;
       const file = path.resolve(base, `.${resource}`);
-      if (!file.startsWith(base) || decoded.includes('\\') || !/^\/(?:index\.html|startup-[0-9]+\.js|assets\/|favicon|apple-touch|site\.webmanifest|safari-pinned|mstile|android-chrome)/.test(resource)) return new Response('', { status: 404 });
+      if (!file.startsWith(base) || decoded.includes('\\') || !/^\/(?:index\.html|(?:variables|schemes)\.js|build-info\.json|THIRD-PARTY-NOTICES\.txt|assets\/|favicon|apple-touch|site\.webmanifest|safari-pinned|mstile|android-chrome)/.test(resource)) return new Response('', { status: 404 });
       return net.fetch(pathToFileURL(file).href);
     }
     return net.fetch(req, { bypassCustomProtocolHandlers: true });

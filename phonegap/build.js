@@ -28,7 +28,7 @@ const config = template.replaceAll('{{id}}', release ? 'org.astian.miwallet' : '
 fs.writeFileSync(path.join(build,'config.xml'), config);
 if (!fs.existsSync(path.join(build,'package.json'))) fs.writeFileSync(path.join(build,'package.json'),JSON.stringify({ name: release ? 'midori-wallet' : 'midori-wallet-beta', version, private: true }));
 const cli = path.join(directory,'node_modules/cordova/bin/cordova');
-const run = args => execFileSync(process.execPath,[cli,...args],{cwd:build,env:{...env,CI:'true',CORDOVA_TELEMETRY_OPTOUT:'1'},stdio:'inherit'});
+const run = args => execFileSync(process.execPath,[cli,...args],{cwd:build,env:{...env,CI:'true',CORDOVA_TELEMETRY_OPTOUT:'1',npm_config_ignore_scripts:'true',npm_config_audit:'false',npm_config_fund:'false'},stdio:'inherit'});
 if (!fs.existsSync(path.join(build,'platforms',platform))) run(['platform','add',path.join(directory, 'node_modules', platform === 'android' ? 'cordova-android' : 'cordova-ios'),'--save']);
 const plugins = [ ['org.astian.midori.vault',path.join(directory,'plugins/midori-vault')], ['cordova-plugin-inappbrowser','cordova-plugin-inappbrowser@7.0.0'], ['cordova-plugin-customurlscheme','cordova-plugin-customurlscheme@5.0.2'], ['cordova-plugin-fingerprint-aio','cordova-plugin-fingerprint-aio@6.0.1'] ];
 for (const [id,source] of plugins) if (!fs.existsSync(path.join(build,'plugins',id))) run(['plugin','add',id === 'org.astian.midori.vault' ? source : path.join(directory, 'node_modules', id),'--save', ...(id === 'cordova-plugin-customurlscheme' ? ['--variable',`URL_SCHEME=${release ? 'midoriwallet' : 'midoriwallet-beta'}`] : [])]);

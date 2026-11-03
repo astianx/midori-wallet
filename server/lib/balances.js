@@ -4,7 +4,7 @@ import { account } from './repositories.js';
 export async function readBalances(db, config, walletId, accountId) {
   const saved = await account(db, walletId, accountId);
   const rpc = async (method, params) => {
-    const response = await fetch(config.rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(10000) });
+    const response = await fetch(config.rpcUrl, { redirect: 'error', method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error();
     const result = await response.json();
     if (result.error || typeof result.result !== 'string' || !/^0x[0-9a-fA-F]+$/.test(result.result)) throw new Error();

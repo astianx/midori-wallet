@@ -45,7 +45,7 @@ export function createCompatibilityApp({ requestRpc, networks = NETWORKS, webDir
   const rpc = requestRpc || (async (network, method, params) => {
     const url = networks[network]?.rpcUrl;
     if (!url) throw new Error('Unknown network');
-    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ jsonrpc:'2.0',id:1,method,params }), signal: AbortSignal.timeout(15000) });
+    const response = await fetch(url, { redirect: 'error', method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ jsonrpc:'2.0',id:1,method,params }), signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw new Error(`Upstream HTTP ${response.status}`);
     const body = await response.json();
     if (body.error || !Object.hasOwn(body,'result')) throw new Error('RPC read failed');

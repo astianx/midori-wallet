@@ -3,7 +3,7 @@ import { ApiError } from './errors.js';
 export function chainRpc(config, fetchImpl = fetch) {
   return async (method, params = []) => {
     try {
-      const response = await fetchImpl(config.rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(15000) });
+      const response = await fetchImpl(config.rpcUrl, { redirect: 'error', method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(15000) });
       if (response.status === 429) {
         const retry = response.headers.get('retry-after');
         const seconds = /^\d+$/.test(retry || '') ? Number(retry) : (Date.parse(retry) - Date.now()) / 1000;

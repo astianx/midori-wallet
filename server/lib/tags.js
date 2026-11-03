@@ -72,3 +72,30 @@ export async function validateResolution(client, walletId, id, destination) {
     WHERE r.id=$1 AND r.wallet_id=$2 AND r.expires_at>clock_timestamp()`, [id, walletId]);
   if (!rows.length || rows[0].address !== destination.toLowerCase()) throw new ApiError(409, 'TAG_RECONFIRM_REQUIRED', 'Resolve the tag again and confirm its current destination');
 }
+
+export async function verifySafeControl(address,owner,rpc) {
+  if(BigInt(await rpc('eth_chainId',[]))!==8453n)throw new ApiError(502,'CHAIN_UNAVAILABLE','Could not verify the account network');
+  const block=await rpc('eth_blockNumber',[]);
+  const code=await rpc('eth_getCode',[address,block]);
+  if(code==='0x')return;
+  const { Interface }=await import('ethers');
+  const safe=new Interface(['function isOwner(address) view returns(bool)','function getThreshold() view returns(uint256)']);
+  const owned=await rpc('eth_call',[{to:address,data:safe.encodeFunctionData('isOwner',[owner])},block]);
+  const threshold=await rpc('eth_call',[{to:address,data:safe.encodeFunctionData('getThreshold',[])},block]);
+  if(BigInt(owned)!==1n||BigInt(threshold)!==1n)throw new ApiError(409,'TAG_ACCOUNT_CONTROL_FAILED','This account is no longer controlled by the registered owner');
+}
+
+export async function verifyTagRegistration(db,principal,body,rpc) {
+  exactKeys(body,['id','signature']);requireValue(uuidPattern.test(body.id),'Invalid challenge');
+  const {rows}=await db.query('SELECT c.message,a.address,a.owner_address FROM tag_challenges c JOIN chain_accounts a ON a.id=c.account_id AND a.wallet_id=c.wallet_id WHERE c.id=$1 AND c.wallet_id=$2 AND c.consumed_at IS NULL AND c.expires_at>clock_timestamp()',[body.id,principal.wallet_id]);
+  if(!rows.length)throw new ApiError(409,'TAG_PROOF_EXPIRED','Request a new tag confirmation');
+  let signer;try{signer=verifyMessage(rows[0].message,body.signature).toLowerCase();}catch{requireValue(false,'Invalid ownership proof');}
+  requireValue(signer===rows[0].owner_address,'This signature does not control the account');
+  await verifySafeControl(rows[0].address,rows[0].owner_address,rpc);
+}
+
+export async function verifyTagSnapshot(db,id,rpc) {
+  const {rows}=await db.query('SELECT a.address,a.owner_address FROM tag_resolutions r JOIN wallet_tags t ON t.alias=r.alias AND t.revision=r.revision AND t.active JOIN chain_accounts a ON a.id=t.account_id AND a.address=r.address WHERE r.id=$1 AND r.expires_at>clock_timestamp()',[id]);
+  if(!rows.length)throw new ApiError(409,'TAG_RECONFIRM_REQUIRED','Resolve and confirm the tag again');
+  await verifySafeControl(rows[0].address,rows[0].owner_address,rpc);
+}

@@ -1,5 +1,4 @@
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
-/* eslint-env node */
 import { ViteEjsPlugin } from 'vite-plugin-ejs';
 import { ViteMinifyPlugin } from 'vite-plugin-minify';
 import basicSsl from '@vitejs/plugin-basic-ssl';

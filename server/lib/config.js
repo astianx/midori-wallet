@@ -23,7 +23,7 @@ export function loadConfig(env = process.env) {
   const host = env.MIDORI_API_HOST || '127.0.0.1';
   if (!['127.0.0.1', '::1', '0.0.0.0'].includes(host)) throw new Error('Invalid MIDORI_API_HOST');
   const rpcUrl = env.MIDORI_RPC_URL || 'https://mainnet.base.org';
-  try { if (new URL(rpcUrl).protocol !== 'https:') throw new Error(); } catch { throw new Error('Base RPC must use HTTPS'); }
+  try { if (new URL(rpcUrl).protocol !== 'https:' || new URL(rpcUrl).username || new URL(rpcUrl).password || new URL(rpcUrl).hash) throw new Error(); } catch { throw new Error('Base RPC must use HTTPS'); }
   const port = integer(env.MIDORI_API_PORT || env.PORT, 8080, 1024, 65535, 'API port');
   const allowedOrigins = new Set([publicOrigin]);
   if (origin.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(origin.hostname)) {

@@ -8,7 +8,7 @@
   "scripts": {
     "server": "node --env-file-if-exists=.env server.js",
     "server:watch": "node --env-file-if-exists=.env --watch server.js",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test --experimental-test-isolation=none test/*.test.mjs",
     "worker": "node --env-file-if-exists=.env worker.js",
     "db:migrate": "node --env-file-if-exists=.env.migrations scripts/migrate.mjs",
     "db:bootstrap": "node --env-file-if-exists=.env scripts/bootstrap.mjs",

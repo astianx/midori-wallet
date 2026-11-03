@@ -118,7 +118,7 @@ export default {
             this.back();
           }, { keepStep: true });
         } else {
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         }
       }
     },

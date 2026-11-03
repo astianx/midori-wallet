@@ -57,7 +57,7 @@ export default {
           this.error = this.$t('Invalid extra ID');
           return;
         }
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }

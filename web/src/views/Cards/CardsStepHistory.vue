@@ -60,7 +60,7 @@ export default {
           this.transactions.push(...data.transactions.filter((item) => !item.hidden));
         }
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
         this.error = err;
       } finally {
         this.isLoading = false;

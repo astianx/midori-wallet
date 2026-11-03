@@ -38,7 +38,7 @@ export default {
         } catch (err) {
           await walletConnect.rejectSessionRequest(this.storage.request, err.message);
           this.updateStorage({ status: false });
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         } finally {
           this.next('status');
         }

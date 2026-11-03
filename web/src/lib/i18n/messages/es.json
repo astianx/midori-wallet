@@ -507,5 +507,11 @@
   "Could not complete this step. Your payment has not been sent.": "No se pudo completar este paso. El pago no se ha enviado.",
   "This payment is already authorized. Keep checking its status.": "Este pago ya fue autorizado. Sigue consultando su estado.",
   "This tag must be verified again by its owner.": "El titular debe verificar de nuevo este tag.",
-  "Network": "Red"
+  "Network": "Red",
+  "Recovery file": "Archivo de recuperación",
+  "Recovery file verified": "Archivo de recuperación verificado",
+  "Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.": "Tus 12 palabras restauran tu wallet. También puedes guardar este archivo de recuperación opcional. No contiene claves privadas.",
+  "This owner key controls your Safe account. Keep your 12 words safe to restore your wallet.": "Esta clave controla tu cuenta Safe. Guarda tus 12 palabras de forma segura para restaurar tu wallet.",
+  "Use a 6-digit PIN": "Usar un PIN de 6 dígitos",
+  "Use a 4-digit PIN": "Usar un PIN de 4 dígitos"
 }

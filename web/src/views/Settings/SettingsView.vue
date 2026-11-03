@@ -92,7 +92,7 @@ export default {
   },
   methods: {
     support() {
-      this.$safeOpen('https://astian.org/midori-wallet/');
+      this.$safeOpen('https://github.com/astianx/midori-wallet/issues');
     },
     logout() {
       this.$account.logout();
@@ -175,6 +175,10 @@ export default {
       <MwListItem
         :title="securityPinTitle"
         @click="$router.push({ name: 'settings.pin' })"
+      />
+      <MwListItem
+        :title="$t('Recovery file')"
+        @click="$router.push({ name: 'settings.recovery' })"
       />
       <MwListItem
         :title="$t('Hardware security')"

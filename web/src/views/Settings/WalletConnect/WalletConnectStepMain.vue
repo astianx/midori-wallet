@@ -46,7 +46,7 @@ export default {
         const walletConnect = await this.$account.walletConnect();
         await walletConnect.disconnectSession();
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
         this.$router.replace({ name: 'settings.walletconnect', force: true });
@@ -80,7 +80,7 @@ export default {
         this.next('gas');
       } catch (err) {
         this.error = this.$account.unknownError(err);
-        console.error(err);
+        console.error('Midori Wallet operation failed');
         const walletConnect = await this.$account.walletConnect();
         await walletConnect.rejectSessionRequest(request, err.message);
       } finally {
@@ -105,7 +105,7 @@ export default {
         this.next('sign');
       } catch (err) {
         this.error = this.$account.unknownError(err);
-        console.error(err);
+        console.error('Midori Wallet operation failed');
         const walletConnect = await this.$account.walletConnect();
         await walletConnect.rejectSessionRequest(request, err.message);
       } finally {
@@ -135,7 +135,7 @@ export default {
         this.next('sign');
       } catch (err) {
         this.error = this.$account.unknownError(err);
-        console.error(err);
+        console.error('Midori Wallet operation failed');
         const walletConnect = await this.$account.walletConnect();
         await walletConnect.rejectSessionRequest(request, err.message);
       } finally {

@@ -90,7 +90,7 @@ export default {
         }
         this.$emit('update:modelValue', { filename: this.filename, ...value });
       } catch (err) {
-        console.error('Failed to read file', err);
+        console.error('Failed to read file');
         this.filename = '';
         this.$emit('update:modelValue', undefined);
       } finally {
@@ -131,7 +131,7 @@ export default {
       let width = img.naturalWidth;
       let height = img.naturalHeight;
 
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         width = Math.max(1, Math.round(img.naturalWidth * scale));
         height = Math.max(1, Math.round(img.naturalHeight * scale));

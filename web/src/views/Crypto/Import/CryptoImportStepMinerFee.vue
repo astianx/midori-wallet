@@ -41,7 +41,7 @@ export default {
         });
         this.next('privateKey');
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }

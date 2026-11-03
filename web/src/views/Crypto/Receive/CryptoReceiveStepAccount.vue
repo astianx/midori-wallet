@@ -45,7 +45,7 @@ export default {
           this.errors.username = this.$t('Username already taken');
           return;
         }
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }

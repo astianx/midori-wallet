@@ -37,7 +37,7 @@ export default {
           this.updateStorage({ status: true });
         } catch (err) {
           this.updateStorage({ status: false });
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         } finally {
           this.next('status');
         }

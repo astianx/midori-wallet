@@ -15,6 +15,10 @@ import router from './router/router.js';
 import i18n, { setLanguage } from './lib/i18n/i18n.js';
 
 async function main() {
+  let theme = 'system';
+  try { const saved = localStorage.getItem('_cs_theme'); if (['system','light','dark'].includes(saved)) theme = saved; } catch { /* use the system theme */ }
+  document.documentElement.dataset.theme = theme === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
+  window.electron?.setTheme(theme);
   document.addEventListener('touchstart', () => {}, false); // fix safari :active css bug
   if (import.meta.env.VITE_BUILD_TYPE === 'phonegap') {
     await (await import('../../phonegap/lib/deviceready.js')).default();
@@ -29,4 +33,9 @@ async function main() {
   app.mount('#app');
 }
 
-main().catch(console.error);
+main().catch(error => {
+  console.error('Midori Wallet startup failed');
+  document.getElementById('app')?.remove();
+  const fallback = document.getElementById('error');
+  if (fallback) fallback.style.display = 'block';
+});

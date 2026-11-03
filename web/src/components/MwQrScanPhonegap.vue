@@ -21,7 +21,7 @@ export default {
       if (!isReady) return this.$emit('back');
       window.QRScanner.scan((err, contents) => {
         if (err) {
-          console.error(err);
+          console.error('Midori Wallet operation failed');
           return this.$emit('back');
         }
         this.$emit('scan', { data: contents });

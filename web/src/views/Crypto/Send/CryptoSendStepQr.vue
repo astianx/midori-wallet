@@ -24,7 +24,7 @@ export default {
           try {
             temp.amount = Amount.fromString(parsed.amount, this.$wallet.crypto.decimals);
           } catch (err) {
-            console.error(err);
+            console.error('Midori Wallet operation failed');
           }
         }
         if (parsed.destinationTag && this.$wallet.crypto._id === 'xrp@ripple') {

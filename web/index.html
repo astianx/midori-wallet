@@ -50,7 +50,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Midori Wallet">
-    <script src="/startup-0.js" defer></script>
     <style>
       @import '/src/assets/styles/common.scss';
     </style>
@@ -71,14 +70,13 @@
           </div>
           <div class="error__error">
             <div class="error__title">Error</div>
-            <div class="error__message">Update your browser or install Chrome on your device.</div>
+            <div class="error__message">Midori Wallet could not start. Reload or restart the application.</div>
           </div>
         </div>
         <div class="error__copyright"> © <%= new Date().getFullYear() %> AstianX, Inc </div>
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>
-    <script src="/startup-1.js" defer></script>
     <% if (env.VITE_BUILD_TYPE === 'phonegap') { %>
       <script src="cordova.js"></script>
     <% } %>

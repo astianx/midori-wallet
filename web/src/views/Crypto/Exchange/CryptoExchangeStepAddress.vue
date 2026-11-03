@@ -122,7 +122,7 @@ export default {
             this.error = this.$t('Invalid address');
             return;
           }
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         } finally {
           this.isLoading = false;
         }

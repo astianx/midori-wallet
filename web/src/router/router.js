@@ -106,7 +106,7 @@ function setWalletProps($app, wallet) {
       await wallet.load();
       $account.emit('update');
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
     state.walletState.value = $app.config.globalProperties.$wallet?.state;
   };

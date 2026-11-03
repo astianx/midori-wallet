@@ -117,7 +117,7 @@ export default class Biometry {
       return true;
     } catch (err) {
       if (err?.message === 'fingerprint_error') return false;
-      console.error(err);
+      console.error('Midori Wallet operation failed');
       return false;
     }
   }
@@ -134,7 +134,7 @@ export default class Biometry {
       this.#clientStorage.setBiometryEnabled(false);
       return true;
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
       return false;
     }
   }
@@ -168,7 +168,7 @@ export default class Biometry {
       });
       return res.deviceToken;
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
       return false;
     }
   }
@@ -189,7 +189,7 @@ export default class Biometry {
       });
       return res;
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
       return false;
     }
   }

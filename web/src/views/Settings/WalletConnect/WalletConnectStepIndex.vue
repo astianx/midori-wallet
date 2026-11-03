@@ -77,7 +77,7 @@ export default {
           return;
         }
         this.error = this.$account.unknownError(err);
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }
@@ -142,7 +142,7 @@ export default {
       </MwButton>
       <MwButton
         type="primary-link"
-        @click="$safeOpen('https://astian.org/midori-wallet/')"
+        @click="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
       >
         {{ $t('What is WalletConnect?') }}
       </MwButton>

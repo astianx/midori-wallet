@@ -33,7 +33,7 @@ export default {
       <MwButtonGroup>
         <MwButton
           type="primary-link"
-          @click="$safeOpen('https://astian.org/midori-wallet/')"
+          @click="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
         >
           {{ $t('Read more') }}
         </MwButton>

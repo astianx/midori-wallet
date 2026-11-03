@@ -54,7 +54,7 @@ export default {
           });
           return;
         }
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }
@@ -65,7 +65,7 @@ export default {
         const walletConnect = await this.$account.walletConnect();
         await walletConnect.rejectSessionRequest(this.storage.request);
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
         this.back();

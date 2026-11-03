@@ -8,7 +8,6 @@ import AuthStepPassphrase from './AuthStepPassphrase.vue';
 import AuthStepPassphraseConfirmation from './AuthStepPassphraseConfirmation.vue';
 import AuthStepPassphraseGeneration from './AuthStepPassphraseGeneration.vue';
 import AuthStepPin from './AuthStepPin.vue';
-import AuthStepBackup from './AuthStepBackup.vue';
 import { clearRecovery } from '../../lib/account/recovery.js';
 import MwSelectCryptosStep from '../../components/MwSelectCryptosStep.vue';
 
@@ -18,7 +17,6 @@ export default {
   },
   beforeUnmount() { clearRecovery(); },
   steps: {
-    backup: AuthStepBackup,
     index: AuthStepIndex,
     passphraseGeneration: AuthStepPassphraseGeneration,
     passphrase: AuthStepPassphrase,

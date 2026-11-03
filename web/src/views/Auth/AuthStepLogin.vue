@@ -18,7 +18,7 @@ export default {
     confirm(recoveryHandle) {
       this.updateStorage({ recoveryHandle });
       this.passphrase = '';
-      this.next('backup');
+      this.next('pin');
     },
   },
 };

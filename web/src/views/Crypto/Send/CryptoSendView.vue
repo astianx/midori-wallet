@@ -47,7 +47,7 @@ export default {
         try {
           temp.amount = Amount.fromString(route.query.amount, this.$wallet.crypto.decimals);
         } catch (err) {
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         }
       }
       if (route.query.destinationTag && this.$wallet.crypto._id === 'xrp@ripple') {

@@ -42,7 +42,7 @@ export default class Ramps {
         });
         if (CountryList.getName(country)) this.#countryCode = country;
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       }
     }
     return this.#countryCode;

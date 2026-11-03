@@ -42,7 +42,7 @@ export default {
   computed: {
     supportUrl() {
       if (this.$wallet.crypto._id === 'ethereum@ethereum') {
-        return 'https://astian.org/midori-wallet/';
+        return 'https://github.com/astianx/midori-wallet/issues';
       }
     },
   },
@@ -70,7 +70,7 @@ export default {
       );
     } catch (err) {
       this.error = this.$account.unknownError(err);
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     } finally {
       this.isLoading = false;
     }

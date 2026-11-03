@@ -186,12 +186,10 @@ export default class Account extends EventEmitter {
   }
 
   get isCreated() {
-    return this.#clientStorage.hasId()
-      && this.#clientStorage.hasSeed('device')
-      && this.#clientStorage.hasSeed('wallet')
-      && this.#clientStorage.hasPinKey()
-      && this.#clientStorage.hasDetailsKey();
+    return this.#clientStorage.hasVault() && this.#clientStorage.hasPinKey();
   }
+
+  get pinLength() { return this.#clientStorage.getPinLength(); }
 
   get isLocked() {
     return !this.#deviceSeed;
@@ -293,8 +291,10 @@ export default class Account extends EventEmitter {
     const detailsKey = hmac(sha256, 'Midori Wallet', hex.encode(walletSeed));
     const pinKey = randomBytes(32);
     this.#opening = true;
+    let setupStarted = false;
     try {
-      this.#clientStorage.clear();
+      this.#clientStorage.beginSetup();
+      setupStarted = true;
       const pinHash = this.pinHash(pin, pinKey);
       this.#clientStorage.setPinKey(pinKey);
       const { deviceToken, walletToken, deviceId } = await this.#midori.create(walletSeed, deviceSeed, pinHash, detailsKey, descriptor);
@@ -307,8 +307,11 @@ export default class Account extends EventEmitter {
       await this.#init();
       if (generation !== this.#generation) throw new Error('Wallet is locked');
       await this.#initWalletsFromDetails();
+      this.#clientStorage.setPinLength(pin.length);
+      this.#clientStorage.commitSetup();
     } catch (error) {
       this.#midori.lock(); deviceSeed.fill(0); this.#deviceSeed = undefined;
+      if (setupStarted) this.#clientStorage.rollbackSetup();
       throw error;
     } finally { detailsKey.fill(0); pinKey.fill(0); this.#opening = false; }
   }
@@ -319,6 +322,7 @@ export default class Account extends EventEmitter {
     let seed;
     try {
       const { deviceToken } = await this.#midori.unlock(this.pinHash(pin));
+      this.#clientStorage.setPinLength(pin.length);
       if (generation !== this.#generation) throw new Error('Wallet is locked');
       seed = this.#midori.getSeed('device', hex.decode(deviceToken));
       await this.open(seed);
@@ -411,7 +415,6 @@ export default class Account extends EventEmitter {
     await Promise.allSettled(wallets.map(wallet => wallet.load()));
     this.#wallets.setMany(wallets);
 
-    if (this.connection === 'online') await this.#details.save();
     this.emit('update');
     this.#monitor?.stop();
     this.#monitor = new BalanceMonitor({ refresh: () => this.refreshBalances(), active: () => !this.isLocked && !document.hidden });
@@ -732,8 +735,8 @@ export default class Account extends EventEmitter {
 
 
   pinHash(pin, pinKey) {
-    if (typeof pin !== 'string') {
-      throw new TypeError('pin must be string');
+    if (typeof pin !== 'string' || !/^(?:[0-9]{4}|[0-9]{6})$/.test(pin)) {
+      throw new TypeError('PIN must have four or six digits');
     }
     pinKey = pinKey || this.#clientStorage.getPinKey();
     return hex.encode(hmac(sha256, pinKey, pin));
@@ -768,7 +771,7 @@ export default class Account extends EventEmitter {
     try {
       await wallet.load();
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
   }
 

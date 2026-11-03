@@ -43,7 +43,7 @@ export default {
       this.secondError = this.firstError;
       if (!valid) return;
       this.firstWord = ''; this.secondWord = '';
-      this.next('backup');
+      this.next('pin');
     },
   },
 };

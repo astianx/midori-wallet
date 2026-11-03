@@ -137,7 +137,7 @@ export default {
     </MwButton>
     <MwButton
       type="primary-link"
-      @click="$safeOpen('https://astian.org/midori-wallet/')"
+      @click="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
     >
       {{ $t('What is a passphrase?') }}
     </MwButton>

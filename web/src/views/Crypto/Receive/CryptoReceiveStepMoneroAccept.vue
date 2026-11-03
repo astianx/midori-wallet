@@ -50,11 +50,11 @@ export default {
           return this.error = this.$t('Transaction has already been accepted');
         }
         if (err instanceof MoneroErrors.UnknownTransactionError) {
-          // eslint-disable-next-line max-len
+
           return this.error = this.$t('Transaction not found or has less than 10 confirmations. Please wait 20 minutes and try again.');
         }
         this.error = this.$account.unknownError(err);
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }
@@ -83,7 +83,7 @@ export default {
           <MwButtonGroup>
             <MwButton
               type="primary-link"
-              @click="$safeOpen('https://astian.org/midori-wallet/')"
+              @click="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
             >
               {{ $t('Read more') }}
             </MwButton>

@@ -126,7 +126,7 @@ export default {
         return;
       }
       if (err instanceof errors.BigAmountConfirmationPendingError) {
-        // eslint-disable-next-line max-len
+
         this.errors['amount'] = this.$t('Some funds are temporarily unavailable. To send this transaction, you will need to wait for your pending transactions to be confirmed first. Available {amount} {symbol}', {
           amount: err.amount,
           symbol: this.crypto.symbol,
@@ -140,7 +140,7 @@ export default {
         });
         return;
       }
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     },
   },
 };

@@ -33,6 +33,7 @@ export default {
     const { type, isEnabled } = this.$account.biometry;
     return {
       value: '',
+      pinLength: this.mode === 'setup' ? 4 : this.$account.pinLength || 4,
       paymentActive: false,
       isLoading: false,
       isWrong: false,
@@ -44,7 +45,7 @@ export default {
   },
   watch: {
     async value(value) {
-      if (value.length === 6) {
+      if (value.length === this.pinLength) {
         await this.confirm(value);
       }
     },
@@ -63,10 +64,16 @@ export default {
   methods: {
     enter(number) {
       if (this.isLoading) return;
-      if (this.value.length === 6) return;
+      if (this.value.length === this.pinLength) return;
       this.value += number;
       this.error = undefined;
       window.taptic?.tap();
+    },
+    switchPinLength() {
+      if (this.isLoading) return;
+      this.value = '';
+      this.error = undefined;
+      this.pinLength = this.pinLength === 4 ? 6 : 4;
     },
     backspace() {
       if (this.isLoading) return;
@@ -74,7 +81,7 @@ export default {
       window.taptic?.tap();
     },
     keydown({ key }) {
-      if (/\d/.test(key)) {
+      if (/^[0-9]$/.test(key)) {
         this.enter(key);
       }
       if (key === 'Backspace') {
@@ -206,28 +213,10 @@ export default {
     </span>
     <template v-else>
       <div
+        v-for="digit in pinLength"
+        :key="digit"
         class="&__dot"
-        :class="{ '&__dot--active': value.length > 0 }"
-      />
-      <div
-        class="&__dot"
-        :class="{ '&__dot--active': value.length > 1 }"
-      />
-      <div
-        class="&__dot"
-        :class="{ '&__dot--active': value.length > 2 }"
-      />
-      <div
-        class="&__dot"
-        :class="{ '&__dot--active': value.length > 3 }"
-      />
-      <div
-        class="&__dot"
-        :class="{ '&__dot--active': value.length > 4 }"
-      />
-      <div
-        class="&__dot"
-        :class="{ '&__dot--active': value.length > 5 }"
+        :class="{ '&__dot--active': value.length >= digit }"
       />
     </template>
   </div>
@@ -317,6 +306,9 @@ export default {
       />
     </div>
   </div>
+  <MwButton type="primary-link" :disabled="isLoading" @click="switchPinLength">
+    {{ pinLength === 4 ? $t('Use a 6-digit PIN') : $t('Use a 4-digit PIN') }}
+  </MwButton>
 </template>
 
 <style lang="scss">

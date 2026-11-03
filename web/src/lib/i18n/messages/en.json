@@ -511,5 +511,7 @@
   "Recovery file": "Recovery file",
   "Recovery file verified": "Recovery file verified",
   "Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.": "Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.",
-  "This owner key controls your Safe account. Keep your 12 words safe to restore your wallet.": "This owner key controls your Safe account. Keep your 12 words safe to restore your wallet."
+  "This owner key controls your Safe account. Keep your 12 words safe to restore your wallet.": "This owner key controls your Safe account. Keep your 12 words safe to restore your wallet.",
+  "Use a 6-digit PIN": "Use a 6-digit PIN",
+  "Use a 4-digit PIN": "Use a 4-digit PIN"
 }

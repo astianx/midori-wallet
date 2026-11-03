@@ -66,6 +66,12 @@ export function walletService(db, config) {
         if (!rows.length) return null;
         const walletId = rows[0].id;
         await lockWallet(client, walletId);
+        const { rows: devices } = await client.query('SELECT id,wallet_id,revoked_at FROM devices WHERE public_key=$1 FOR UPDATE', [context.devicePublicKey]);
+        if (devices.length) {
+          const device = devices[0];
+          if (device.wallet_id !== walletId || device.revoked_at) return null;
+          return createSession(client, config, device);
+        }
         await checkDeviceLimit(client, walletId, config.maxDevices);
         const deviceId = randomUUID();
         await client.query('INSERT INTO devices(id,wallet_id,public_key) VALUES ($1,$2,$3)', [deviceId, walletId, context.devicePublicKey]);

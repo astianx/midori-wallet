@@ -13,6 +13,7 @@ env:
   MIDORI_SIGN_ARTIFACTS: 'false'
   MIDORI_BUILD_PROFILE: debug
   VITE_API_ORIGIN: https://wallet.astian.org
+  VITE_COMMIT: ${{ github.sha }}
 jobs:
   checks:
     runs-on: ubuntu-24.04
@@ -34,17 +35,22 @@ jobs:
       - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+      - name: Reject retired dependency registries
+        run: |
+          if rg -i '@coinspace|npm.pkg.github.com|github.com/CoinSpace|"mongodb"' package-lock.json web/package-lock.json server/package-lock.json electron/package-lock.json phonegap/package-lock.json .npmrc web/.npmrc server/.npmrc; then exit 1; fi
       - run: npm run lint
-      - run: npm test
-      - run: npm --prefix packages/wallet-core test
       - name: Prepare isolated PostgreSQL database
         run: |
           sudo systemctl start postgresql
           sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE midori_ci LOGIN PASSWORD 'midori-ci-local';"
           sudo -u postgres createdb -O midori_ci midori_verify_ci
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "GRANT pg_signal_backend TO midori_ci;"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE midori_api LOGIN PASSWORD 'midori-api-ci-local';"
       - run: npm --prefix server test
         env:
           MIDORI_TEST_DATABASE_URL: postgresql://midori_ci:midori-ci-local@127.0.0.1/midori_verify_ci
+          MIDORI_TEST_RUNTIME_DATABASE_URL: postgresql://midori_api:midori-api-ci-local@127.0.0.1/midori_verify_ci
+          MIDORI_PG_ADMIN_URL: postgresql://midori_ci:midori-ci-local@127.0.0.1/postgres
       - run: npm --prefix server run contract:build
       - run: git diff --exit-code -- server/openapi.json
       - run: npm run build:web
@@ -75,6 +81,9 @@ jobs:
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix electron ci --ignore-scripts --no-audit --no-fund
       - run: node electron/node_modules/electron/install.js
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
       - run: npm run build:electron
       - uses: actions/upload-artifact@v4
         with:
@@ -99,6 +108,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.14.2'
@@ -131,10 +142,16 @@ jobs:
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
       - run: npm run build:ios
+      - name: Preserve simulator bundle permissions
+        run: |
+          mkdir -p artifacts
+          ios_bundle=$(find phonegap/build-native/debug/platforms/ios/build -type d -name '*.app' -print -quit)
+          test -n "$ios_bundle"
+          tar -czf artifacts/midori-ios-simulator.tar.gz -C "$(dirname "$ios_bundle")" "$(basename "$ios_bundle")"
       - uses: actions/upload-artifact@v4
         with:
           name: midori-ios-simulator-${{ github.sha }}
           path: |
-            phonegap/build-native/debug/platforms/ios/build/**/*.app
+            artifacts/midori-ios-simulator.tar.gz
             artifacts/*build.json
           if-no-files-found: error

@@ -1,11 +1,11 @@
 import { app, dialog, shell } from 'electron';
 import { createGitHubUpdates, compareVersions } from '../dist/update-core.js';
-import { MIDORI_UPDATE_REPOSITORY, MIDORI_UPDATE_CHANNEL, MIDORI_UPDATE_PUBLIC_KEY } from './constants.js';
+import { MIDORI_UPDATE_REPOSITORY, MIDORI_UPDATE_CHANNEL, MIDORI_UPDATE_PUBLIC_KEY, MIDORI_BUILD_PROFILE } from './constants.js';
 
 class Updater {
   state = 'disabled';
   #source = createGitHubUpdates({ env: { MIDORI_UPDATE_REPOSITORY, MIDORI_UPDATE_CHANNEL, MIDORI_UPDATE_PUBLIC_KEY } });
-  supported = this.#source.enabled;
+  supported = this.#source.enabled && MIDORI_UPDATE_CHANNEL === (MIDORI_BUILD_PROFILE === 'release' ? 'stable' : 'beta');
   #checking = false;
   launchCheckForUpdates() { return false; }
   async checkForUpdates() {

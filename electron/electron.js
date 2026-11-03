@@ -1,4 +1,5 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import log from 'electron-log';
 import { Menu, app, ipcMain, nativeTheme, net, protocol } from 'electron';
 
@@ -11,6 +12,7 @@ import { assertCaller, paymentLink } from './lib/security.js';
 import path from 'node:path';
 import {
   APP_HOSTNAME,
+  MIDORI_BUILD_PROFILE,
   VITE_SITE_URL,
   isDevelopment,
   isLinux,
@@ -19,13 +21,28 @@ import {
   isWindows,
 } from './lib/constants.js';
 
+app.setName(MIDORI_BUILD_PROFILE === 'release' ? 'Midori Wallet' : 'Midori Wallet Beta');
+app.setPath('userData', path.join(app.getPath('appData'), MIDORI_BUILD_PROFILE === 'release' ? 'midori-wallet' : 'midori-wallet-beta'));
+
 log.initialize({ spyRendererConsole: false });
 if (!isDevelopment) {
   log.transports.file.level = false;
 }
 
 
+const installerEvent = process.argv[1];
+if (isWindows && app.isPackaged && ['--squirrel-install','--squirrel-updated','--squirrel-uninstall','--squirrel-obsolete'].includes(installerEvent)) {
+  if (installerEvent !== '--squirrel-obsolete') {
+    const update = path.resolve(path.dirname(process.execPath), '..', 'Update.exe');
+    const action = installerEvent === '--squirrel-uninstall' ? '--removeShortcut' : '--createShortcut';
+    try { execFileSync(update, [action, path.basename(process.execPath)], { windowsHide: true, timeout: 15000, stdio: 'ignore' }); }
+    catch { log.warn('Installer shortcut update failed'); }
+  }
+  app.exit(0);
+}
+
 if (isWindows) {
+  app.setAppUserModelId(`com.squirrel.${MIDORI_BUILD_PROFILE === 'release' ? 'midori_wallet.midori-wallet' : 'midori_wallet_beta.midori-wallet-beta'}`);
   app.setAboutPanelOptions({
     iconPath: fileURLToPath(new URL('./resources/64x64.png', import.meta.url)),
   });
@@ -54,7 +71,7 @@ if (!isMas && !lock) {
 // Set up Application Menu
 Menu.setApplicationMenu(menu);
 
-[...schemes, { scheme: 'midoriwallet' }].forEach((item) => {
+(MIDORI_BUILD_PROFILE === 'release' ? [...schemes, { scheme: 'midoriwallet' }] : [{ scheme: 'midoriwallet-beta' }]).forEach((item) => {
   if (!app.isDefaultProtocolClient(item.scheme)) {
     // Define custom protocol handler.
     // Deep linking works on packaged versions of the application!
@@ -122,8 +139,9 @@ app.whenReady().then(() => {
       const base = fileURLToPath(new URL('./dist/', import.meta.url));
       let decoded;
       try { decoded = decodeURIComponent(pathname); } catch { return new Response('', { status: 400 }); }
-      const file = path.resolve(base, `.${decoded === '/' ? '/index.html' : decoded}`);
-      if (!file.startsWith(base) || decoded.includes('\\') || !/^\/(?:index\.html|startup-[0-9]+\.js|assets\/|favicon|apple-touch|site\.webmanifest|safari-pinned|mstile|android-chrome)/.test(decoded)) return new Response('', { status: 404 });
+      const resource = decoded === '/' ? '/index.html' : decoded;
+      const file = path.resolve(base, `.${resource}`);
+      if (!file.startsWith(base) || decoded.includes('\\') || !/^\/(?:index\.html|(?:variables|schemes)\.js|build-info\.json|THIRD-PARTY-NOTICES\.txt|assets\/|favicon|apple-touch|site\.webmanifest|safari-pinned|mstile|android-chrome)/.test(resource)) return new Response('', { status: 404 });
       return net.fetch(pathToFileURL(file).href);
     }
     return net.fetch(req, { bypassCustomProtocolHandlers: true });

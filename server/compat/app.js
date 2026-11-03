@@ -52,7 +52,7 @@ export function createCompatibilityApp({ requestRpc, networks = NETWORKS, webDir
     return body.result;
   });
   app.get('/healthz', (req,res) => res.json({ status:'ok', phase:'F1' }));
-  app.get('/api/f1/status', (req,res) => res.json({ status:'ok', phase:'F1', startedAt:started, persistence, signing:'client-side only', broadcastEnabled:false, integrations:{ coinspace:false, docker:false }, nativeProofs:{ios:'pending macOS',safari:'pending macOS'} }));
+  app.get('/api/f1/status', (req,res) => res.json({ status:'ok', phase:'F1', startedAt:started, persistence, signing:'client-side only', broadcastEnabled:false, integrations:{ legacyProviders:false, docker:false }, nativeProofs:{ios:'pending macOS',safari:'pending macOS'} }));
   app.get('/api/f1/networks', (req,res) => res.json(Object.fromEntries(Object.entries(networks).map(([name,network])=>[name,{ chainId:network.chainId,testnet:network.testnet,assets:network.assets }]))));
   app.post('/api/f1/rpc/:network', async (req,res) => {
     if (!Object.hasOwn(networks,req.params.network)) return res.status(404).json({error:'Unknown network'});

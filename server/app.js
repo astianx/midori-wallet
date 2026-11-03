@@ -18,7 +18,7 @@ import { ownTag, tagOptions, registerTag, resolveTag, verifyTagRegistration, ver
 const route = action => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
 
-export function createApp({ db, config, compatibilityApp, provider, logger = () => {} }) {
+export function createApp({ db, config, webApp, provider, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
   const webauthn = webauthnService(db, config);
@@ -110,7 +110,7 @@ export function createApp({ db, config, compatibilityApp, provider, logger = () 
     if (!result.rowCount) throw notFound();
     return { revoked: true };
   });
-  if (compatibilityApp) app.use((req, res, next) => req.path.startsWith('/api/') && !req.path.startsWith('/api/f1/') ? next() : compatibilityApp(req, res, next));
+  if (webApp) app.use((req, res, next) => req.path.startsWith('/api/') ? next() : webApp(req, res, next));
   app.use((req, res, next) => next(notFound()));
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);

@@ -4,7 +4,7 @@
   "productName": "Midori Wallet",
   "executableName": "midori-wallet",
   "version": "0.1.0",
-  "description": "Shared Midori Wallet desktop shell",
+  "description": "Midori Wallet for USDT and USDC on Base",
   "license": "MIT",
   "type": "module",
   "main": "electron.js",
@@ -33,5 +33,6 @@
   "engines": {
     "node": ">=22.22.2 <23",
     "npm": ">=10 <13"
-  }
+  },
+  "author": "Midori Wallet"
 }

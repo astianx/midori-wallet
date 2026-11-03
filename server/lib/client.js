@@ -3,10 +3,15 @@ import { requestMessage } from './crypto.js';
 
 export class MidoriClient {
   constructor({ origin, privateKey, session, fetchImpl = fetch }) {
-    Object.assign(this, { origin, privateKey, session, fetchImpl });
+    const base = new URL(origin);
+    if (base.origin !== origin.replace(/\/$/,'') || base.username || base.password || (base.protocol !== 'https:' && !(base.protocol === 'http:' && ['localhost','127.0.0.1'].includes(base.hostname)))) throw new Error('Invalid API origin');
+    Object.assign(this, { origin: base.origin, privateKey, session, fetchImpl });
   }
 
   async request(method, target, value) {
+    if (typeof target !== 'string' || !target.startsWith('/api/v1/') || target.includes('#') || target.includes('..')) throw new Error('Invalid API target');
+    const url = new URL(target, this.origin);
+    if (url.origin !== this.origin || url.pathname !== target.split('?')[0] || /[\\\u0000-\u0020]/.test(target)) throw new Error('Invalid API target');
     const body = value === undefined ? '' : JSON.stringify(value);
     const headers = { 'Content-Type': 'application/json' };
     if (this.session) {
@@ -17,7 +22,7 @@ export class MidoriClient {
       headers['X-Midori-Nonce'] = nonce;
       headers['X-Midori-Signature'] = sign(null, Buffer.from(requestMessage({ method, target, timestamp, nonce, token: this.session.token, body })), this.privateKey).toString('base64url');
     }
-    const response = await this.fetchImpl(new URL(target, this.origin), { method, headers, ...(body ? { body } : {}), signal: AbortSignal.timeout(15000) });
+    const response = await this.fetchImpl(url, { method, headers, redirect: 'error', credentials: 'omit', cache: 'no-store', ...(body ? { body } : {}), signal: AbortSignal.timeout(15000) });
     const result = await response.json();
     if (!response.ok) {
       const error = new Error(result.error?.message || 'API request failed');

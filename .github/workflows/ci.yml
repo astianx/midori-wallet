@@ -43,11 +43,13 @@ jobs:
           sudo systemctl start postgresql
           sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE midori_ci LOGIN PASSWORD 'midori-ci-local';"
           sudo -u postgres createdb -O midori_ci midori_verify_ci
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "GRANT pg_signal_backend TO midori_ci;"
           sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE midori_api LOGIN PASSWORD 'midori-api-ci-local';"
       - run: npm --prefix server test
         env:
           MIDORI_TEST_DATABASE_URL: postgresql://midori_ci:midori-ci-local@127.0.0.1/midori_verify_ci
           MIDORI_TEST_RUNTIME_DATABASE_URL: postgresql://midori_api:midori-api-ci-local@127.0.0.1/midori_verify_ci
+          MIDORI_PG_ADMIN_URL: postgresql://midori_ci:midori-ci-local@127.0.0.1/postgres
       - run: npm --prefix server run contract:build
       - run: git diff --exit-code -- server/openapi.json
       - run: npm run build:web

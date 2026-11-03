@@ -14,7 +14,7 @@ const updateMenu = {
       case 'checking-for-update':
         return 'Checking for Updates';
       case 'update-available':
-        return 'Updating...';
+        return 'Update Available';
       case 'update-downloaded':
         return 'Restart to Update';
       default:

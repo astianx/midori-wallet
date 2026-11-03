@@ -1,4 +1,4 @@
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import log from 'electron-log';
 import { Menu, app, ipcMain, nativeTheme, net, protocol } from 'electron';
 
@@ -124,7 +124,7 @@ app.whenReady().then(() => {
       try { decoded = decodeURIComponent(pathname); } catch { return new Response('', { status: 400 }); }
       const file = path.resolve(base, `.${decoded === '/' ? '/index.html' : decoded}`);
       if (!file.startsWith(base) || decoded.includes('\\') || !/^\/(?:index\.html|startup-[0-9]+\.js|assets\/|favicon|apple-touch|site\.webmanifest|safari-pinned|mstile|android-chrome)/.test(decoded)) return new Response('', { status: 404 });
-      return net.fetch(new URL(`file://${file}`));
+      return net.fetch(pathToFileURL(file).href);
     }
     return net.fetch(req, { bypassCustomProtocolHandlers: true });
   });

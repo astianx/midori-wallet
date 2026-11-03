@@ -22,7 +22,7 @@ const updateMenu = {
     }
   },
   get enabled() {
-    return ['update-not-available', 'error'].includes(updater.state);
+    return ['disabled', 'update-not-available', 'update-available', 'error'].includes(updater.state);
   },
   click() {
     if (updater.state === 'update-downloaded') {
@@ -34,8 +34,8 @@ const updateMenu = {
 };
 
 // eslint-disable-next-line max-len
-const FAQ = `https://support.coin.space/hc/en-us/sections/115000511287-FAQ?tf_24464158=${encodeURIComponent(prettyVersion)}`;
-const SUPPORT = `https://support.coin.space/hc/en-us?tf_24464158=${encodeURIComponent(prettyVersion)}`;
+const FAQ = `https://astian.org/midori-wallet/`;
+const SUPPORT = `https://astian.org/midori-wallet/`;
 
 const helpMenu = {
   role: 'help',

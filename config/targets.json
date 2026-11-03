@@ -1,0 +1,6 @@
+{
+  "web": { "buildType": "web", "platform": "web", "distribution": "web", "directory": "web" },
+  "electron": { "buildType": "electron", "platform": "linux", "distribution": "flatpak", "directory": "electron" },
+  "android": { "buildType": "phonegap", "platform": "android", "distribution": "android-apk", "directory": "phonegap" },
+  "ios": { "buildType": "phonegap", "platform": "ios", "distribution": "ios", "directory": "phonegap" }
+}

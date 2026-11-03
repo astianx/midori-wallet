@@ -6,10 +6,6 @@
     <true/>
     <key>com.apple.security.network.client</key>
     <true/>
-    <key>com.apple.security.device.usb</key>
-    <true/>
-    <key>com.apple.security.device.bluetooth</key>
-    <true/>
     <key>com.apple.security.device.camera</key>
     <true/>
   </dict>

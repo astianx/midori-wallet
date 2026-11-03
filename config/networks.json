@@ -1,0 +1,22 @@
+{
+  "base-sepolia": {
+    "chainId": 84532,
+    "rpcUrl": "https://sepolia.base.org",
+    "explorerUrl": "https://sepolia.basescan.org",
+    "testnet": true,
+    "assets": {
+      "USDC": { "contract": "0x036CbD53842c5426634e7929541eC2318f3dCF7e", "decimals": 6, "representation": "Circle testnet" },
+      "USDT": { "contract": null, "decimals": 6, "representation": "test contract to be chosen and labelled in F1" }
+    }
+  },
+  "base": {
+    "chainId": 8453,
+    "rpcUrl": "https://mainnet.base.org",
+    "explorerUrl": "https://basescan.org",
+    "testnet": false,
+    "assets": {
+      "USDC": { "contract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6, "representation": "Circle native" },
+      "USDT": { "contract": "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2", "decimals": 6, "representation": "bridged, operational acceptance pending F1" }
+    }
+  }
+}

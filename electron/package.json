@@ -13,32 +13,23 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env start.mjs",
-    "build": "node --env-file-if-exists=.env build.js",
+    "build": "node ../scripts/build.mjs electron",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "node ../scripts/publish-artifact.mjs --target electron",
-    "lint": "eslint --report-unused-disable-directives .",
+    "lint": "npm --prefix .. run lint -- electron",
     "clean": "rm -rf ./dist && rm -rf ./out"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.10.2",
-    "@electron-forge/maker-appx": "^7.10.2",
-    "@electron-forge/maker-base": "^7.10.2",
-    "@electron-forge/maker-dmg": "^7.10.2",
-    "@electron-forge/maker-flatpak": "^7.10.2",
-    "@electron-forge/maker-pkg": "^7.10.2",
-    "@electron-forge/maker-zip": "^7.10.2",
-    "@electron-forge/publisher-gcs": "^7.10.2",
-    "@electron-forge/publisher-github": "^7.10.2",
-    "app-builder-lib": "^26.16.1",
-    "ejs": "^3.1.9",
-    "electron": "^38.7.2",
-    "electron-packager-languages": "^0.6.0",
-    "eslint": "^9.39.2"
+    "@electron-forge/cli": "7.10.2",
+    "@electron-forge/maker-zip": "7.10.2",
+    "@electron-forge/maker-dmg": "7.10.2",
+    "@electron-forge/maker-squirrel": "7.10.2",
+    "@electron-forge/maker-deb": "7.10.2",
+    "electron": "45.2.1"
   },
   "dependencies": {
-    "@sentry/electron": "^7.5.0",
-    "electron-log": "^5.0.0"
+    "electron-log": "5.4.3"
   },
   "engines": {
     "node": ">=22.22.2 <23",

@@ -59,7 +59,7 @@ export default {
           await this.$account.updatePlatformSettings(this.$wallet, this.settings, walletSeed);
           this.$router.up();
         } catch (err) {
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         }
       }, { keepStep: true });
       this.isLoading = false;

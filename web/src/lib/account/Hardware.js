@@ -64,7 +64,7 @@ export default class Hardware {
       if (err.message === 'hardware_not_supported') {
         eventBus.emit('MwErrorHardwareNotSupported');
       } else {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       }
       return false;
     }
@@ -82,7 +82,7 @@ export default class Hardware {
       });
       return true;
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
       return false;
     }
   }
@@ -121,7 +121,7 @@ export default class Hardware {
       if (err.message === 'hardware_not_supported') {
         eventBus.emit('MwErrorHardwareNotSupported');
       } else {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       }
       return false;
     }

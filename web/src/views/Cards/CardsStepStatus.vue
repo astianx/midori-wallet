@@ -39,7 +39,7 @@ export default {
         if (this.storage.error instanceof BuyDisabledError) {
           return this.$t('Card issuance has been temporarily suspended.');
         }
-        console.error(this.storage.error);
+        console.error('Midori Wallet operation failed');
         return this.$account.unknownError(this.storage.error);
       }
     },

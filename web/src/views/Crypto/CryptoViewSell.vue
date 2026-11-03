@@ -34,7 +34,7 @@ export default {
         this.providers = await this.$account.ramps.sell(this.countryCode, this.$wallet, this.$resolvedTheme);
       } catch (err) {
         this.providers = [];
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }

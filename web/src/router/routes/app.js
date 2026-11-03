@@ -173,7 +173,7 @@ const app = [
             };
           }
         } catch (err) {
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         }
         return { name: 'home' };
       },

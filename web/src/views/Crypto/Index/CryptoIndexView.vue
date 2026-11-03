@@ -89,7 +89,7 @@ export default {
         );
         this.chartSeries = prices;
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
         this.chartError = true;
       } finally {
         this.isLoadingChart = false;

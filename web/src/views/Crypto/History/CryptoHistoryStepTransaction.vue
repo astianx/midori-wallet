@@ -38,7 +38,7 @@ export default {
       try {
         this.transaction = await this.$account.exchanges.reexchangifyTransaction(this.transaction);
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       }
     }
   },

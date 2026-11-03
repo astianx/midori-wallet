@@ -183,7 +183,7 @@ export default {
         default:
           this.error = this.$account.unknownError(error);
           this.value = '';
-          console.error(error);
+          console.error('Midori Wallet operation failed');
       }
     },
   },

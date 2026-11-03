@@ -111,7 +111,7 @@ export default class Cards {
       this.#enabled = enabled;
       this.#config = config;
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
   }
 
@@ -154,7 +154,7 @@ export default class Cards {
         });
         if (CountryList.getName(country)) this.#countryCode = country;
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       }
     }
     return this.#countryCode;
@@ -254,7 +254,7 @@ export default class Cards {
       });
       return true;
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
   }
 
@@ -267,7 +267,7 @@ export default class Cards {
       });
       return true;
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
   }
 
@@ -310,7 +310,7 @@ export default class Cards {
         seed: 'cardholder',
       });
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
   }
 

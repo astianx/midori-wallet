@@ -101,7 +101,7 @@ export default class BaseExchange {
     try {
       return this.#loadExchanges();
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
   }
 

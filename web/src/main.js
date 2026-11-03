@@ -34,7 +34,7 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error('Midori Wallet startup failed', error?.name || 'Error');
+  console.error('Midori Wallet startup failed');
   document.getElementById('app')?.remove();
   const fallback = document.getElementById('error');
   if (fallback) fallback.style.display = 'block';

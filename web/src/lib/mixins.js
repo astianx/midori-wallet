@@ -35,7 +35,7 @@ export const walletSeed = {
           await callback(walletSeed);
         }
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       }
     },
   },

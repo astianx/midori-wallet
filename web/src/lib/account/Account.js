@@ -768,7 +768,7 @@ export default class Account extends EventEmitter {
     try {
       await wallet.load();
     } catch (err) {
-      console.error(err);
+      console.error('Midori Wallet operation failed');
     }
   }
 

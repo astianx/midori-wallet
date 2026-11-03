@@ -73,7 +73,7 @@ export default {
             this.redirectToApp();
           }, { layout: 'AuthStepLayout' });
         } else {
-          console.error(err);
+          console.error('Midori Wallet operation failed');
         }
       } finally {
         this.isLoading = false;
@@ -90,7 +90,7 @@ export default {
         await this.$account.details.save();
         this.redirectToApp();
       } catch (err) {
-        console.error(err);
+        console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
       }

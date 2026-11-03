@@ -7,6 +7,7 @@ import menu from './lib/menu.js';
 import openWindow from './lib/openWindow.js';
 import schemes from './dist/schemes.js';
 import updater from './lib/updater.js';
+import { installVault } from './lib/vault.js';
 import {
   APP_HOSTNAME,
   VITE_GOOGLE_API_KEY,
@@ -112,6 +113,7 @@ app.on('window-all-closed', () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   log.info('app ready');
+  installVault();
 
   ipcMain.handle('geolocation', async (event, options) => {
     const res = await fetch(`https://www.googleapis.com/geolocation/v1/geolocate?key=${VITE_GOOGLE_API_KEY}`, {

@@ -7,5 +7,5 @@ export const isWindows = process.platform === 'win32';
 export const isDevelopment = mode === 'development';
 export const isMas = process.mas === true;
 export const isWindowsStore = process.windowsStore === true;
-export const APP_HOSTNAME = new URL(variables.VITE_SITE_URL).hostname;
+export const APP_HOSTNAME = 'localhost';
 export * from '../dist/variables.js';

@@ -27,6 +27,9 @@ export default function openWindow(deeplink) {
       minHeight: 700,
       webPreferences: {
         devTools: isDevelopment,
+        sandbox: true,
+        nodeIntegration: false,
+        contextIsolation: true,
         preload: fileURLToPath(new URL('preload.js', import.meta.url)),
       },
     });

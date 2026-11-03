@@ -4,10 +4,10 @@
   "productName": "Midori Wallet",
   "executableName": "midori-wallet",
   "version": "0.1.0",
-  "description": "Midori WDK F1 Linux runtime proof",
+  "description": "Shared Midori Wallet desktop shell",
   "license": "MIT",
   "type": "module",
-  "main": "f1-main.js",
+  "main": "electron.js",
   "config": {
     "forge": "forge.config.js"
   },

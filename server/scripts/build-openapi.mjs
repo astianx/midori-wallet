@@ -89,4 +89,6 @@ endpoint('get', '/api/v1/accounts/{id}/intents', 'Restore payment tracking on an
 endpoint('get', '/api/v1/intents/{id}', 'Track a persisted payment', null, ref('PaymentIntent'), auth);
 endpoint('post', '/api/v1/intents/{id}/authorize', 'Authorize the exact quote with the local owner signature', object({ quoteDigest: { type: 'string', pattern: '^[0-9a-f]{64}$' }, signature: { type: 'string', pattern: '^0x[0-9a-fA-F]{130}$' } }), ref('PaymentIntent'), auth);
 endpoint('post', '/api/v1/intents/{id}/cancel', 'Cancel an unsigned payment quote', object({}), ref('PaymentIntent'), auth);
+endpoint('get', '/api/v1/updates/{platform}/{arch}', 'Verified Midori release manifest', null, object({ enabled: { type: 'boolean' }, update: { type: ['object','null'], additionalProperties: true } }));
+spec.paths['/api/v1/updates/{platform}/{arch}'].get.parameters.forEach(parameter => { parameter.schema = { enum: parameter.name === 'platform' ? ['web','linux','darwin','win32','android','ios'] : ['x64','arm64','any'] }; });
 await writeFile(new URL('../openapi.json', import.meta.url), JSON.stringify(spec, null, 2) + '\n');

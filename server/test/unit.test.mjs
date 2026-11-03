@@ -7,7 +7,7 @@ import { verifyEd25519, requestMessage } from '../lib/crypto.js';
 import { createWalletSession } from '../../packages/wallet-core/src/index.js';
 
 test('configuration requires PostgreSQL and Base mainnet and rejects unsafe origins and enabled payments', () => {
-  const env = { DATABASE_URL: 'postgresql://midori@localhost/midori' };
+  const env = { DATABASE_URL: 'postgresql://midori@localhost/midori', MIDORI_PUBLIC_ORIGIN: 'http://localhost:5173' };
   assert.throws(() => loadConfig({}));
   for (const overrides of [{ DATABASE_URL: 'mongodb://localhost/midori' }, { MIDORI_CHAIN_ID: '84532' }, { MIDORI_NETWORK: 'base-sepolia' }, { MIDORI_API_PORT: 'invalid' }, { MIDORI_PUBLIC_ORIGIN: 'http://remote.example' }, { MIDORI_PUBLIC_ORIGIN: 'https://example.com/path' }, { MIDORI_RP_ID: 'evil.example' }, { MIDORI_TRANSACTIONS_ENABLED: 'true' }, { MIDORI_RPC_URL: 'http://remote.example' }]) assert.throws(() => loadConfig({ ...env, ...overrides }));
   assert.equal(loadConfig(env).poolSize, 10);

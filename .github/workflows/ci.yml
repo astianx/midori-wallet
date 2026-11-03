@@ -34,10 +34,10 @@ jobs:
       - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
-      - run: npm run check:f5
+      - run: npm run check
       - run: npm run lint
       - run: npm test
-      - run: npm run test:f1
+      - run: npm --prefix packages/wallet-core test
       - run: npm --prefix server test
       - run: npm run contract:check
       - run: npm run build:web

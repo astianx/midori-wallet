@@ -28,3 +28,6 @@ __pycache__/
 /phonegap/build-f1/
 
 /phonegap/build-wdk/
+
+/phonegap/build-native/
+/phonegap/build/

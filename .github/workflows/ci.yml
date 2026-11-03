@@ -107,6 +107,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.14.2'
@@ -139,10 +141,16 @@ jobs:
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
       - run: npm run build:ios
+      - name: Preserve simulator bundle permissions
+        run: |
+          mkdir -p artifacts
+          ios_bundle=$(find phonegap/build-native/debug/platforms/ios/build -type d -name '*.app' -print -quit)
+          test -n "$ios_bundle"
+          tar -czf artifacts/midori-ios-simulator.tar.gz -C "$(dirname "$ios_bundle")" "$(basename "$ios_bundle")"
       - uses: actions/upload-artifact@v4
         with:
           name: midori-ios-simulator-${{ github.sha }}
           path: |
-            phonegap/build-native/debug/platforms/ios/build/**/*.app
+            artifacts/midori-ios-simulator.tar.gz
             artifacts/*build.json
           if-no-files-found: error

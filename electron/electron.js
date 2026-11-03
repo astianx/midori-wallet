@@ -126,8 +126,9 @@ app.whenReady().then(() => {
       const base = fileURLToPath(new URL('./dist/', import.meta.url));
       let decoded;
       try { decoded = decodeURIComponent(pathname); } catch { return new Response('', { status: 400 }); }
-      const file = path.resolve(base, `.${decoded === '/' ? '/index.html' : decoded}`);
-      if (!file.startsWith(base) || decoded.includes('\\') || !/^\/(?:index\.html|startup-[0-9]+\.js|assets\/|favicon|apple-touch|site\.webmanifest|safari-pinned|mstile|android-chrome)/.test(decoded)) return new Response('', { status: 404 });
+      const resource = decoded === '/' ? '/index.html' : decoded;
+      const file = path.resolve(base, `.${resource}`);
+      if (!file.startsWith(base) || decoded.includes('\\') || !/^\/(?:index\.html|startup-[0-9]+\.js|assets\/|favicon|apple-touch|site\.webmanifest|safari-pinned|mstile|android-chrome)/.test(resource)) return new Response('', { status: 404 });
       return net.fetch(pathToFileURL(file).href);
     }
     return net.fetch(req, { bypassCustomProtocolHandlers: true });

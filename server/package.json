@@ -1,0 +1,37 @@
+{
+  "name": "@midori/server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Midori PostgreSQL API v1",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "server": "node --env-file-if-exists=.env server.js",
+    "server:watch": "node --env-file-if-exists=.env --watch server.js",
+    "test": "node --test test/*.test.mjs",
+    "worker": "node --env-file-if-exists=.env worker.js",
+    "db:migrate": "node --env-file-if-exists=.env.migrations scripts/migrate.mjs",
+    "db:bootstrap": "node --env-file-if-exists=.env scripts/bootstrap.mjs",
+    "db:backup": "node --env-file-if-exists=.env.migrations scripts/backup.mjs",
+    "db:restore": "node --env-file-if-exists=.env.migrations scripts/restore.mjs",
+    "account:create": "node --env-file-if-exists=.env scripts/create-account.mjs",
+    "db:verify": "node --env-file-if-exists=.env.migrations scripts/verify-postgres.mjs",
+    "contract:build": "node scripts/build-openapi.mjs",
+    "account:inspect": "node --env-file-if-exists=.env scripts/inspect-account.mjs"
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "14.0.3",
+    "abstractionkit": "0.4.0",
+    "ethers": "6.17.0",
+    "express": "4.22.3",
+    "pg": "8.23.1"
+  },
+  "engines": {
+    "node": ">=22.22.2 <23",
+    "npm": ">=10 <13"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  }
+}

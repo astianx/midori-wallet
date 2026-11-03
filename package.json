@@ -1,0 +1,53 @@
+{
+  "name": "midori-wallet",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Shared Midori Wallet preparation and development tools",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.22.2 <23",
+    "npm": ">=10 <13"
+  },
+  "scripts": {
+    "env:setup": "node scripts/setup-env.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "inventory": "node scripts/inventory.mjs",
+    "check:f0": "node scripts/check-f0.mjs",
+    "test": "node --experimental-vm-modules --test tests/build-orchestration.test.mjs tests/environment.test.mjs tests/ui-preservation.test.mjs",
+    "dev": "node scripts/dev.mjs",
+    "prototype:install": "node scripts/prototype-install.mjs",
+    "prototype:check": "npm --prefix experiments/wdk-compat run check",
+    "prototype:build": "npm --prefix experiments/wdk-compat run build",
+    "build:web": "node scripts/build.mjs web",
+    "build:electron": "node scripts/build.mjs electron",
+    "build:android": "node scripts/build.mjs android",
+    "build:ios": "node scripts/build.mjs ios",
+    "publish:artifact": "node scripts/publish-artifact.mjs",
+    "verify:f0": "node scripts/verify-f0.mjs",
+    "mcp:check": "node scripts/check-wdk-mcp.mjs",
+    "dev:web": "npm --prefix web run dev",
+    "dev:server": "npm --prefix server run server",
+    "dev:electron": "npm --prefix electron run start",
+    "test:f1": "npm --prefix packages/wallet-core test",
+    "f1:android": "node scripts/f1-android.mjs",
+    "f1:runtime-tests": "node scripts/f1-runtime-tests.mjs",
+    "f1:local-chain": "npm --prefix experiments/wdk-compat run local:chain",
+    "f1:local-tests": "npm --prefix experiments/wdk-compat run local:test",
+    "verify:f1": "node scripts/verify-f1.mjs",
+    "f1:reconcile": "node scripts/f1-reconcile.mjs",
+    "f1:artifacts": "node scripts/check-f1-artifacts.mjs",
+    "f1:token-fees": "npm --prefix experiments/wdk-compat run local:token-fees",
+    "f1:gas-tokens": "python3 experiments/wdk-compat/probe-paymaster.py",
+    "prototype:dev": "npm --prefix experiments/wdk-compat run dev",
+    "f1:wdk-android": "node scripts/f1-wdk-android.mjs",
+    "test:ui": "node scripts/ui-runtime-tests.mjs",
+    "test:f2": "npm --prefix server test",
+    "verify:f2": "npm --prefix server run db:verify",
+    "db:migrate": "npm --prefix server run db:migrate",
+    "db:backup": "npm --prefix server run db:backup"
+  },
+  "devDependencies": {
+    "playwright-core": "1.64.1"
+  }
+}

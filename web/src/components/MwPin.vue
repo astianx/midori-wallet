@@ -220,10 +220,12 @@ export default {
       <div
         class="&__dot"
         :class="{ '&__dot--active': value.length > 3 }"
-      />      <div
+      />
+      <div
         class="&__dot"
         :class="{ '&__dot--active': value.length > 4 }"
-      />      <div
+      />
+      <div
         class="&__dot"
         :class="{ '&__dot--active': value.length > 5 }"
       />

@@ -82,7 +82,6 @@ export async function setLanguage(languageCode = defaultLanguageCode()) {
 }
 
 function defaultLanguageCode() {
-  if (import.meta.env.DEV) return 'en';
   return localStorage.getItem('_cs_language') || navigator.language || defaultLanguage.value;
 }
 

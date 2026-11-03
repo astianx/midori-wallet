@@ -1,0 +1,31 @@
+{
+  "name": "Midori Wallet F1",
+  "short_name": "Midori F1",
+  "description": "Experimento Midori Wallet: cuenta compartida USDT y USDC en Base. Cuenta p\u00fablica de prueba, no depositar fondos.",
+  "start_url": ".",
+  "icons": [
+    {
+      "src": "android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "theme_color": "#1b4e3d",
+  "background_color": "#f5f8f6",
+  "display": "standalone",
+  "prefer_related_applications": false,
+  "protocol_handlers": []
+}

@@ -1,0 +1,53 @@
+name: Midori preparation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preparation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run env:setup
+      - run: npm run check:f0
+      - run: npm test
+  prototype:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm run env:setup
+      - run: npm run prototype:install
+      - run: npm run prototype:check
+      - run: npm run prototype:build
+
+  wdk-compatibility:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
+      - run: npm run env:setup
+      - run: npm run test:f1
+      - run: npm --prefix server test
+      - run: npm run build:web

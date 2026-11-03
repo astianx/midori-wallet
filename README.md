@@ -19,6 +19,7 @@ Preparar los `.env` a partir de los ejemplos de cada proyecto, sin versionarlos.
 ```sh
 npm run dev
 npm run dev:server
+npm run dev:electron
 npm run build:web
 npm run build:electron
 npm run build:android

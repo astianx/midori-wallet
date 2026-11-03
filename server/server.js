@@ -12,7 +12,7 @@ export async function startServer(config = loadConfig()) {
   const webApp = express();
   webApp.use((req, res, next) => { res.set('Content-Security-Policy', "frame-ancestors 'none'"); next(); });
   webApp.use(express.static(fileURLToPath(new URL('./dist/', import.meta.url)), { dotfiles:'deny', index:'index.html' }));
-  webApp.get('*', (req, res, next) => req.accepts('html') && req.get('accept')?.includes('text/html') ? res.sendFile(fileURLToPath(new URL('./dist/index.html', import.meta.url))) : next());
+  webApp.get('*', (req, res, next) => !req.path.startsWith('/api/') && req.accepts('html') && req.get('accept')?.includes('text/html') ? res.sendFile(fileURLToPath(new URL('./dist/index.html', import.meta.url))) : next());
   const app = createApp({ db, config, logger, webApp });
   const server = createServer(app);
   server.requestTimeout = 30000;

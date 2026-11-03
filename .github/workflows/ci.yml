@@ -1,53 +1,134 @@
-name: Midori preparation
-
+name: Midori builds
 on:
   push:
   pull_request:
   workflow_dispatch:
-
 permissions:
   contents: read
-
+concurrency:
+  group: midori-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  MIDORI_ALLOW_PUBLISH: 'false'
+  MIDORI_SIGN_ARTIFACTS: 'false'
+  MIDORI_BUILD_PROFILE: debug
+  VITE_API_ORIGIN: https://wallet.astian.org
 jobs:
-  preparation:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+            server/package-lock.json
+            packages/wallet-core/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+      - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+      - run: npm run check:f5
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:f1
+      - run: npm --prefix server test
+      - run: npm run contract:check
+      - run: npm run build:web
+      - run: npm run test:ui
+      - uses: actions/upload-artifact@v4
+        with:
+          name: midori-web-${{ github.sha }}
+          path: |
+            server/dist
+            artifacts/*build.json
+          if-no-files-found: error
+  desktop:
+    needs: checks
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, windows-2022, macos-15]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
         with:
-          node-version-file: .nvmrc
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm run env:setup
-      - run: npm run check:f0
-      - run: npm test
-  prototype:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-      - run: npm run env:setup
-      - run: npm run prototype:install
-      - run: npm run prototype:check
-      - run: npm run prototype:build
-
-  wdk-compatibility:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
-      - run: npm run env:setup
-      - run: npm run test:f1
-      - run: npm --prefix server test
-      - run: npm run build:web
+      - run: npm --prefix electron ci --ignore-scripts --no-audit --no-fund
+      - run: node electron/node_modules/electron/install.js
+      - run: npm run build:electron
+      - uses: actions/upload-artifact@v4
+        with:
+          name: midori-desktop-${{ matrix.os }}-${{ github.sha }}
+          path: |
+            electron/out/make
+            artifacts/*build.json
+          if-no-files-found: error
+  android:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.2'
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build:android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: midori-android-${{ github.sha }}
+          path: |
+            phonegap/build-native/debug/platforms/android/app/build/outputs/apk/debug/*.apk
+            artifacts/*build.json
+          if-no-files-found: error
+  ios:
+    needs: checks
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build:ios
+      - uses: actions/upload-artifact@v4
+        with:
+          name: midori-ios-simulator-${{ github.sha }}
+          path: |
+            phonegap/build-native/debug/platforms/ios/build/**/*.app
+            artifacts/*build.json
+          if-no-files-found: error

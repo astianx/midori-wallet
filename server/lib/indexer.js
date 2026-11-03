@@ -1,4 +1,5 @@
 import { Interface } from 'ethers';
+import { observeKnownPaymentReceipts, resetPaymentForReorg } from './payments.js';
 import { chainRpc } from './chain-rpc.js';
 
 const transfer = new Interface(['event Transfer(address indexed from,address indexed to,uint256 value)']);
@@ -23,6 +24,8 @@ async function repairReorganization(db, rpc, accountId, head) {
   }
   await db.transaction(async client => {
     await client.query('SELECT pg_advisory_xact_lock(738194261)');
+    const payments=await client.query("SELECT i.wallet_id,i.id FROM tx_intents i JOIN user_operations u ON u.intent_id=i.id WHERE u.block_number>$1 AND i.status IN ('included','confirmed','reverted')",[ancestor.toString()]);
+    for(const payment of payments.rows)await resetPaymentForReorg(client,payment.wallet_id,payment.id);
     await client.query('UPDATE chain_events SET canonical=false WHERE canonical AND block_number>$1', [ancestor.toString()]);
     await client.query(`UPDATE index_cursors SET next_block=LEAST(next_block,$1),backfill_next=LEAST(backfill_next,$1),
       last_head=LEAST(last_head,GREATEST($1-1,0)),revision=revision+1,updated_at=clock_timestamp()`, [(ancestor + 1n).toString()]);
@@ -35,12 +38,10 @@ async function readRange(rpc, saved, contracts, from, to) {
   const end = await blockAt(rpc, to);
   const padded = `0x${saved.address.slice(2).padStart(64, '0')}`;
   const logs = [];
-  for (const contract of contracts) {
-    for (const topics of [[topic, padded], [topic, null, padded]]) {
-      const batch = await rpc('eth_getLogs', [{ address: contract, fromBlock: hex(from), toBlock: hex(to), topics }]);
-      if (!Array.isArray(batch)) throw new Error('Invalid log batch');
-      logs.push(...batch);
-    }
+  for (const topics of [[topic, padded], [topic, null, padded]]) {
+    const batch = await rpc('eth_getLogs', [{ address: contracts, fromBlock: hex(from), toBlock: hex(to), topics }]);
+    if (!Array.isArray(batch)) throw new Error('Invalid log batch');
+    logs.push(...batch);
   }
   const events = new Map();
   const blocks = new Map([[to.toString(), end]]);
@@ -66,15 +67,16 @@ async function readRange(rpc, saved, contracts, from, to) {
     events.set(`${tx}:${logIndex}`, { tx, logIndex, blockNumber: blockKey, blockHash: block.hash.toLowerCase(), contract: log.address.toLowerCase(), sender, recipient, amount: decoded.args.value.toString(), occurredAt: new Date(Number(BigInt(block.timestamp)) * 1000).toISOString(), receipt: { transactionHash: tx, blockHash: block.hash.toLowerCase(), status: receipt.status, gasUsed: receipt.gasUsed, effectiveGasPrice: receipt.effectiveGasPrice } });
   }
   if ((await blockAt(rpc, to)).hash !== end.hash) throw new Error('Reorganized log batch');
-  return { events: [...events.values()], end };
+  return { events: [...events.values()], end, receipts: [...receipts.values()] };
 }
 
-async function persistRange(db, saved, range, from, to, head, backfill) {
+async function persistRange(db, config, saved, range, from, to, head, backfill) {
   return db.transaction(async client => {
     await client.query('SELECT pg_advisory_xact_lock(738194261)');
     const { rows } = await client.query('SELECT * FROM index_cursors WHERE account_id=$1 FOR UPDATE', [saved.account_id]);
     const current = rows[0];
     if (String(current.revision) !== String(saved.revision) || BigInt(backfill ? current.backfill_next : current.next_block) !== from) return false;
+    await observeKnownPaymentReceipts(client, config, range.receipts);
     for (const event of range.events) {
       const result = await client.query(`INSERT INTO chain_events(chain_id,contract,transaction_hash,log_index,block_number,block_hash,sender,recipient,amount_atomic,occurred_at,receipt)
         VALUES (8453,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
@@ -82,6 +84,9 @@ async function persistRange(db, saved, range, from, to, head, backfill) {
         contract=EXCLUDED.contract,sender=EXCLUDED.sender,recipient=EXCLUDED.recipient,amount_atomic=EXCLUDED.amount_atomic,
         occurred_at=EXCLUDED.occurred_at,receipt=EXCLUDED.receipt,canonical=true RETURNING id`,
       [event.contract, event.tx, event.logIndex, event.blockNumber, event.blockHash, event.sender, event.recipient, event.amount, event.occurredAt, event.receipt]);
+      await client.query(`UPDATE chain_events e SET intent_id=u.intent_id,event_kind=CASE WHEN e.log_index=u.payment_log_index THEN 'payment' ELSE 'gas' END
+        FROM user_operations u WHERE e.id=$1 AND u.transaction_hash=e.transaction_hash AND u.block_hash=e.block_hash
+        AND (e.log_index=u.payment_log_index OR e.log_index=ANY(u.gas_log_indexes))`, [result.rows[0].id]);
       await client.query(`INSERT INTO event_participants(account_id,event_id,incoming,outgoing)
         SELECT id,$1,address=$2,address=$3 FROM chain_accounts WHERE chain_id=8453 AND address IN ($2,$3)
         ON CONFLICT (account_id,event_id) DO UPDATE SET incoming=EXCLUDED.incoming,outgoing=EXCLUDED.outgoing`, [result.rows[0].id, event.recipient, event.sender]);
@@ -92,7 +97,7 @@ async function persistRange(db, saved, range, from, to, head, backfill) {
   });
 }
 
-export async function synchronizeHistory(db, config, rpc = chainRpc(config)) {
+export async function synchronizeHistory(db, config, rpc = chainRpc({ ...config, rpcUrl: config.indexRpcUrl || config.rpcUrl })) {
   if (!config.indexEnabled) return { enabled: false };
   if (BigInt(await rpc('eth_chainId')) !== 8453n) throw new Error('History RPC must be Base');
   const head = BigInt(await rpc('eth_blockNumber'));
@@ -110,15 +115,20 @@ export async function synchronizeHistory(db, config, rpc = chainRpc(config)) {
     const cursorHead = await db.query('UPDATE index_cursors SET last_head=$2,updated_at=clock_timestamp() WHERE account_id=$1 AND revision=$3 RETURNING account_id', [saved.account_id, head.toString(), saved.revision]);
     if (!cursorHead.rowCount) continue;
     for (const backfill of [false, true]) {
-      const from = BigInt(backfill ? saved.backfill_next : saved.next_block);
-      const limit = backfill ? BigInt(saved.backfill_end) - 1n : head;
-      if (from > limit) continue;
-      const proposed = from + BigInt(config.indexBlockBatch) - 1n;
-      const to = proposed < limit ? proposed : limit;
-      const range = await readRange(rpc, saved, contracts, from, to);
-      const { rows: anchor } = await db.query('SELECT block_number::text,block_hash FROM index_checkpoints WHERE account_id=$1 ORDER BY block_number DESC LIMIT 1', [saved.account_id]);
-      if (anchor.length && (await blockAt(rpc, anchor[0].block_number)).hash.toLowerCase() !== anchor[0].block_hash) throw new Error('Chain changed during synchronization');
-      if (await persistRange(db, saved, range, from, to, head, backfill)) ranges++;
+      const batches = backfill ? config.indexBackfillBatches || 1 : 1;
+      for (let iteration = 0; iteration < batches; iteration++) {
+        const from = BigInt(backfill ? saved.backfill_next : saved.next_block);
+        const limit = backfill ? BigInt(saved.backfill_end) - 1n : head;
+        if (from > limit) break;
+        const proposed = from + BigInt(config.indexBlockBatch) - 1n;
+        const to = proposed < limit ? proposed : limit;
+        const range = await readRange(rpc, saved, contracts, from, to);
+        const { rows: anchor } = await db.query('SELECT block_number::text,block_hash FROM index_checkpoints WHERE account_id=$1 ORDER BY block_number DESC LIMIT 1', [saved.account_id]);
+        if (anchor.length && (await blockAt(rpc, anchor[0].block_number)).hash.toLowerCase() !== anchor[0].block_hash) throw new Error('Chain changed during synchronization');
+        if (!await persistRange(db, config, saved, range, from, to, head, backfill)) break;
+        saved[backfill ? 'backfill_next' : 'next_block'] = (to + 1n).toString();
+        ranges++;
+      }
     }
   }
   return { enabled: true, accounts: accounts.length, ranges, head: head.toString() };

@@ -3771,7 +3771,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^(0|[1-9][0-9]{0,18})$"
+              "pattern": "^(e?[0-9]+|p[0-9a-f-]{36})$"
             }
           }
         ],
@@ -3863,6 +3863,649 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/intents": {
+      "post": {
+        "operationId": "Reviewanidempotentpaymentanditsnetworkcost",
+        "summary": "Review an idempotent payment and its network cost",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "Restorepaymenttrackingonanydevice",
+        "summary": "Restore payment tracking on any device",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "intents": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PaymentIntent"
+                      }
+                    }
+                  },
+                  "required": [
+                    "intents"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/intents/{id}": {
+      "get": {
+        "operationId": "Trackapersistedpayment",
+        "summary": "Track a persisted payment",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/intents/{id}/authorize": {
+      "post": {
+        "operationId": "Authorizetheexactquotewiththelocalownersignature",
+        "summary": "Authorize the exact quote with the local owner signature",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quoteDigest": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "signature": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{130}$"
+                  }
+                },
+                "required": [
+                  "quoteDigest",
+                  "signature"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/intents/{id}/cancel": {
+      "post": {
+        "operationId": "Cancelanunsignedpaymentquote",
+        "summary": "Cancel an unsigned payment quote",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentIntent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
               }
             }
           }
@@ -4658,7 +5301,10 @@
                 "type": "boolean"
               },
               "payments": {
-                "const": false
+                "type": "boolean"
+              },
+              "sponsorship": {
+                "type": "boolean"
               },
               "tags": {
                 "const": true
@@ -4679,6 +5325,7 @@
               "webauthn",
               "encryptedBlobs",
               "payments",
+              "sponsorship",
               "tags",
               "history",
               "signing",
@@ -4700,14 +5347,37 @@
               "tokenSymbol": {
                 "const": "USDT"
               },
+              "tokenContract": {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              "paymaster": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maxFeeAtomic": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,77})$",
+                "description": "Exact uint256 in base units; never a JSON number"
+              },
               "enabled": {
-                "const": false
+                "type": "boolean"
               }
             },
             "required": [
               "midoriFeeAtomic",
               "preferredMode",
               "tokenSymbol",
+              "tokenContract",
+              "paymaster",
+              "maxFeeAtomic",
               "enabled"
             ],
             "additionalProperties": false
@@ -4893,15 +5563,16 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^(0|[1-9][0-9]{0,18})$"
+            "pattern": "^(e[0-9]+|p[0-9a-f-]{36})$"
           },
           "transactionHash": {
-            "type": "string",
-            "pattern": "^0x[0-9a-f]{64}$"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "logIndex": {
-            "type": "integer",
-            "minimum": 0
+            "type": "integer"
           },
           "chainId": {
             "const": 8453
@@ -4940,9 +5611,12 @@
           },
           "status": {
             "enum": [
+              "pending",
               "included",
               "confirmed",
-              "reorganized"
+              "reverted",
+              "reorganized",
+              "expired"
             ]
           },
           "confirmations": {
@@ -4958,10 +5632,62 @@
             "format": "date-time"
           },
           "origin": {
-            "const": "unverified"
+            "enum": [
+              "midori",
+              "unverified"
+            ]
           },
           "midoriFeeAtomic": {
             "const": "0"
+          },
+          "intentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "feeMode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "feeToken": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actualFeeAtomic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "maxFeeAtomic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userOperationHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recipientTag": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accountingState": {
+            "enum": [
+              "pending",
+              "settled",
+              "review"
+            ]
           }
         },
         "required": [
@@ -4982,7 +5708,15 @@
           "minConfirmations",
           "timestamp",
           "origin",
-          "midoriFeeAtomic"
+          "midoriFeeAtomic",
+          "intentId",
+          "feeMode",
+          "feeToken",
+          "actualFeeAtomic",
+          "maxFeeAtomic",
+          "userOperationHash",
+          "recipientTag",
+          "accountingState"
         ],
         "additionalProperties": false
       },
@@ -5046,6 +5780,255 @@
           "hasMore",
           "cursor",
           "indexing"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentIntent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "chainId": {
+            "const": 8453
+          },
+          "contract": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "amountAtomic": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "recipientKind": {
+            "enum": [
+              "address",
+              "midori_tag"
+            ]
+          },
+          "recipientTag": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "feeMode": {
+            "enum": [
+              "token",
+              "sponsored"
+            ]
+          },
+          "feeToken": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "preparing",
+              "quoted",
+              "authorized",
+              "submitted",
+              "ambiguous",
+              "included",
+              "confirmed",
+              "reverted",
+              "reorganized",
+              "expired",
+              "cancelled",
+              "rejected"
+            ]
+          },
+          "failureCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "quote": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          },
+          "quoteDigest": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userOperationHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transactionHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actualFeeAtomic": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accountingState": {
+            "enum": [
+              "pending",
+              "settled",
+              "review"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "chainId",
+          "contract",
+          "amountAtomic",
+          "from",
+          "to",
+          "recipientKind",
+          "recipientTag",
+          "feeMode",
+          "feeToken",
+          "status",
+          "failureCode",
+          "expiresAt",
+          "createdAt",
+          "updatedAt",
+          "quote",
+          "quoteDigest",
+          "userOperationHash",
+          "transactionHash",
+          "actualFeeAtomic",
+          "accountingState"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentRequest": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contract": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "amountAtomic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,77})$",
+                "description": "Exact uint256 in base units; never a JSON number"
+              },
+              {
+                "const": "max"
+              }
+            ]
+          },
+          "recipient": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "address"
+                  },
+                  "address": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "address"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "midori_tag"
+                  },
+                  "resolutionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "resolutionId"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "feeMode": {
+            "enum": [
+              "token",
+              "sponsored"
+            ]
+          },
+          "feeToken": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxFeeAtomic": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "contract",
+          "amountAtomic",
+          "recipient",
+          "feeMode",
+          "feeToken",
+          "maxFeeAtomic"
         ],
         "additionalProperties": false
       }

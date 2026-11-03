@@ -1,6 +1,3 @@
-export default {
-  account: undefined,
-  async sync() {},
-  async getUpdate() { return undefined; },
-  async getUpdates() { return []; },
-};
+import { createGitHubUpdates } from '../../packages/update-core/index.js';
+export { createGitHubUpdates } from '../../packages/update-core/index.js';
+export default createGitHubUpdates({ env: process.env });

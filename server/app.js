@@ -1,4 +1,5 @@
 import express from 'express';
+import githubUpdates from './lib/github.js';
 import { randomUUID } from 'node:crypto';
 import { ApiError, exactKeys, notFound, requireValue } from './lib/errors.js';
 import { uuidPattern } from './lib/crypto.js';
@@ -10,15 +11,18 @@ import { webauthnService } from './lib/webauthn.js';
 import { readBlob, writeBlob } from './lib/storage.js';
 import { readBalances } from './lib/balances.js';
 import { history } from './lib/history.js';
-import { ownTag, tagOptions, registerTag, resolveTag } from './lib/tags.js';
+import { paymentService } from './lib/payments.js';
+import { chainRpc } from './lib/chain-rpc.js';
+import { ownTag, tagOptions, registerTag, resolveTag, verifyTagRegistration, verifyTagSnapshot } from './lib/tags.js';
 
 const route = action => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
 
-export function createApp({ db, config, compatibilityApp, logger = () => {} }) {
+export function createApp({ db, config, compatibilityApp, provider, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
   const webauthn = webauthnService(db, config);
+  const payments = paymentService(db, config, provider);
   app.disable('x-powered-by');
   app.set('query parser', 'simple');
   app.use((req, res, next) => {
@@ -38,7 +42,12 @@ export function createApp({ db, config, compatibilityApp, logger = () => {} }) {
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'unavailable', database: ready ? 'ready' : 'unavailable' });
   }));
   app.get('/api/v1/openapi.json', (req, res) => res.sendFile(new URL('./openapi.json', import.meta.url).pathname));
-  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: false, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenSymbol: 'USDT', enabled: false }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenSymbol: 'USDT', tokenContract: config.gasToken, paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/updates/:platform/:arch', route(async (req, res) => {
+    requireValue(['win32','darwin','linux','android','ios','web'].includes(req.params.platform) && ['x64','arm64','any'].includes(req.params.arch));
+    try { res.json({ enabled: githubUpdates.enabled, update: await githubUpdates.getUpdate(req.params.platform, req.params.arch) || null }); }
+    catch { throw new ApiError(503, 'UPDATES_UNAVAILABLE', 'Updates are temporarily unavailable'); }
+  }));
   app.get('/api/v1/assets', route(async (req, res) => res.json({ assets: await catalog(db) })));
 
   const publicPost = (path, action, status = 200) => app.post(path, route(async (req, res) => { await limitUnauthenticated(db, config, req); res.status(status).json(await action(req.body)); }));
@@ -64,10 +73,21 @@ export function createApp({ db, config, compatibilityApp, logger = () => {} }) {
   protectedRoute('get', '/api/v1/accounts/:id/balances', async (req, client, principal) => { uuid(req.params.id); return readBalances(db, config, principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/accounts/:id/history', (req, client, principal) => { uuid(req.params.id); return history(client, config, principal.wallet_id, req.params.id, req.query); });
   protectedRoute('get', '/api/v1/accounts/:id/history/:eventId', async (req, client, principal) => { uuid(req.params.id); return (await history(client, config, principal.wallet_id, req.params.id, {}, req.params.eventId)).transactions[0]; });
+  protectedRoute('post', '/api/v1/accounts/:id/intents', (req, client, principal) => { uuid(req.params.id); return payments.create(principal, req.params.id, req.body); }, 200, false);
+  protectedRoute('get', '/api/v1/accounts/:id/intents', (req, client, principal) => { uuid(req.params.id); return payments.list(principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/intents/:id', (req, client, principal) => { uuid(req.params.id); return payments.get(principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('post', '/api/v1/intents/:id/authorize', (req, client, principal) => { uuid(req.params.id); return payments.authorize(principal, req.params.id, req.body); }, 200, false);
+  protectedRoute('post', '/api/v1/intents/:id/cancel', (req, client, principal) => { uuid(req.params.id); exactKeys(req.body, []); return payments.cancel(principal, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/tag', (req, client, principal) => ownTag(client, principal.wallet_id));
   protectedRoute('post', '/api/v1/tag/options', (req, client, principal) => tagOptions(client, config, principal, req.body));
-  protectedRoute('post', '/api/v1/tag/verify', (req, client, principal) => registerTag(client, principal, req.body));
-  protectedRoute('post', '/api/v1/tags/resolve', (req, client, principal) => resolveTag(client, config, principal, req.body));
+  protectedRoute('post', '/api/v1/tag/verify', async (req, client, principal) => {
+    await verifyTagRegistration(db, principal, req.body, provider?.chain || chainRpc(config));
+    return db.transaction(async client => { await activePrincipal(client, principal); return registerTag(client, principal, req.body); });
+  }, 200, false);
+  protectedRoute('post', '/api/v1/tags/resolve', async (req, client, principal) => {
+    const result = await db.transaction(async client => { await activePrincipal(client, principal); return resolveTag(client, config, principal, req.body); });
+    await verifyTagSnapshot(db, result.id, provider?.chain || chainRpc(config)); return result;
+  }, 200, false);
   protectedRoute('get', '/api/v1/devices', async (req, client, principal) => {
     const { rows } = await client.query('SELECT id,public_key,created_at,revoked_at FROM devices WHERE wallet_id=$1 ORDER BY created_at', [principal.wallet_id]);
     return { devices: rows.map(row => ({ id: row.id, publicKey: row.public_key, createdAt: row.created_at, revokedAt: row.revoked_at })) };

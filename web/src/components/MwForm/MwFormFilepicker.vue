@@ -131,7 +131,7 @@ export default {
       let width = img.naturalWidth;
       let height = img.naturalHeight;
 
-       
+
       while (true) {
         width = Math.max(1, Math.round(img.naturalWidth * scale));
         height = Math.max(1, Math.round(img.naturalHeight * scale));

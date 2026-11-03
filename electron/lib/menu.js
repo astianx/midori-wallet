@@ -33,7 +33,7 @@ const updateMenu = {
   },
 };
 
-// eslint-disable-next-line max-len
+
 const FAQ = `https://github.com/astianx/midori-wallet/issues`;
 const SUPPORT = `https://github.com/astianx/midori-wallet/issues`;
 

@@ -22,7 +22,7 @@ export default {
           return this.$t('Transaction has already been accepted');
         }
         if (this.storage.error instanceof MoneroErrors.UnknownTransactionError) {
-           
+
           return this.$t('Transaction not found or has less than 10 confirmations. Please wait 20 minutes and try again.');
         }
         console.error('Midori Wallet operation failed');

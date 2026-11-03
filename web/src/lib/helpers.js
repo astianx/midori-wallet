@@ -83,7 +83,7 @@ export function registerProtocolHandler(crypto, account) {
     } catch (e) {
       try {
         navigator.registerProtocolHandler(`web+${crypto.scheme}`, handler, 'Midori Wallet');
-         
+
       } catch (e) {}
     }
   }

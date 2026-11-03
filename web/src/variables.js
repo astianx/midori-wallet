@@ -1,4 +1,4 @@
- 
+
 export const MODE = import.meta.env.MODE;
 export const VITE_BUILD_TYPE = import.meta.env.VITE_BUILD_TYPE;
 export const VITE_PLATFORM = import.meta.env.VITE_PLATFORM;

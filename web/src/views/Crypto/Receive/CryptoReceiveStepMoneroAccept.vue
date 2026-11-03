@@ -50,7 +50,7 @@ export default {
           return this.error = this.$t('Transaction has already been accepted');
         }
         if (err instanceof MoneroErrors.UnknownTransactionError) {
-           
+
           return this.error = this.$t('Transaction not found or has less than 10 confirmations. Please wait 20 minutes and try again.');
         }
         this.error = this.$account.unknownError(err);

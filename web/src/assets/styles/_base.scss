@@ -1,0 +1,92 @@
+html {
+  display: flex;
+  min-height: 100%;
+  box-sizing: border-box;
+  color: var(--color-text);
+  /* stylelint-disable-next-line max-line-length */
+  font-family: system-ui, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+  text-size-adjust: none; // Prevent adjustments of font size after orientation changes in iOS.
+  &.platform--ios {
+    min-height: 100vh; // fix ios overlay bug
+  }
+}
+
+body {
+  background-color: var(--color-background);
+  @include breakpoint(lg) {
+    background-color: var(--color-secondary-light);
+  }
+}
+
+html,
+body {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+  outline: none;
+  -webkit-tap-highlight-color: rgb(0 0 0 / 0%);
+}
+
+* {
+  scrollbar-color: var(--color-neutral) var(--color-background);
+  scrollbar-width: thin;
+  @include breakpoint(lg) {
+    scrollbar-width: auto;
+  }
+}
+
+button,
+select,
+input {
+  display: block;
+  padding: 0;
+  border: none;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+}
+
+option {
+  background-color: var(--color-background);
+}
+
+a {
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: none;
+
+  @include hover {
+    color: var(--color-primary-d-15);
+  }
+
+  &:active {
+    color: var(--color-primary-d-25);
+  }
+}
+
+svg,
+img {
+  display: block;
+}
+
+[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
+}

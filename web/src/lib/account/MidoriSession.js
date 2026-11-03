@@ -7,6 +7,7 @@ import { BASE_ASSETS, basePlatform, validateAssets } from './AssetCatalog.js';
 import { isUnavailable } from './domain.js';
 import { MidoriClient, EncryptedBlobSync } from '../api/MidoriClient.js';
 import { LocalVault, encode, decode } from './LocalVault.js';
+import { decryptLegacyStorage, decrypt, encrypt } from '../encryption.js';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -145,7 +146,7 @@ export default class MidoriSession {
 
   async cipherKey() { return crypto.subtle.importKey('raw', this.#detailsKey, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']); }
 
-  async readData(name) {
+  async readData(name, migrationAttempt = 0) {
     const namespace = this.namespace(name);
     let blob;
     try {
@@ -160,7 +161,24 @@ export default class MidoriSession {
     const envelope = JSON.parse(decoder.decode(decode(blob.ciphertext)));
     if (envelope.version !== 1) throw new Error('Unsupported encrypted metadata');
     const bytes = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: decode(envelope.iv), additionalData: encoder.encode(namespace) }, await this.cipherKey(), decode(envelope.ciphertext)));
-    try { return JSON.parse(decoder.decode(bytes)); } finally { bytes.fill(0); }
+    try {
+      const data = JSON.parse(decoder.decode(bytes));
+      if (typeof data !== 'string' || !data.startsWith('U2FsdGVkX1')) return data;
+      const key = hex.encode(this.#detailsKey);
+      const cleartext = await decryptLegacyStorage(data, key);
+      const value = JSON.parse(cleartext);
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid legacy storage document');
+      const migrated = encrypt(cleartext, key);
+      if (decrypt(migrated, key) !== cleartext) throw new Error('Storage migration verification failed');
+      const backupKey = `_midori_migration_backup_${namespace}`;
+      if (!this.storage.getItem(backupKey)) this.storage.setItem(backupKey, JSON.stringify(blob));
+      try { await this.writeData(name, migrated); }
+      catch (error) {
+        if (error.code === 'REVISION_CONFLICT' && migrationAttempt === 0) return this.readData(name, 1);
+        if (!isUnavailable(error) && error.code !== 'REVISION_CONFLICT') throw error;
+      }
+      return migrated;
+    } finally { bytes.fill(0); }
   }
 
   async writeData(name, data) {

@@ -33,15 +33,15 @@ before(async () => {
   if (!enabled) return;
   const url = new URL(process.env.MIDORI_TEST_DATABASE_URL);
   if (!/^\/midori_verify_[a-z0-9]+$/.test(url.pathname)) throw new Error('Integration checks require an explicitly isolated midori_verify_* database');
-  config = loadConfig({ DATABASE_URL: url.href, MIDORI_RATE_LIMIT: '10000' });
+  config = loadConfig({ DATABASE_URL: url.href, MIDORI_RATE_LIMIT: '10000', MIDORI_PUBLIC_ORIGIN: 'http://localhost:5173' });
   db = createDatabase(config);
   const initial = await migrate(db);
-  assert.equal(initial.length, 2);
+  assert.equal(initial.length, 4);
   assert.deepEqual(await migrate(db), []);
   if (process.env.MIDORI_TEST_RUNTIME_DATABASE_URL) {
     const runtimeUrl = new URL(process.env.MIDORI_TEST_RUNTIME_DATABASE_URL);
     await grantRuntime(db, runtimeUrl.username);
-    apiDb = createDatabase(loadConfig({ DATABASE_URL: runtimeUrl.href }));
+    apiDb = createDatabase(loadConfig({ DATABASE_URL: runtimeUrl.href, MIDORI_PUBLIC_ORIGIN: 'http://localhost:5173' }));
   }
   server = createServer(createApp({ db: apiDb || db, config }));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));

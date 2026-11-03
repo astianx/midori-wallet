@@ -45,7 +45,7 @@
     "core-js": "3.33.1",
     "sass": "1.66.1",
     "vite": "6.4.5",
-    "vite-plugin-ejs": "1.6.4",
+    "vite-plugin-ejs": "1.8.0",
     "vite-plugin-minify": "1.5.2",
     "vite-plugin-node-polyfills": "0.23.0",
     "vite-svg-loader": "4.0.0"

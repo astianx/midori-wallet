@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget id="{{id}}" version="{{version}}" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+  <name>{{name}}</name><description>USDT and USDC on Base</description>
+  <author href="https://astian.org/midori-wallet/">Midori Wallet</author>
+  <content src="index.html"/><access origin="{{api}}"/><access origin="https://mainnet.base.org"/>
+  <allow-intent href="https://*/*"/><allow-intent href="mailto:*"/>
+  <preference name="scheme" value="https"/><preference name="hostname" value="localhost"/>
+  <preference name="AutoHideSplashScreen" value="true"/>
+  <platform name="android">
+    <config-file target="AndroidManifest.xml" parent="/manifest"><uses-permission android:name="android.permission.CAMERA"/><uses-feature android:name="android.hardware.camera" android:required="false"/></config-file>
+    <preference name="android-minSdkVersion" value="26"/><preference name="android-targetSdkVersion" value="36"/>
+    <preference name="AndroidWindowSplashScreenBackground" value="#f5f8f6"/>
+    <icon src="../../images/android/icons/36.png" density="ldpi"/><icon src="../../images/android/icons/48.png" density="mdpi"/><icon src="../../images/android/icons/72.png" density="hdpi"/><icon src="../../images/android/icons/96.png" density="xhdpi"/><icon src="../../images/android/icons/144.png" density="xxhdpi"/><icon src="../../images/android/icons/192.png" density="xxxhdpi"/>
+    <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application"><application android:usesCleartextTraffic="{{cleartext}}" android:allowBackup="false" android:fullBackupContent="false"/></edit-config>
+  </platform>
+  <platform name="ios">
+    <icon src="../../images/ios/icons/icon-1024.png" width="1024" height="1024"/>
+    <icon src="../../images/ios/icons/icon-60@3x.png" width="180" height="180"/>
+    <icon src="../../images/ios/icons/icon-60@2x.png" width="120" height="120"/>
+    <icon src="../../images/ios/icons/icon-76@2x.png" width="152" height="152"/>
+    <icon src="../../images/ios/icons/icon-83.5@2x.png" width="167" height="167"/>
+    <icon src="../../images/ios/icons/icon-29@3x.png" width="87" height="87"/>
+    <icon src="../../images/ios/icons/icon-20@3x.png" width="60" height="60"/>
+    <preference name="deployment-target" value="15.4"/><preference name="scheme" value="app"/>
+    <edit-config file="*-Info.plist" target="NSCameraUsageDescription" mode="merge"><string>Scan a payment QR code</string></edit-config>
+    <edit-config file="*-Info.plist" target="NSFaceIDUsageDescription" mode="merge"><string>Unlock your local Midori vault</string></edit-config>
+  </platform>
+</widget>

@@ -1,0 +1,28 @@
+{
+  "name": "@midori/mobile",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Shared Midori Cordova targets",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node --env-file-if-exists=.env build.js",
+    "android": "node --env-file-if-exists=.env android.js",
+    "ios": "node --env-file-if-exists=.env ios.js",
+    "cordova": "cordova",
+    "lint": "npm --prefix .. run lint -- phonegap",
+    "publish": "node -e \"throw new Error('Publication is a separate manual operation')\""
+  },
+  "dependencies": {
+    "cordova": "13.0.0",
+    "cordova-android": "15.1.0",
+    "cordova-ios": "8.1.1",
+    "cordova-plugin-customurlscheme": "5.0.2",
+    "cordova-plugin-fingerprint-aio": "6.0.1",
+    "cordova-plugin-inappbrowser": "7.0.0"
+  },
+  "engines": {
+    "node": ">=22.22.2 <23",
+    "npm": ">=10 <13"
+  }
+}

@@ -1,0 +1,821 @@
+import { EventEmitter } from 'events';
+import { ed25519 } from '@noble/curves/ed25519';
+import { hex } from '@scure/base';
+import { hmac } from '@noble/hashes/hmac';
+import { randomBytes } from '@noble/hashes/utils';
+import { sha256 } from '@noble/hashes/sha256';
+import { WalletState, errors } from './domain.js';
+
+import Biometry from './Biometry.js';
+import Cache from './Cache.js';
+import Cards from './Cards.js';
+import ClientStorage from '../storage/ClientStorage.js';
+import AssetCatalog from './AssetCatalog.js';
+import { BalanceMonitor } from './BalanceMonitor.js';
+import Details from '../storage/Details.js';
+import Exchanges from '../exchanges/Exchanges.js';
+import Hardware from './Hardware.js';
+import AccountMarket from './AccountMarket.js';
+import Mecto from './Mecto.js';
+import Ramps from './Ramps.js';
+import Seeds from './Seeds.js';
+import Settings from './Settings.js';
+import MidoriSession from './MidoriSession.js';
+import { consumeRecovery } from './recovery.js';
+import MidoriWallet from './MidoriWallet.js';
+import WalletStorage from '../storage/WalletStorage.js';
+import i18n from '../i18n/i18n.js';
+import {
+  EVM_FAMILY,
+  getApiNode,
+  getBaseURL,
+  loadWalletModule,
+} from '../constants.js';
+
+export class CryptoAlreadyAddedError extends TypeError {
+  name = 'CryptoAlreadyAddedError';
+  constructor(id, options) {
+    super(`Crypto '${id}' already added'`, options);
+  }
+}
+
+export class SeedRequiredError extends Error {
+  name = 'SeedRequiredError';
+}
+
+class WalletManager {
+  #wallets;
+  constructor() {
+    this.#wallets = new Map();
+  }
+
+  set(wallet) {
+    this.#wallets.set(wallet.crypto._id, wallet);
+  }
+
+  setMany(wallets = []) {
+    wallets.forEach((wallet) => this.set(wallet));
+  }
+
+  get(id) {
+    return this.#wallets.get(id);
+  }
+
+  has(id) {
+    return this.#wallets.has(id);
+  }
+
+  delete(id) {
+    this.#wallets.delete(id);
+  }
+
+  getByChainId(chainId) {
+    return [...this.#wallets.values()].find((wallet) => {
+      return wallet.isWalletConnectSupported && wallet.chainId === chainId;
+    });
+  }
+
+  filterByPlatform(platform) {
+    return [...this.#wallets.values()].filter((wallet) => {
+      return wallet.crypto.platform === platform;
+    });
+  }
+
+  filterByType(type) {
+    return [...this.#wallets.values()].filter((wallet) => {
+      return wallet.crypto.type === type;
+    });
+  }
+
+  tokensByPlatform(platform) {
+    return [...this.#wallets.values()].filter((wallet) => {
+      return wallet.crypto.platform === platform && wallet.crypto.type === 'token';
+    });
+  }
+
+  list() {
+    return [...this.#wallets.values()];
+  }
+}
+
+export default class Account extends EventEmitter {
+  #clientStorage;
+  #midori;
+  #seeds;
+  #settings;
+  #details;
+  #market;
+  #mecto;
+  #cryptoDB;
+  #wallets = new WalletManager();
+  #monitor;
+  #generation = 0;
+  #opening = false;
+  get isOpening() { return this.#opening; }
+  #deviceSeed;
+  #biometry;
+  #hardware;
+  #ramps;
+  #cards;
+  #exchanges;
+  #needToMigrateV5Balance = false;
+  #walletConnect;
+  #dummy = false;
+  #cryptosToSelect = undefined;
+  #systemThemeMediaQuery;
+  #handleSystemThemeChange = () => {
+    if (this.theme === 'system') {
+      this.emit('update', 'theme');
+    }
+  };
+
+  get paymentConfig() { return this.#midori?.config?.gas || {}; }
+
+  get tag() { return this.#midori?.tag; }
+
+  get capabilities() {
+    return this.#midori?.config?.capabilities || {};
+  }
+
+  get siteUrl() {
+    return this.isOnion ? import.meta.env.VITE_SITE_URL_TOR : import.meta.env.VITE_SITE_URL;
+  }
+
+  get clientStorage() {
+    return this.#clientStorage;
+  }
+
+  get settings() {
+    return this.#settings;
+  }
+
+  get details() {
+    return this.#details;
+  }
+
+  get market() {
+    return this.#market;
+  }
+
+  get mecto() {
+    return this.#mecto;
+  }
+
+  get cryptoDB() {
+    return this.#cryptoDB;
+  }
+
+  get biometry() {
+    return this.#biometry;
+  }
+
+  get hardware() {
+    return this.#hardware;
+  }
+
+  get ramps() {
+    return this.#ramps;
+  }
+
+  get cards() {
+    return this.#cards;
+  }
+
+  get exchanges() {
+    return this.#exchanges;
+  }
+
+  get isCreated() {
+    return this.#clientStorage.hasId()
+      && this.#clientStorage.hasSeed('device')
+      && this.#clientStorage.hasSeed('wallet')
+      && this.#clientStorage.hasPinKey()
+      && this.#clientStorage.hasDetailsKey();
+  }
+
+  get isLocked() {
+    return !this.#deviceSeed;
+  }
+
+  get isOnion() {
+    return this.#clientStorage.isOnion();
+  }
+
+  get user() {
+    if (this.#details) {
+      const user = this.#details.get('userInfo');
+      let avatar;
+      if (user.email) {
+        const hash = hex.encode(sha256(user.email.trim().toLowerCase()));
+        avatar = `gravatar:${hash}`;
+      } else {
+        const hash = hex.encode(hmac(sha256, 'Midori Wallet', hex.encode(this.#clientStorage.getDetailsKey())));
+        avatar = `identicon:${hash}`;
+      }
+      return {
+        ...user,
+        username: this.#midori?.tag === undefined ? user.username : this.#midori.tag?.alias || '',
+        avatar,
+      };
+    }
+    return {};
+  }
+
+  get theme() {
+    const theme = this.details?.get('systemInfo').theme || this.#clientStorage.getTheme();
+    return ['system', 'light', 'dark'].includes(theme) ? theme : 'system';
+  }
+
+  get isHiddenBalance() {
+    return this.#clientStorage.isHiddenBalance();
+  }
+
+  get isDummy() {
+    return this.#dummy;
+  }
+
+  get cryptosToSelect() {
+    return this.#cryptosToSelect;
+  }
+
+  get walletsNeedSynchronization() {
+    return this.wallets('coin').filter((wallet) => {
+      return wallet.state === WalletState.STATE_NEED_INITIALIZATION;
+    });
+  }
+
+  constructor({ localStorage, release }) {
+    super();
+    if (!localStorage) {
+      throw new TypeError('localStorage is required');
+    }
+
+    this.#clientStorage = new ClientStorage({ localStorage });
+    this.#midori = new MidoriSession({ localStorage, clientStorage: this.#clientStorage });
+    this.#seeds = new Seeds({
+      clientStorage: this.#clientStorage,
+    });
+    this.#settings = new Settings({
+      request: this.request,
+    });
+    this.#cryptoDB = new AssetCatalog();
+    this.#market = new AccountMarket(this.#midori);
+    this.#mecto = new Mecto({
+      request: this.request,
+      account: this,
+    });
+    this.#biometry = new Biometry({
+      request: this.request,
+      clientStorage: this.#clientStorage,
+    });
+    this.#hardware = new Hardware({
+      request: this.request,
+      account: this,
+    });
+    this.#ramps = new Ramps({
+      request: this.request,
+      account: this,
+    });
+    this.#cards = new Cards({
+      cryptoDB: this.#cryptoDB,
+      request: this.request,
+      account: this,
+    });
+
+    this.#systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    this.#systemThemeMediaQuery.addEventListener('change', this.#handleSystemThemeChange);
+  }
+
+  async create(walletSeed, pin, descriptor) {
+    if (!(walletSeed instanceof Uint8Array) || walletSeed.length !== 64) throw new TypeError('walletSeed must be 64 bytes');
+    const generation = this.#generation;
+    const deviceSeed = randomBytes(32);
+    const detailsKey = hmac(sha256, 'Midori Wallet', hex.encode(walletSeed));
+    const pinKey = randomBytes(32);
+    this.#opening = true;
+    try {
+      this.#clientStorage.clear();
+      const pinHash = this.pinHash(pin, pinKey);
+      this.#clientStorage.setPinKey(pinKey);
+      const { deviceToken, walletToken, deviceId } = await this.#midori.create(walletSeed, deviceSeed, pinHash, detailsKey, descriptor);
+      if (generation !== this.#generation) throw new Error('Wallet is locked');
+      this.#deviceSeed = deviceSeed;
+      this.#clientStorage.setSeed('device', new Uint8Array(), hex.decode(deviceToken));
+      this.#clientStorage.setSeed('wallet', new Uint8Array(), hex.decode(walletToken));
+      this.#clientStorage.setId(deviceId);
+      this.#clientStorage.setDetailsKey(detailsKey);
+      await this.#init();
+      if (generation !== this.#generation) throw new Error('Wallet is locked');
+      await this.#initWalletsFromDetails();
+    } catch (error) {
+      this.#midori.lock(); deviceSeed.fill(0); this.#deviceSeed = undefined;
+      throw error;
+    } finally { detailsKey.fill(0); pinKey.fill(0); this.#opening = false; }
+  }
+
+  async unlockAndOpen(pin) {
+    const generation = this.#generation;
+    this.#opening = true;
+    let seed;
+    try {
+      const { deviceToken } = await this.#midori.unlock(this.pinHash(pin));
+      if (generation !== this.#generation) throw new Error('Wallet is locked');
+      seed = this.#midori.getSeed('device', hex.decode(deviceToken));
+      await this.open(seed);
+      if (generation !== this.#generation) throw new Error('Wallet is locked');
+    } catch (error) { seed?.fill(0); this.lock(); throw error; }
+    finally { this.#opening = false; }
+  }
+
+  async createFromRecovery(handle, pin) {
+    return consumeRecovery(handle, (seed, descriptor) => this.create(seed, pin, descriptor));
+  }
+
+  async open(deviceSeed) {
+    const generation = this.#generation;
+    await this.#midori.open(deviceSeed);
+    if (generation !== this.#generation) throw new Error('Wallet is locked');
+    this.#deviceSeed = deviceSeed;
+    if (this.#clientStorage.hasSeed('cardholder')) {
+      this.#cards.seed = this.getSeed('cardholder', deviceSeed);
+    }
+    await this.#init();
+    await this.#initWalletsFromDetails();
+  }
+
+  async #init() {
+    await this.#settings.init();
+    await this.#cryptoDB.init();
+    this.#details = new Details({
+      request: this.request,
+      key: this.#clientStorage.getDetailsKey(),
+      cryptoDB: this.#cryptoDB,
+    });
+    await this.#details.init();
+    this.#details.setCryptos(this.#cryptoDB.all.filter(crypto => crypto.supported));
+    this.emit('update', 'user');
+    this.emit('update', 'language');
+    this.emit('update', 'currency');
+    this.emit('update', 'theme');
+    this.emit('update', 'isHiddenBalance');
+
+    this.#exchanges = new Exchanges({
+      request: this.request,
+      account: this,
+    });
+    if (this.capabilities.optionalProviders) {
+      await this.#exchanges.init();
+      await this.#cards.init();
+    }
+    this.#dummy = hex.encode(this.#clientStorage.getDetailsKey())
+      === import.meta.env.VITE_DUMMY_ACCOUNT;
+
+    this.#initCryptosToSelect();
+  }
+
+  #initCryptosToSelect() {
+    let cryptos = [];
+    let type;
+    if (this.#details.get('cryptos') === undefined) {
+      type = 'popular';
+      cryptos = this.#cryptoDB.popular.filter((item) => item.supported && !item.deprecated);
+    } else {
+      type = 'new';
+      cryptos = this.#details.getNewCryptos();
+    }
+    if (cryptos.length) {
+      this.#cryptosToSelect = { type, cryptos };
+    }
+  }
+
+  async #initWalletsFromDetails(walletSeed = undefined) {
+    const cryptos = this.#details.getSupportedCryptos();
+    const walletStorages = {};
+    const wallets = await Promise.all(cryptos.map(async (crypto) => {
+      const wallet = await this.#createWallet({
+        crypto,
+        walletStorage: walletStorages[crypto._id],
+      }, walletSeed);
+      // save public key only for coins
+      if (crypto.type === 'coin') {
+        if (wallet.state === WalletState.STATE_INITIALIZED) {
+          this.#clientStorage.setPublicKey(crypto.platform, wallet.getPublicKey(), this.#deviceSeed);
+        }
+        this.#details.setPlatformSettings(crypto.platform, wallet.settings);
+      }
+      if (this.#details.needToMigrateV5Balance) {
+        await this.#migrateV5Balance(wallet);
+      }
+      return wallet;
+    }));
+    await Promise.allSettled(wallets.map(wallet => wallet.load()));
+    this.#wallets.setMany(wallets);
+
+    if (this.connection === 'online') await this.#details.save();
+    this.emit('update');
+    this.#monitor?.stop();
+    this.#monitor = new BalanceMonitor({ refresh: () => this.refreshBalances(), active: () => !this.isLocked && !document.hidden });
+    this.#monitor.start();
+  }
+
+  async refreshBalances() {
+    if (this.isLocked) return;
+    const generation = this.#generation;
+    await Promise.allSettled(this.wallets().map(wallet => wallet.load()));
+    if (generation === this.#generation && !this.isLocked) this.emit('update');
+  }
+
+  async #createWallet({ crypto, walletStorage, settings }, walletSeed) {
+    if (crypto.platform === 'base') return new MidoriWallet({ crypto, platform: this.#cryptoDB.platform('base'), session: this.#midori });
+    const Wallet = await loadWalletModule(crypto.platform);
+    const platform = this.#cryptoDB.platform(crypto.platform);
+    const options = this.#getWalletOptions(crypto, platform, walletStorage, settings);
+    const wallet = new Wallet(options);
+    if (walletSeed) {
+      await wallet.create(walletSeed);
+    } else if (this.#clientStorage.hasPublicKey(crypto.platform)) {
+      await wallet.open(this.#clientStorage.getPublicKey(crypto.platform, this.#deviceSeed));
+    } else {
+      wallet.state = WalletState.STATE_NEED_INITIALIZATION;
+    }
+    return wallet;
+  }
+
+  #getApiNode(platform) {
+    return getApiNode(platform, this.isOnion);
+  }
+
+  getBaseURL(service) {
+    return getBaseURL(service, this.isOnion);
+  }
+
+  #getWalletOptions(crypto, platform, storage, settings) {
+    const cache = new Cache({
+      crypto,
+      clientStorage: this.#clientStorage,
+      deviceSeed: this.#deviceSeed,
+    });
+    const options = {
+      crypto,
+      platform,
+      request: this.request,
+      apiNode: this.#getApiNode(crypto.platform),
+      cache,
+      storage,
+      settings: settings || this.#details.getPlatformSettings(crypto.platform),
+      development: import.meta.env.DEV,
+    };
+    return options;
+  }
+
+  async getCustomTokenInfo(platform, address = '') {
+    if (EVM_FAMILY.includes(platform)) {
+      address = address.toLowerCase();
+    }
+    const token = this.#cryptoDB.getTokenByAddress(platform, address);
+    if (token) return token;
+    const Wallet = await loadWalletModule(platform);
+    const info = await this.request({
+      baseURL: this.#getApiNode(platform),
+      url: Wallet.tokenApiUrl(address),
+    });
+    if (info?.name && info?.symbol && info?.decimals !== undefined) {
+      return {
+        _id: `${address}@${platform}`,
+        platform,
+        type: 'token',
+        name: info.name,
+        symbol: info.symbol,
+        address,
+        decimals: parseInt(info.decimals, 10),
+        custom: true,
+      };
+    } else {
+      throw new errors.AddressError(`Invalid contract address ${address}`);
+    }
+  }
+
+  async getTokenUrl(platform, address) {
+    try {
+      const Wallet = await loadWalletModule(platform);
+      return Wallet.tokenUrl(platform, address, import.meta.env.DEV);
+    } catch {
+      return undefined;
+    }
+  }
+
+  wallet(id) {
+    return this.#wallets.get(id);
+  }
+
+  wallets(type = '') {
+    if (type) return this.#wallets.filterByType(type);
+    return this.#wallets.list();
+  }
+
+  tokensByPlatform(platform) {
+    return this.#wallets.tokensByPlatform(platform);
+  }
+
+  walletByChainId(chainId) {
+    return this.#wallets.getByChainId(chainId);
+  }
+
+  hasWallet(id) {
+    return this.#wallets.has(id);
+  }
+
+  toggleOnion() {
+    this.#clientStorage.toggleOnion();
+    for (const wallet of this.#wallets.list()) {
+      wallet.apiNode = this.#getApiNode(wallet.crypto.platform);
+    }
+    this.emit('update', 'isOnion');
+  }
+
+  applyTheme() {
+    this.#clientStorage.setTheme(this.theme);
+    window.cordova?.plugins?.Theme?.setStyle(this.theme);
+    window.electron?.setTheme(this.theme);
+    const resolvedTheme = this.theme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : this.theme;
+    document.documentElement.dataset.theme = resolvedTheme;
+    if (document.documentElement.dataset.statusbarStyle !== 'locked') {
+      window.systemBars?.setStyle(resolvedTheme);
+    }
+    return resolvedTheme;
+  }
+
+  lock() {
+    this.#generation++;
+    this.#monitor?.stop();
+    this.#midori.lock();
+    this.#deviceSeed?.fill(0);
+    this.#deviceSeed = undefined;
+    for (const wallet of this.wallets()) wallet.cleanup();
+    this.#wallets = new WalletManager();
+    this.#details = undefined;
+    this.emit('locked');
+  }
+
+  get connection() { return this.#midori.connection; }
+  get recoveryDescriptor() { return this.#midori.descriptor; }
+  async exportPrivateKeys(pin) {
+    if (this.isLocked) throw Object.assign(new Error('Wallet is locked'), { status: 401 });
+    return this.#midori.exportPrivateKeys(this.pinHash(pin));
+  }
+
+  logout() {
+    this.lock();
+    this.#deviceSeed?.fill(0);
+    this.#deviceSeed = undefined;
+    this.#clientStorage.clear();
+    this.#systemThemeMediaQuery.removeEventListener('change', this.#handleSystemThemeChange);
+    this.emit('logout');
+  }
+
+  async remove(walletSeed) {
+    await this.request({
+      url: '/local/wallet',
+      method: 'delete',
+      seed: walletSeed,
+    });
+    this.logout();
+  }
+
+  async addWallet(crypto, walletSeed) {
+    if (this.#details.hasCrypto(crypto)) {
+      throw new CryptoAlreadyAddedError(crypto._id);
+    }
+    await this.#addWallet(crypto, walletSeed);
+    await this.#initMarket();
+    await this.#details.save();
+    this.emit('update');
+  }
+
+  async addWallets(cryptos, walletSeed) {
+    for (const crypto of cryptos) {
+      if (this.#details.hasCrypto(crypto)) continue;
+      await this.#addWallet(crypto, walletSeed);
+    }
+    await this.#initMarket();
+    await this.#details.save();
+    this.emit('update');
+  }
+
+  /**
+   * Adding a new wallet to the account.
+   * If there is a public key, then unlocking the private seed is not requested.
+   */
+  async #addWallet(crypto, walletSeed) {
+    if (this.#clientStorage.hasPublicKey(crypto.platform)) {
+      const walletStorage = await WalletStorage.initOne(this, crypto);
+      this.#wallets.set(await this.#createWallet({ crypto, walletStorage }));
+      this.#details.addCrypto(crypto);
+    } else if (walletSeed) {
+      if (crypto.type === 'coin') {
+        const walletStorage = await WalletStorage.initOne(this, crypto);
+        const wallet = await this.#createWallet({
+          crypto,
+          walletStorage,
+        }, walletSeed);
+        this.#wallets.set(wallet);
+        this.#details.setPlatformSettings(crypto.platform, wallet.settings);
+        this.#clientStorage.setPublicKey(wallet.crypto.platform, wallet.getPublicKey(), this.#deviceSeed);
+        this.#details.addCrypto(crypto);
+      }
+      if (crypto.type === 'token') {
+        const platform = this.#cryptoDB.platform(crypto.platform);
+        const walletStorages = await WalletStorage.initMany(this, [crypto, platform]);
+        const wallet = await this.#createWallet({
+          crypto: platform,
+          walletStorage: walletStorages[platform._id],
+        }, walletSeed);
+        this.#wallets.set(wallet);
+        this.#details.setPlatformSettings(crypto.platform, wallet.settings);
+        this.#clientStorage.setPublicKey(wallet.crypto.platform, wallet.getPublicKey(), this.#deviceSeed);
+        this.#wallets.set(await this.#createWallet({
+          crypto,
+          walletStorage: walletStorages[crypto._id],
+        }));
+        this.#details.addCrypto(platform);
+        this.#details.addCrypto(crypto);
+      }
+    } else {
+      throw new SeedRequiredError();
+    }
+  }
+
+  async #initMarket() {
+    await this.#market.init({
+      cryptos: this.#details.getSupportedCryptos(),
+      currency: this.#details.get('systemInfo').preferredCurrency,
+    });
+  }
+
+  async removeWallet(crypto) {
+    if (crypto.type === 'coin') {
+      const wallets = this.#wallets.filterByPlatform(crypto.platform);
+      for (const wallet of wallets) {
+        this.#wallets.delete(wallet.crypto._id);
+        this.#details.removeCrypto(wallet.crypto);
+      }
+      this.#clientStorage.unsetPublicKey(crypto.platform);
+    } else if (crypto.type === 'token') {
+      this.#wallets.delete(crypto._id);
+      this.#details.removeCrypto(crypto);
+    }
+
+    await this.#details.save();
+    this.emit('update');
+  }
+
+  /**
+   * Initialize wallet in NEED_INITIALIZATION state
+   * 1. The wallet was added from another device
+   * 2. Settings have been changed on another device
+   */
+  async initWallet(wallet, walletSeed) {
+    await wallet.create(walletSeed);
+    const publicKey = wallet.getPublicKey();
+    const wallets = this.#wallets.filterByPlatform(wallet.crypto.platform);
+    for (const item of wallets) {
+      // wallet already initialized
+      if (item !== wallet) {
+        await item.open(publicKey);
+      }
+    }
+    this.#clientStorage.setPublicKey(wallet.crypto.platform, publicKey, this.#deviceSeed);
+  }
+
+  async initWallets(wallets, walletSeed) {
+    for (const wallet of wallets) {
+      await this.initWallet(wallet, walletSeed);
+    }
+    this.emit('update');
+  }
+
+  async updatePlatformSettings(wallet, settings, walletSeed) {
+    const { platform } = wallet.crypto;
+    const platformWallets = this.#wallets.filterByPlatform(platform);
+    platformWallets.forEach((item) => item.cleanup());
+    wallet.settings = settings;
+    await wallet.create(walletSeed);
+    const publicKey = wallet.getPublicKey();
+    this.#clientStorage.setPublicKey(platform, publicKey, this.#deviceSeed);
+    for (const platformWallet of platformWallets) {
+      if (wallet !== platformWallet) {
+        platformWallet.settings = settings;
+        await platformWallet.open(publicKey);
+      }
+    }
+    this.#details.setPlatformSettings(platform, settings);
+    await this.#details.save();
+  }
+
+  authorizePayment(intent, pin, expectedContract, stillApproved) { return this.#midori.authorizePayment(intent, this.pinHash(pin), expectedContract, stillApproved); }
+
+  async updateUsername(username) {
+    return this.#midori.updateTag(username);
+  }
+
+  // binded to this
+  getSeed = (type, token) => {
+    return this.#midori.getSeed(type, token);
+  };
+
+  // binded to this
+  request = (config) => {
+    return this.#midori.request(config);
+  };
+
+
+  pinHash(pin, pinKey) {
+    if (typeof pin !== 'string') {
+      throw new TypeError('pin must be string');
+    }
+    pinKey = pinKey || this.#clientStorage.getPinKey();
+    return hex.encode(hmac(sha256, pinKey, pin));
+  }
+
+  async getNormalSecurityWalletSeed() {
+    let walletToken;
+    if (this.settings.get('hasAuthenticators')) {
+      walletToken = await this.#hardware.walletToken();
+      if (!walletToken) return;
+    } else {
+      ({ walletToken } = await this.request({
+        url: '/local/token/wallet',
+        method: 'get',
+        seed: 'device',
+      }));
+    }
+    return this.getSeed('wallet', hex.decode(walletToken));
+  }
+
+  setPlatformWalletsStateInitialized(platform, excludeWallet) {
+    const wallets = this.#wallets.filterByPlatform(platform);
+    for (const wallet of wallets) {
+      if (wallet.state === WalletState.STATE_LOADED && wallet !== excludeWallet) {
+        wallet.state = WalletState.STATE_INITIALIZED;
+      }
+    }
+  }
+
+  async #migrateV5Balance(wallet) {
+    if (!this.#needToMigrateV5Balance) return;
+    try {
+      await wallet.load();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  toggleHiddenBalance() {
+    this.#clientStorage.toggleHiddenBalance();
+    this.emit('update', 'isHiddenBalance');
+  }
+
+  async walletConnect() {
+    if (!this.#walletConnect) {
+      this.#walletConnect = import('./WalletConnect.js').then(({ WalletConnect }) => {
+        return new WalletConnect({ account: this }).init();
+      });
+    }
+    return this.#walletConnect;
+  }
+
+  async getInvitationStatus() {
+    return this.request({
+      url: '/local/invitation',
+      method: 'get',
+      seed: 'device',
+    });
+  }
+
+  async sendInvitation(email) {
+    return this.request({
+      url: '/local/invitation',
+      method: 'post',
+      seed: 'device',
+      data: { email },
+    });
+  }
+
+  async setCardsSeed(walletSeed) {
+    const cardholderSeed = hmac(sha256, 'Cards', hex.encode(walletSeed));
+    const cardholderId = hex.encode(await ed25519.getPublicKey(cardholderSeed));
+    this.#cards.seed = cardholderSeed;
+    this.#seeds.set('cardholder', cardholderSeed, this.#deviceSeed);
+    this.#clientStorage.setCardholderId(cardholderId);
+  }
+
+  unknownError(error) {
+    if (this.isOnion && navigator.onLine) return i18n.global.t('Error! Please ensure that your Tor VPN is active.');
+    if (error instanceof errors.NetworkError) {
+      return i18n.global.t('Error! Please check your internet connection and try again.');
+    }
+    return i18n.global.t('Error! Please try again later.');
+  }
+}

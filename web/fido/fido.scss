@@ -1,0 +1,48 @@
+@import "../src/assets/styles/common";
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  background-color: var(--color-background);
+}
+
+.container {
+  display: flex;
+  width: 100%;
+  max-width: 320px;
+  flex-direction: column;
+  gap: var(--spacing-3xl);
+}
+
+.message {
+  @include text-md;
+  text-align: center;
+}
+
+.btn {
+  @include text-md;
+  @include text-bold;
+
+  display: flex;
+  overflow: hidden;
+  height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--spacing-lg);
+  border-radius: 0.625rem;
+  background-color: var(--color-primary-brand);
+  color: var(--color-primary-button-text);
+  gap: var(--spacing-md);
+  line-height: 1.2;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+
+  @include hover {
+    background-color: var(--color-primary-brand-d-10);
+  }
+
+  &:active {
+    background-color: var(--color-primary-brand-d-15);
+  }
+}

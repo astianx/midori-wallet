@@ -1,11 +1,9 @@
-import { uiRuntimeAliases } from './ui-runtime.config.js';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 /* eslint-env node */
 import { ViteEjsPlugin } from 'vite-plugin-ejs';
 import { ViteMinifyPlugin } from 'vite-plugin-minify';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import path from 'path';
-import { sentryVitePlugin } from '@sentry/vite-plugin';
 import svgLoader from 'vite-svg-loader';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv } from 'vite';
@@ -20,7 +18,7 @@ export default defineConfig(({ mode }) => {
   if (apiOrigin && !['http:', 'https:'].includes(new URL(apiOrigin).protocol)) throw new Error('Invalid API origin');
   return {
     cacheDir: process.env.MIDORI_VITE_CACHE_DIR || 'node_modules/.vite',
-    resolve: { alias: [{ find: '@midori/wallet-core', replacement: path.resolve('../packages/wallet-core/src/index.js') }, ...uiRuntimeAliases, ...['buffer', 'global', 'process'].map(name => ({ find: `vite-plugin-node-polyfills/shims/${name}`, replacement: path.resolve(`node_modules/vite-plugin-node-polyfills/shims/${name}/dist/index.js`) }))] },
+    resolve: { dedupe: ['vue', 'vue-router', 'vue-i18n'], alias: [{ find: '@midori/wallet-core', replacement: path.resolve('../packages/wallet-core/src/index.js') }, ...['buffer', 'global', 'process'].map(name => ({ find: `vite-plugin-node-polyfills/shims/${name}`, replacement: path.resolve(`node_modules/vite-plugin-node-polyfills/shims/${name}/dist/index.js`) }))] },
     server: {
       host: development.MIDORI_DEV_HOST || '127.0.0.1',
       port: Number(development.MIDORI_DEV_PORT || 5173),
@@ -46,16 +44,6 @@ export default defineConfig(({ mode }) => {
       sfcAutoName(),
       ViteEjsPlugin({ env }),
       ViteMinifyPlugin(),
-      sentryVitePlugin({
-        org: process.env.SENTRY_ORG,
-        project: process.env.SENTRY_PROJECT,
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-        telemetry: false,
-        sourcemaps: {
-          filesToDeleteAfterUpload: outDir(env.VITE_BUILD_TYPE) + '/**/*.map',
-        },
-        disable: true,
-      }),
       ...(isHttps ? [basicSsl()] : []),
     ],
     build: {
@@ -63,7 +51,7 @@ export default defineConfig(({ mode }) => {
       minify: true,
       outDir: outDir(env.VITE_BUILD_TYPE),
       emptyOutDir: true,
-      sourcemap: 'hidden',
+      sourcemap: false,
       rollupOptions: {
         input: inputs(env.VITE_BUILD_TYPE),
         preserveEntrySignatures: env.VITE_BUILD_TYPE === 'electron' ? 'exports-only' : undefined,

@@ -1,0 +1,11 @@
+export class BigGasLimitError extends Error { name = 'BigGasLimitError'; }
+export class SmallGasLimitError extends Error { name = 'SmallGasLimitError'; }
+export class InvalidTransactionIDError extends Error { name = 'InvalidTransactionIDError'; }
+export class NotYourTransactionError extends Error { name = 'NotYourTransactionError'; }
+export class TransactionAlreadyAddedError extends Error { name = 'TransactionAlreadyAddedError'; }
+export class UnknownTransactionError extends Error { name = 'UnknownTransactionError'; }
+export class InvalidNetworkAddressError extends Error { name = 'InvalidNetworkAddressError'; }
+export class DestinationTagNeededError extends Error { name = 'DestinationTagNeededError'; }
+export class InvalidDestinationTagError extends Error { name = 'InvalidDestinationTagError'; }
+export class InvalidInvoiceIDError extends Error { name = 'InvalidInvoiceIDError'; }
+export class InvalidMemoError extends Error { name = 'InvalidMemoError'; }

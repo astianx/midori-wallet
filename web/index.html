@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light dark"/>
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline' data:;
+      script-src 'self';
       style-src 'self' 'unsafe-inline';
       connect-src
         'self'
@@ -18,15 +18,11 @@
         <%= env.VITE_SITE_URL_TOR %>
         <%= env.VITE_API_CSP_TOR %>
         <% } %>
-        wss://*.walletconnect.org/
-        wss://*.walletconnect.com/
-        https://*.walletconnect.org/
-        https://*.walletconnect.com/
-        https://*.sentry.io;
-      frame-src
-        'self'
-        https://*.walletconnect.org/
-        https://*.walletconnect.com/;
+;
+      frame-src 'none';
+      object-src 'none';
+      base-uri 'none';
+      form-action 'none';
       img-src
         'self'
         blob:
@@ -37,11 +33,11 @@
         <%= env.VITE_SITE_URL_TOR %>
         <%= env.VITE_API_CSP_TOR %>
         <% } %>
-        https://www.gravatar.com/
+        
         data:;
     "/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0, viewport-fit=cover">
-    <meta name="description" content="Midori Wallet works with any ERC20 / BEP20 / ARC20 / TRC20 tokens and supports the most popular cryptocurrencies — Bitcoin, Bitcoin Cash, Ethereum, Litecoin, XRP, Stellar, Dogecoin, Dash, Monero, Cardano, Solana and Binance Smart Chain.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Midori Wallet: USDT and USDC on Base, with local signing and portable recovery.">
     <meta name="format-detection" content="telephone=no"/>
     <meta name="format-detection" content="address=no"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -54,19 +50,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Midori Wallet">
-    <script>
-      try {
-        const cached = localStorage.getItem('_cs_theme');
-        const theme = ['system', 'light', 'dark'].includes(cached) ? cached : 'system';
-        localStorage.setItem('_cs_theme', theme);
-        window.cordova?.plugins?.Theme?.setStyle(theme);
-        window.electron?.setTheme(theme);
-        const resolvedTheme = theme === 'system'
-          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-          : theme;
-        document.documentElement.dataset.theme = resolvedTheme;
-      } catch {}
-    </script>
+    <script src="/startup-0.js" defer></script>
     <style>
       @import '/src/assets/styles/common.scss';
     </style>
@@ -94,19 +78,7 @@
       </div>
     </div>
     <script type="module" src="/src/main.js"></script>
-    <script>
-      try {
-        if (!Promise) throw new Error('Promise not supported');
-        if (!BigInt) throw new Error('BigInt not supported');
-        if (!Proxy) throw new Error('Proxy not supported');
-        if (!localStorage) throw new Error('localStorage not supported');
-        if (document.createElement('script').noModule === undefined) throw new Error('ES modules not supported');
-      } catch (err) {
-        console.error(err);
-        document.getElementById('app').remove();
-        document.getElementById('error').style.display = 'block';
-      }
-    </script>
+    <script src="/startup-1.js" defer></script>
     <% if (env.VITE_BUILD_TYPE === 'phonegap') { %>
       <script src="cordova.js"></script>
     <% } %>

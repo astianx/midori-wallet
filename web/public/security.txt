@@ -1,0 +1,2 @@
+# Midori Wallet F1: entorno local de desarrollo.
+# Canal público de seguridad pendiente de habilitar antes de F6.

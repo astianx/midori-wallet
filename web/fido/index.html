@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Midori Wallet</title>
+  <meta charset="UTF-8" />
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0, viewport-fit=cover">
+  <style>
+    @import './fido.scss';
+  </style>
+  <script>
+    try {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      function applyTheme(dark) {
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      }
+      mediaQuery.addEventListener('change', (query) => applyTheme(query.matches) );
+      applyTheme(mediaQuery.matches);
+    } catch {}
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div id="message" class="message">Loading...</div>
+    <button type="button" id="btn" class="btn">Back</button>
+  </div>
+  <body>
+    <script type="module" src="./fido.js"></script>
+  </body>
+</body>
+</html>

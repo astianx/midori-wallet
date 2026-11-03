@@ -44,7 +44,7 @@ export default {
   },
   watch: {
     async value(value) {
-      if (value.length === 4) {
+      if (value.length === 6) {
         await this.confirm(value);
       }
     },
@@ -63,7 +63,7 @@ export default {
   methods: {
     enter(number) {
       if (this.isLoading) return;
-      if (this.value.length === 4) return;
+      if (this.value.length === 6) return;
       this.value += number;
       this.error = undefined;
       window.taptic?.tap();
@@ -220,6 +220,12 @@ export default {
       <div
         class="&__dot"
         :class="{ '&__dot--active': value.length > 3 }"
+      />      <div
+        class="&__dot"
+        :class="{ '&__dot--active': value.length > 4 }"
+      />      <div
+        class="&__dot"
+        :class="{ '&__dot--active': value.length > 5 }"
       />
     </template>
   </div>

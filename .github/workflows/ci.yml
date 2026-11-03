@@ -34,12 +34,19 @@ jobs:
       - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
-      - run: npm run check
       - run: npm run lint
       - run: npm test
       - run: npm --prefix packages/wallet-core test
+      - name: Prepare isolated PostgreSQL database
+        run: |
+          sudo systemctl start postgresql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE midori_ci LOGIN PASSWORD 'midori-ci-local';"
+          sudo -u postgres createdb -O midori_ci midori_verify_ci
       - run: npm --prefix server test
-      - run: npm run contract:check
+        env:
+          MIDORI_TEST_DATABASE_URL: postgresql://midori_ci:midori-ci-local@127.0.0.1/midori_verify_ci
+      - run: npm --prefix server run contract:build
+      - run: git diff --exit-code -- server/openapi.json
       - run: npm run build:web
       - uses: actions/upload-artifact@v4
         with:

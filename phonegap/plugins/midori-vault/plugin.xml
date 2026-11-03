@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="org.astian.midori.vault" version="1.0.0">
+  <name>MidoriVault</name>
+  <platform name="android">
+    <config-file target="res/xml/config.xml" parent="/*"><feature name="MidoriVault"><param name="android-package" value="org.astian.midori.vault.MidoriVault" /></feature></config-file>
+    <source-file src="src/android/MidoriVault.java" target-dir="src/org/astian/midori/vault" />
+  </platform>
+  <platform name="ios">
+    <config-file target="config.xml" parent="/*"><feature name="MidoriVault"><param name="ios-package" value="MidoriVault" /></feature></config-file>
+    <header-file src="src/ios/MidoriVault.h" /><source-file src="src/ios/MidoriVault.m" />
+    <framework src="Security.framework" /><framework src="UniformTypeIdentifiers.framework" />
+  </platform>
+</plugin>

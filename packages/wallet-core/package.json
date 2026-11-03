@@ -1,0 +1,27 @@
+{
+  "name": "@midori/wallet-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.js",
+    "./testing": "./src/testing.js",
+    "./vault": "./src/vault.js",
+    "./local-proof": "./src/local-proof.js"
+  },
+  "scripts": {
+    "test": "node --test --experimental-test-isolation=none test/core.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.22.2 <23"
+  },
+  "dependencies": {
+    "@tetherto/wdk": "1.0.0-beta.22",
+    "@tetherto/wdk-wallet-evm": "1.0.0-beta.19",
+    "@tetherto/wdk-wallet-evm-erc-4337": "1.0.0-beta.22",
+    "abstractionkit": "0.4.0",
+    "ethers": "6.17.0",
+    "sodium-javascript": "0.8.0"
+  }
+}

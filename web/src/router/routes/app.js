@@ -168,7 +168,7 @@ const app = [
                 destinationTag: BaseExchange.EXTRA_ID.includes(crypto._id) ? parsed.destinationTag : undefined,
               },
               params: {
-                cryptoId: crypto._id,
+                cryptoId: parsed.token ? `${parsed.token}@base` : crypto._id,
               },
             };
           }

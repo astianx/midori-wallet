@@ -1,34 +1,21 @@
 import { errors } from './account/domain.js';
-
-export function parseCryptoURI(uri) {
-  try {
-    if (!uri.includes(':')) {
-      uri = `crypto:${uri}`;
-    }
-    const parsed = new URL(uri);
-    const data = {};
-    if (parsed.protocol !== 'crypto:') {
-      data.scheme = parsed.protocol.replace(/:$/, '').replace(/^web\+/, '');
-    }
-    if (parsed.searchParams.has('address')) {
-      // ERC 681
-      // https://github.com/ethereum/ercs/blob/master/ERCS/erc-681.md
-      data.address = parsed.searchParams.get('address');
-      data.token = parsed.pathname;
-    } else {
-      // BIP 21 etc
-      // https://github.com/bitcoin/bips/blob/master/bip-0021.mediawiki
-      data.address = data.scheme === 'kaspa' ? `${data.scheme}:${parsed.pathname}` : parsed.pathname;
-      if (parsed.searchParams.has('amount')) {
-        data.amount = parsed.searchParams.get('amount');
-      }
-      if (parsed.searchParams.has('dt')) {
-        // https://github.com/XRPLF/XRPL-Standards/tree/master/XLS-0002d-destination-information
-        data.destinationTag = parsed.searchParams.get('dt');
-      }
-    }
-    return data;
-  } catch (err) {
-    throw new errors.AddressError(`Invalid URI: "${uri}"`, { cause: err });
+import { paymentLink } from '../../../electron/lib/security.js';
+const contracts = new Set(['0xfde4c96c8593536e31f229ea8f37b2ada2699bb2','0x833589fcd6edb6e08f4c7c32d4f71b54bda02913']);
+export function parseCryptoURI(value) {
+  const link = paymentLink(value);
+  if (!link) throw new errors.AddressError('Invalid Base payment URI');
+  if (/^0x[0-9a-fA-F]{40}$/.test(link)) return { address: link };
+  const url = new URL(link);
+  const [target, method] = url.pathname.split('/');
+  const address = target.split('@')[0];
+  if (!method) return { scheme:'ethereum', address };
+  if (method !== 'transfer' || !contracts.has(address.toLowerCase()) || !url.searchParams.has('address')) throw new errors.AddressError('Unsupported payment token');
+  const data = { scheme:'ethereum', token:address.toLowerCase(), address:url.searchParams.get('address') };
+  if (url.searchParams.has('uint256')) {
+    const units = BigInt(url.searchParams.get('uint256'));
+    if (units >= 2n ** 256n) throw new errors.AddressError('Invalid payment amount');
+    const fraction = (units % 1000000n).toString().padStart(6,'0').replace(/0+$/,'');
+    data.amount = `${units / 1000000n}${fraction ? '.' + fraction : ''}`;
   }
+  return data;
 }

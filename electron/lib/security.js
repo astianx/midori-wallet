@@ -25,6 +25,7 @@ export function paymentLink(value) {
   try {
     const url = new URL(value);
     if (!['ethereum:', 'midoriwallet:'].includes(url.protocol) || url.username || url.password || url.hash) return null;
+    if (new Set(url.searchParams.keys()).size !== [...url.searchParams.keys()].length) return null;
     if (url.protocol === 'midoriwallet:') {
       if (url.hostname !== 'pay' || (url.pathname && url.pathname !== '/')) return null;
       const address = url.searchParams.get('address');

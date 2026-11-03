@@ -13,17 +13,16 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env start.mjs",
-    "build": "node ../scripts/build.mjs electron",
+    "build": "node --env-file-if-exists=.env build.js",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "node ../scripts/publish-artifact.mjs --target electron",
+    "publish": "node -e \"throw new Error('Publication is a separate manual operation')\"",
     "lint": "npm --prefix .. run lint -- electron",
     "clean": "rm -rf ./dist && rm -rf ./out"
   },
   "devDependencies": {
     "@electron-forge/cli": "8.0.1",
     "@electron-forge/maker-deb": "8.0.1",
-    "@electron-forge/maker-dmg": "8.0.1",
     "@electron-forge/maker-squirrel": "8.0.1",
     "@electron-forge/maker-zip": "8.0.1",
     "electron": "45.2.1"

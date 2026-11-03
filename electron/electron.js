@@ -1,4 +1,5 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import log from 'electron-log';
 import { Menu, app, ipcMain, nativeTheme, net, protocol } from 'electron';
 
@@ -29,7 +30,19 @@ if (!isDevelopment) {
 }
 
 
+const installerEvent = process.argv[1];
+if (isWindows && app.isPackaged && ['--squirrel-install','--squirrel-updated','--squirrel-uninstall','--squirrel-obsolete'].includes(installerEvent)) {
+  if (installerEvent !== '--squirrel-obsolete') {
+    const update = path.resolve(path.dirname(process.execPath), '..', 'Update.exe');
+    const action = installerEvent === '--squirrel-uninstall' ? '--removeShortcut' : '--createShortcut';
+    try { execFileSync(update, [action, path.basename(process.execPath)], { windowsHide: true, timeout: 15000, stdio: 'ignore' }); }
+    catch { log.warn('Installer shortcut update failed'); }
+  }
+  app.exit(0);
+}
+
 if (isWindows) {
+  app.setAppUserModelId(`com.squirrel.${MIDORI_BUILD_PROFILE === 'release' ? 'midori_wallet.midori-wallet' : 'midori_wallet_beta.midori-wallet-beta'}`);
   app.setAboutPanelOptions({
     iconPath: fileURLToPath(new URL('./resources/64x64.png', import.meta.url)),
   });

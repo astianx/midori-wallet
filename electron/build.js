@@ -14,6 +14,7 @@ const env = { ...process.env, VITE_BUILD_TYPE:'electron', VITE_PLATFORM:process.
 const run = (script, args, cwd) => execFileSync(process.execPath, [script, ...args], { cwd, env, stdio:'inherit' });
 run(path.join(root,'web/node_modules/vite/bin/vite.js'), ['build'], path.join(root,'web'));
 fs.copyFileSync(path.join(root,'packages/update-core/index.js'), path.join(directory,'dist/update-core.js'));
+if (process.platform === 'win32') run(path.join(directory,'node_modules/electron-winstaller/script/select-7z-arch.js'), [], path.join(directory,'node_modules/electron-winstaller'));
 run(path.join(directory,'node_modules/@electron-forge/cli/dist/electron-forge.js'), ['make',`--platform=${process.platform}`,`--arch=${process.arch}`], directory);
 if (process.platform === 'darwin') {
   const name = profile === 'release' ? 'Midori Wallet' : 'Midori Wallet Beta';

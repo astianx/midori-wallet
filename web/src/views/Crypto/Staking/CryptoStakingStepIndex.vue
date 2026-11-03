@@ -42,7 +42,7 @@ export default {
   computed: {
     supportUrl() {
       if (this.$wallet.crypto._id === 'ethereum@ethereum') {
-        return 'https://astian.org/midori-wallet/';
+        return 'https://github.com/astianx/midori-wallet/issues';
       }
     },
   },

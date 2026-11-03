@@ -15,7 +15,7 @@ export default {
   },
   makers: [
     { name: '@electron-forge/maker-zip', platforms: ['darwin','linux','win32'] },
-    ...(process.env.MIDORI_DESKTOP_FORMAT === 'zip' ? [] : [{ name: '@electron-forge/maker-deb', platforms: ['linux'], config: { options: { name: executable, bin: executable, productName: appName, icon: 'resources/icon.png', maintainer: 'Midori Wallet', homepage: 'https://astian.org/midori-wallet/', categories: ['Office','Finance'] } } }]),
+    ...(process.env.MIDORI_DESKTOP_FORMAT === 'zip' ? [] : [{ name: '@electron-forge/maker-deb', platforms: ['linux'], config: { options: { name: executable, bin: executable, productName: appName, icon: 'resources/icon.png', maintainer: 'Midori Wallet', homepage: 'https://github.com/astianx/midori-wallet', categories: ['Office','Finance'] } } }]),
     { name: '@electron-forge/maker-squirrel', platforms: ['win32'], config: { name: beta ? 'midori_wallet_beta' : 'midori_wallet', exe: `${executable}.exe`, setupIcon: 'resources/icon.ico', authors: 'Midori Wallet', description: 'Midori Wallet' } },
   ],
   publishers: [],

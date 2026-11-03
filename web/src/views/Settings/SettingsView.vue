@@ -92,7 +92,7 @@ export default {
   },
   methods: {
     support() {
-      this.$safeOpen('https://astian.org/midori-wallet/');
+      this.$safeOpen('https://github.com/astianx/midori-wallet/issues');
     },
     logout() {
       this.$account.logout();

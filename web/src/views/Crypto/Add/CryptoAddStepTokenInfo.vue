@@ -96,7 +96,7 @@ export default {
       <MwWarning
         v-if="token.custom === true"
         class="&__warning"
-        @click="$safeOpen('https://astian.org/midori-wallet/')"
+        @click="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
       >
         {{ $t('Adding unknown tokens can be risky, so only add tokens you trust. Learn more.') }}
       </MwWarning>

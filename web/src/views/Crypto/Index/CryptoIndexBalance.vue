@@ -46,7 +46,7 @@ export default {
         {{ $isHiddenBalance ? '*****' : amount }}
         <a
           v-if="$wallet.crypto._id === 'monero@monero' && $wallet.balance.value === 0n && !$isHiddenBalance"
-          @click.stop="$safeOpen('https://astian.org/midori-wallet/')"
+          @click.stop="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
         >
           {{ $t('Support') }}
         </a>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <widget id="{{id}}" version="{{version}}" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
   <name>{{name}}</name><description>USDT and USDC on Base</description>
-  <author href="https://astian.org/midori-wallet/">Midori Wallet</author>
+  <author href="https://github.com/astianx/midori-wallet">Midori Wallet</author>
   <content src="index.html"/><access origin="{{api}}"/><access origin="https://mainnet.base.org"/>
   <allow-intent href="https://*/*"/><allow-intent href="mailto:*"/>
   <preference name="scheme" value="https"/><preference name="hostname" value="localhost"/>

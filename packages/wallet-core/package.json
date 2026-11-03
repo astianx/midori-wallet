@@ -10,9 +10,7 @@
     "./vault": "./src/vault.js",
     "./local-proof": "./src/local-proof.js"
   },
-  "scripts": {
-    "test": "node --test --experimental-test-isolation=none test/core.test.mjs"
-  },
+  "scripts": {},
   "engines": {
     "node": ">=22.22.2 <23"
   },

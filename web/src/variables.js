@@ -14,3 +14,5 @@ export { prettyVersion, release } from './lib/version.js?inline';
 export const MIDORI_UPDATE_REPOSITORY = import.meta.env.VITE_UPDATE_REPOSITORY;
 export const MIDORI_UPDATE_CHANNEL = import.meta.env.VITE_UPDATE_CHANNEL;
 export const MIDORI_UPDATE_PUBLIC_KEY = import.meta.env.VITE_UPDATE_PUBLIC_KEY;
+
+export const MIDORI_BUILD_PROFILE = import.meta.env.VITE_BUILD_PROFILE || 'debug';

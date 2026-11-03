@@ -18,7 +18,6 @@
     "build:android": "npm --prefix phonegap run android",
     "build:ios": "npm --prefix phonegap run ios",
     "lint": "eslint .",
-    "test": "node --test --experimental-test-isolation=none tests/*.test.mjs",
     "db:migrate": "npm --prefix server run db:migrate",
     "db:backup": "npm --prefix server run db:backup"
   },

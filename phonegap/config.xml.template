@@ -9,11 +9,20 @@
   <platform name="android">
     <config-file target="AndroidManifest.xml" parent="/manifest"><uses-permission android:name="android.permission.CAMERA"/><uses-feature android:name="android.hardware.camera" android:required="false"/></config-file>
     <preference name="android-minSdkVersion" value="26"/><preference name="android-targetSdkVersion" value="36"/>
-    <preference name="AndroidWindowSplashScreenBackground" value="#f5f8f6"/>
+    <preference name="AndroidWindowSplashScreenBackground" value="#f5f8f6"/><preference name="AndroidWindowSplashScreenAnimatedIcon" value="../../images/android/icons/192.png"/>
     <icon src="../../images/android/icons/36.png" density="ldpi"/><icon src="../../images/android/icons/48.png" density="mdpi"/><icon src="../../images/android/icons/72.png" density="hdpi"/><icon src="../../images/android/icons/96.png" density="xhdpi"/><icon src="../../images/android/icons/144.png" density="xxhdpi"/><icon src="../../images/android/icons/192.png" density="xxxhdpi"/>
     <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application"><application android:usesCleartextTraffic="{{cleartext}}" android:allowBackup="false" android:fullBackupContent="false"/></edit-config>
   </platform>
   <platform name="ios">
+    <splash src="../../images/ios/screens/Default@2x~ipad~anyany.png"/>
+    <splash src="../../images/ios/screens/Default@2x~ipad~comany.png"/>
+    <splash src="../../images/ios/screens/Default@2x~iphone~anyany.png"/>
+    <splash src="../../images/ios/screens/Default@2x~iphone~comany.png"/>
+    <splash src="../../images/ios/screens/Default@2x~iphone~comcom.png"/>
+    <splash src="../../images/ios/screens/Default@3x~iphone~anyany.png"/>
+    <splash src="../../images/ios/screens/Default@3x~iphone~anycom.png"/>
+    <splash src="../../images/ios/screens/Default@3x~iphone~comany.png"/>
+    <preference name="SplashScreenBackgroundColor" value="#f5f8f6"/>
     <icon src="../../images/ios/icons/icon-1024.png" width="1024" height="1024"/>
     <icon src="../../images/ios/icons/icon-60@3x.png" width="180" height="180"/>
     <icon src="../../images/ios/icons/icon-60@2x.png" width="120" height="120"/>

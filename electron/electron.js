@@ -11,6 +11,7 @@ import { assertCaller, paymentLink } from './lib/security.js';
 import path from 'node:path';
 import {
   APP_HOSTNAME,
+  MIDORI_BUILD_PROFILE,
   VITE_SITE_URL,
   isDevelopment,
   isLinux,
@@ -18,6 +19,9 @@ import {
   isMas,
   isWindows,
 } from './lib/constants.js';
+
+app.setName(MIDORI_BUILD_PROFILE === 'release' ? 'Midori Wallet' : 'Midori Wallet Beta');
+app.setPath('userData', path.join(app.getPath('appData'), MIDORI_BUILD_PROFILE === 'release' ? 'midori-wallet' : 'midori-wallet-beta'));
 
 log.initialize({ spyRendererConsole: false });
 if (!isDevelopment) {
@@ -54,7 +58,7 @@ if (!isMas && !lock) {
 // Set up Application Menu
 Menu.setApplicationMenu(menu);
 
-[...schemes, { scheme: 'midoriwallet' }].forEach((item) => {
+(MIDORI_BUILD_PROFILE === 'release' ? [...schemes, { scheme: 'midoriwallet' }] : [{ scheme: 'midoriwallet-beta' }]).forEach((item) => {
   if (!app.isDefaultProtocolClient(item.scheme)) {
     // Define custom protocol handler.
     // Deep linking works on packaged versions of the application!

@@ -24,9 +24,9 @@ export function paymentLink(value) {
   if (/^0x[0-9a-fA-F]{40}$/.test(value)) return value;
   try {
     const url = new URL(value);
-    if (!['ethereum:', 'midoriwallet:'].includes(url.protocol) || url.username || url.password || url.hash) return null;
+    if (!['ethereum:', 'midoriwallet:', 'midoriwallet-beta:'].includes(url.protocol) || url.username || url.password || url.hash) return null;
     if (new Set(url.searchParams.keys()).size !== [...url.searchParams.keys()].length) return null;
-    if (url.protocol === 'midoriwallet:') {
+    if (['midoriwallet:', 'midoriwallet-beta:'].includes(url.protocol)) {
       if (url.hostname !== 'pay' || (url.pathname && url.pathname !== '/')) return null;
       const address = url.searchParams.get('address');
       const chain = url.searchParams.get('chainId');

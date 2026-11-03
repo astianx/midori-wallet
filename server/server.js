@@ -1,4 +1,6 @@
 import { createServer } from 'node:http';
+import express from 'express';
+import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
 import { createApp } from './app.js';
 import { createDatabase } from './lib/db.js';
@@ -7,8 +9,11 @@ import { loadConfig } from './lib/config.js';
 export async function startServer(config = loadConfig()) {
   const logger = entry => console.error(JSON.stringify(entry));
   const db = createDatabase(config, logger);
-  const { createCompatibilityApp } = await import('./compat/app.js');
-  const app = createApp({ db, config, logger, compatibilityApp: createCompatibilityApp({ allowedOrigins: config.allowedOrigins, persistence: 'PostgreSQL; API v1' }) });
+  const webApp = express();
+  webApp.use((req, res, next) => { res.set('Content-Security-Policy', "frame-ancestors 'none'"); next(); });
+  webApp.use(express.static(fileURLToPath(new URL('./dist/', import.meta.url)), { dotfiles:'deny', index:'index.html' }));
+  webApp.get('*', (req, res, next) => req.accepts('html') && req.get('accept')?.includes('text/html') ? res.sendFile(fileURLToPath(new URL('./dist/index.html', import.meta.url))) : next());
+  const app = createApp({ db, config, logger, webApp });
   const server = createServer(app);
   server.requestTimeout = 30000;
   server.headersTimeout = 10000;

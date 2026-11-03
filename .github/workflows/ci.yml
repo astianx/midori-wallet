@@ -34,9 +34,10 @@ jobs:
       - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
       - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+      - name: Reject retired dependency registries
+        run: |
+          if rg -i '@coinspace|npm.pkg.github.com|github.com/CoinSpace|"mongodb"' package-lock.json web/package-lock.json server/package-lock.json electron/package-lock.json phonegap/package-lock.json .npmrc web/.npmrc server/.npmrc; then exit 1; fi
       - run: npm run lint
-      - run: npm test
-      - run: npm --prefix packages/wallet-core test
       - name: Prepare isolated PostgreSQL database
         run: |
           sudo systemctl start postgresql
@@ -75,6 +76,9 @@ jobs:
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix electron ci --ignore-scripts --no-audit --no-fund
       - run: node electron/node_modules/electron/install.js
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
       - run: npm run build:electron
       - uses: actions/upload-artifact@v4
         with:

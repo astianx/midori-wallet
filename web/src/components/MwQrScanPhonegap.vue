@@ -1,0 +1,105 @@
+<script>
+import { onShowOnHide } from '../lib/mixins.js';
+
+import MwButton from './MwButton.vue';
+
+export default {
+  components: {
+    MwButton,
+  },
+  mixins: [onShowOnHide],
+  emits: ['back', 'scan'],
+  async onShow() {
+    this.start();
+  },
+  async onHide() {
+    this.stop();
+  },
+  methods: {
+    async start() {
+      const isReady = await window.prepareCamera(this);
+      if (!isReady) return this.$emit('back');
+      window.QRScanner.scan((err, contents) => {
+        if (err) {
+          console.error(err);
+          return this.$emit('back');
+        }
+        this.$emit('scan', { data: contents });
+      });
+      window.QRScanner.show();
+      if (this.$resolvedTheme === 'light') window.systemBars?.setStyle('dark');
+      document.documentElement.dataset.statusbarStyle = 'locked';
+      document.documentElement.classList.add('qr-scanning');
+    },
+    stop() {
+      window.QRScanner.destroy();
+      window.systemBars?.setStyle(this.$resolvedTheme);
+      delete document.documentElement.dataset.statusbarStyle;
+      document.documentElement.classList.remove('qr-scanning');
+    },
+  },
+};
+</script>
+
+<template>
+  <Teleport to="body">
+    <div class="&">
+      <div class="&__box-wrapper">
+        <div class="&__box" />
+      </div>
+      <MwButton
+        type="white-link"
+        @click="$emit('back')"
+      >
+        {{ $t('Back') }}
+      </MwButton>
+    </div>
+  </Teleport>
+</template>
+
+<style lang="scss">
+  html.qr-scanning {
+    background-color: transparent;
+
+    body {
+      background-color: transparent;
+    }
+
+    #app {
+      display: none;
+    }
+  }
+  .#{ $filename } {
+    $self: &;
+
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    padding:
+      max(var(--spacing-xl), env(safe-area-inset-top))
+      max(var(--spacing-xl), env(safe-area-inset-right))
+      max(var(--spacing-3xl), env(safe-area-inset-bottom))
+      max(var(--spacing-xl), env(safe-area-inset-left));
+    gap: var(--spacing-3xl);
+
+    &__box-wrapper {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+    }
+
+    &__box {
+      width: 100%;
+      max-width: 20rem;
+      height: 100%;
+      max-height: 20rem;
+      border-radius: 0.625rem;
+      margin: 0 auto;
+      box-shadow: 0 0 0 3000px rgb(0 0 0 / 60%);
+    }
+  }
+</style>

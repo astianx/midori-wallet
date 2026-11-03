@@ -1,0 +1,375 @@
+<script>
+import {
+  Amount,
+  WalletState,
+  errors,
+} from '../../../lib/account/domain.js';
+import {
+  ExchangeAmountError,
+  ExchangeBigAmountError,
+  ExchangeDisabledError,
+  ExchangeSmallAmountError,
+  InternalExchangeError,
+} from '../../../lib/exchanges/BaseExchange.js';
+import {
+  cryptoSubtitle,
+  cryptoToFiat,
+} from '../../../lib/helpers.js';
+
+import MwButton from '../../../components/MwButton.vue';
+import MwButtonGroup from '../../../components/MwButtonGroup.vue';
+import MwCryptoLogo from '../../../components/MwCryptoLogo.vue';
+import MwFormAmountInput from '../../../components/MwForm/MwFormAmountInput.vue';
+import MwFormDropdown from '../../../components/MwForm/MwFormDropdown.vue';
+import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
+import MwStep from '../../../components/MwStep.vue';
+import MainLayout from '../../../layouts/MainLayout.vue';
+import { onShowOnHide } from '../../../lib/mixins';
+
+import debounce from 'p-debounce';
+
+export default {
+  components: {
+    MainLayout,
+    MwFormAmountInput,
+    MwButton,
+    MwButtonGroup,
+    MwCryptoLogo,
+    MwFormDropdown,
+    MwFormGroup,
+  },
+  extends: MwStep,
+  mixins: [onShowOnHide],
+  data() {
+    return {
+      isLoading: false,
+      isLoadingMaxAmount: false,
+      isEstimating: false,
+      subtitle: cryptoSubtitle(this.$wallet),
+      amount: undefined,
+      errors: {},
+      priceTo: undefined,
+    };
+  },
+  async onShow() {
+    if (this.$wallet.balance?.value === 0n) {
+      this.replace('poor');
+      return;
+    }
+    this.isLoading = true;
+    this.updateStorage({
+      // cache price for all steps
+      price: await this.$account.market.getPrice(this.$wallet.crypto._id, this.$currency),
+      pricePlatform: await this.$account.market.getPrice(this.$wallet.platform._id, this.$currency),
+      priceUSD: this.$wallet.isCsFeeSupported ?
+        await this.$account.market.getPrice(this.$wallet.crypto._id, 'USD') : undefined,
+      provider: this.storage.provider || 'changelly',
+    });
+    this.isLoading = false;
+  },
+  computed: {
+    to() {
+      return this.storage.to;
+    },
+    amountConverted() {
+      if (this.priceTo === undefined) {
+        return;
+      }
+      if (this.estimation?.result === undefined) {
+        return '0';
+      }
+      return cryptoToFiat(this.estimation.result, this.priceTo);
+    },
+    providerInfo() {
+      return this.storage.provider
+        ? this.$account.exchanges.getProviderInfo(this.storage.provider)
+        : {};
+    },
+    estimation() {
+      if (this.storage.provider && this.storage.estimations) {
+        return this.storage.estimations.find((item) => item.provider === this.storage.provider);
+      }
+    },
+  },
+  watch: {
+    amount: debounce(function() {
+      this.estimate();
+    }, 300),
+    async to() {
+      this.clean();
+      this.estimate();
+      if (this.to) {
+        this.priceTo = await this.$account.market.getPrice(this.to.crypto._id, this.$currency);
+      } else {
+        this.priceTo = undefined;
+      }
+    },
+  },
+  methods: {
+    clean() {
+      this.updateStorage({
+        estimations: [],
+        provider: 'changelly',
+      });
+      this.errors = {};
+    },
+    async estimate() {
+      if (!this.to || this.amount === undefined || this.amount.value === 0n) {
+        this.clean();
+        return;
+      }
+      this.isEstimating = true;
+      this.errors = {};
+      try {
+        if (!this.$account.exchanges.isSupported(this.$wallet.crypto, this.to.crypto)) {
+          throw new ExchangeDisabledError();
+        }
+        if (this.$wallet.isFeeRatesSupported) await this.$wallet.loadFeeRates();
+        await this.$wallet.validateAmount({
+          address: this.$wallet.dummyExchangeDepositAddress,
+          // use default fee rate
+          feeRate: this.$wallet.isFeeRatesSupported ? WalletState.FEE_RATE_DEFAULT : undefined,
+          // use default gas limit
+          gasLimit: this.$wallet.isGasLimitSupported ? this.$wallet.gasLimit : undefined,
+          amount: this.amount,
+          price: this.storage.priceUSD,
+        });
+        const estimations = await this.$account.exchanges.estimateExchange({
+          from: this.$wallet.crypto._id,
+          to: this.to.crypto._id,
+          amount: this.amount,
+        });
+        this.updateStorage({
+          estimations,
+          provider: estimations[0].provider,
+        });
+      } catch (err) {
+        this.clean();
+        this.handleError(err);
+      } finally {
+        this.isEstimating = false;
+      }
+    },
+    async confirm() {
+      if (!this.amount?.value) {
+        this.errors['amount'] = this.$t('Invalid value');
+        return;
+      }
+      if (!this.to) {
+        this.errors['to'] = this.$t('Please select a crypto to swap');
+        return;
+      }
+      if (Object.keys(this.errors).length) return;
+      if (!this.estimation) return;
+
+      const amount = this.amount || new Amount(0n, this.$wallet.crypto.decimals);
+      this.isLoading = true;
+      this.errors = {};
+      try {
+        const fee = await this.$wallet.estimateTransactionFee({
+          address: this.$wallet.dummyExchangeDepositAddress,
+          feeRate: this.$wallet.isFeeRatesSupported ? WalletState.FEE_RATE_DEFAULT : undefined,
+          gasLimit: this.$wallet.isGasLimitSupported ? this.$wallet.gasLimit : undefined,
+          amount,
+          price: this.storage.priceUSD,
+        });
+        this.updateStorage({
+          exchange: true,
+          amount,
+          amountTo: this.estimation.result,
+          address: (this.to.crypto.supported && this.$account.wallet(this.to.crypto._id))
+            ? 'your wallet' : undefined,
+          priceTo: this.priceTo,
+          fee,
+        });
+        this.next('address');
+      } catch (err) {
+        this.handleError(err);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async setMaxAmount() {
+      this.isLoadingMaxAmount = true;
+      try {
+        if (this.$wallet.isFeeRatesSupported) await this.$wallet.loadFeeRates();
+        this.amount = await this.$wallet.estimateMaxAmount({
+          address: this.$wallet.dummyExchangeDepositAddress,
+          feeRate: this.$wallet.isFeeRatesSupported ? WalletState.FEE_RATE_DEFAULT : undefined,
+          gasLimit: this.$wallet.gasLimit,
+          price: this.storage.priceUSD,
+        });
+      } catch (err) {
+        this.handleError(err);
+      } finally {
+        this.isLoadingMaxAmount = false;
+      }
+    },
+    handleError(err) {
+      if (err instanceof ExchangeSmallAmountError) {
+        this.errors['amount'] = this.$t('Value is too small, minimum {amount} {symbol}', {
+          amount: err.amount,
+          symbol: this.$wallet.crypto.symbol,
+        });
+        return;
+      }
+      if (err instanceof ExchangeBigAmountError) {
+        this.errors['amount'] = this.$t('Value is too big, maximum {amount} {symbol} (incl. fee)', {
+          amount: err.amount,
+          symbol: this.$wallet.crypto.symbol,
+        });
+        return;
+      }
+      if (err instanceof errors.SmallAmountError) {
+        this.errors['amount'] = this.$t('Value is too small, minimum {amount} {symbol}', {
+          amount: err.amount,
+          symbol: this.$wallet.crypto.symbol,
+        });
+        return;
+      }
+      if (err instanceof errors.BigAmountError) {
+        this.errors['amount'] = this.$t('Not enough funds on your balance, maximum {amount} {symbol}', {
+          amount: err.amount,
+          symbol: this.$wallet.crypto.symbol,
+        });
+        return;
+      }
+      if (err instanceof ExchangeDisabledError) {
+        this.updateStorage({ provider: null });
+        this.errors['provider'] = this.$t('There are currently no providers available');
+        return;
+      }
+      if (err instanceof InternalExchangeError) {
+        this.updateStorage({ provider: null });
+        this.errors['provider'] = this.$t('There are currently no providers available');
+        return;
+      }
+      if (err instanceof errors.MinimumReserveDestinationError) {
+        this.errors['amount'] = this.$t('Value is too small for this destination address, minimum {amount} {symbol}', {
+          amount: err.amount,
+          symbol: this.$wallet.crypto.symbol,
+        });
+        return;
+      }
+      if (err instanceof errors.BigAmountConfirmationPendingError) {
+        // eslint-disable-next-line max-len
+        this.errors['amount'] = this.$t('Some funds are temporarily unavailable. To send this transaction, you will need to wait for your pending transactions to be confirmed first. Available {amount} {symbol}', {
+          amount: err.amount,
+          symbol: this.$wallet.crypto.symbol,
+        });
+        return;
+      }
+      if (err instanceof errors.InsufficientCoinForTransactionFeeError) {
+        this.errors['amount'] = this.$t('Insufficient funds to pay the transaction fee. Required {amount} {symbol}', {
+          amount: err.amount,
+          symbol: this.$wallet.platform.symbol,
+        });
+        return;
+      }
+      if (err instanceof ExchangeAmountError) {
+        this.errors['amount'] = this.$t('Invalid value');
+        return;
+      }
+      console.error(err);
+    },
+  },
+};
+</script>
+
+<template>
+  <MainLayout
+    :title="$t('Swap {symbol}', { symbol: $wallet.crypto.symbol })"
+    :description="subtitle"
+  >
+    <MwFormGroup>
+      <MwFormAmountInput
+        v-model="amount"
+        :label="$t('Amount')"
+        :error="errors['amount']"
+        :decimals="$wallet.crypto.decimals"
+        :symbol="$wallet.crypto.symbol"
+        :factors="$wallet.isFactorsSupported ? $wallet.factors : []"
+        :price="storage.price"
+        :currency="$currency"
+        @update:modelValue="errors['amount'] = undefined"
+      />
+      <MwButton
+        type="secondary"
+        :isLoading="isLoadingMaxAmount"
+        @click="setMaxAmount"
+      >
+        {{ $t('max') }}
+      </MwButton>
+    </MwFormGroup>
+
+    <MwFormGroup class="&__growing-group">
+      <MwFormDropdown
+        :label="$t('To')"
+        :error="errors['to']"
+        :value="to && to.crypto.name"
+        @click="next('target')"
+      >
+        <template #before>
+          <MwCryptoLogo
+            v-if="to"
+            :crypto="to.crypto"
+            :platform="to.platform"
+          />
+        </template>
+      </MwFormDropdown>
+      <MwFormDropdown
+        :label="$t('Provider')"
+        :error="errors['provider']"
+        :value="providerInfo.name"
+        :writable="storage.estimations?.length > 1"
+        @click="(storage.estimations?.length > 1 && next('provider'))"
+      >
+        <template #before>
+          <img
+            v-if="providerInfo.logo?.[$resolvedTheme]"
+            loading="lazy"
+            :src="providerInfo.logo[$resolvedTheme]"
+            :alt="providerInfo.name"
+          >
+        </template>
+      </MwFormDropdown>
+      <div
+        v-if="to && estimation"
+        class="&__info"
+      >
+        <div>
+          <span dir="ltr">{{ estimation.result }} {{ to.crypto.symbol }}</span>
+        </div>
+        <div v-if="amountConverted">
+          <span dir="ltr">
+            {{ $fiatPrecise(amountConverted) }}
+          </span>
+        </div>
+      </div>
+    </MwFormGroup>
+
+    <MwButtonGroup>
+      <MwButton
+        type="primary"
+        :isLoading="isLoading || isEstimating"
+        @click="confirm"
+      >
+        {{ $t('Continue') }}
+      </MwButton>
+    </MwButtonGroup>
+  </MainLayout>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    $self: &;
+
+    &__growing-group {
+      flex-grow: 1;
+    }
+
+    &__info {
+      @include text-md;
+    }
+  }
+</style>

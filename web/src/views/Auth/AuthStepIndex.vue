@@ -1,0 +1,126 @@
+<script>
+import MwButton from '../../components/MwButton.vue';
+import MwButtonGroup from '../../components/MwButtonGroup.vue';
+import MwStep from '../../components/MwStep.vue';
+import { onShowOnHide } from '../../lib/mixins.js';
+
+import LogoIcon from '../../assets/svg/logo.svg';
+
+export default {
+  components: {
+    MwButton,
+    MwButtonGroup,
+    LogoIcon,
+  },
+  extends: MwStep,
+  mixins: [onShowOnHide],
+  computed: {
+    copyright() {
+      return `© ${new Date().getFullYear()} Midori Wallet`;
+    },
+  },
+  async onShow() {
+    window.systemBars?.setStyle('dark');
+    document.documentElement.dataset.statusbarStyle = 'locked';
+  },
+  async onHide() {
+    window.systemBars?.setStyle(this.$resolvedTheme);
+    delete document.documentElement.dataset.statusbarStyle;
+  },
+};
+</script>
+
+<template>
+  <div class="&">
+    <div class="&__frame">
+      <div class="&__logo-wrapper">
+        <LogoIcon class="&__logo" />
+      </div>
+      <MwButtonGroup class="&__button-group">
+        <MwButton
+          type="primary"
+          @click="next('passphraseGeneration')"
+        >
+          {{ $t('Create new wallet') }}
+        </MwButton>
+        <MwButton
+          type="white-link"
+          @click="next('login')"
+        >
+          {{ $t('Open existing wallet') }}
+        </MwButton>
+      </MwButtonGroup>
+    </div>
+    <div class="&__copyright">
+      {{ copyright }}
+    </div>
+  </div>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    padding:
+      calc(var(--spacing-3xl) + env(safe-area-inset-top))
+      calc(var(--spacing-xl) + env(safe-area-inset-right))
+      max(var(--spacing-3xl), env(safe-area-inset-bottom))
+      calc(var(--spacing-xl) + env(safe-area-inset-left));
+    background-color: var(--color-background-brand);
+    gap: var(--spacing-5xl);
+    overflow-y: auto;
+
+    &.slide-left-leave-active {
+      transition: opacity 0.1s ease-out;
+    }
+
+    &.slide-right-enter-active {
+      transition: opacity 0.1s ease-in 0.1s;
+    }
+
+    &.slide-left-leave-to,
+    &.slide-right-enter-from {
+      opacity: 0;
+    }
+
+    &__frame {
+      display: flex;
+      width: 100%;
+      flex-direction: column;
+      flex-grow: 1;
+      align-items: center;
+      gap: var(--spacing-5xl);
+      @include breakpoint(lg) {
+        justify-content: center;
+      }
+    }
+
+    &__logo-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: center;
+      @include breakpoint(lg) {
+        flex-grow: 0;
+      }
+    }
+
+    &__logo {
+      width: 10rem;
+    }
+
+    &__button-group {
+      width: 100%;
+      @include breakpoint(lg) {
+        width: auto;
+      }
+    }
+
+    &__copyright {
+      @include text-xs;
+      color: var(--color-white);
+    }
+  }
+</style>

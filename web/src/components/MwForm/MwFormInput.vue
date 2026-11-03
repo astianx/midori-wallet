@@ -1,0 +1,133 @@
+<script>
+import MwFormElement from './MwFormElement.vue';
+
+import CloseIcon from '../../assets/svg/close.svg';
+
+export default {
+  components: {
+    MwFormElement,
+    CloseIcon,
+  },
+  props: {
+    readonly: { type: Boolean, default: false },
+    modelValue: {
+      type: String,
+      default: '',
+    },
+    label: {
+      type: String,
+      default: undefined,
+    },
+    error: {
+      type: [Boolean, String],
+      default: false,
+    },
+    placeholder: {
+      type: String,
+      default: '',
+    },
+    small: {
+      type: Boolean,
+      default: false,
+    },
+    clear: {
+      type: Boolean,
+      default: false,
+    },
+    info: {
+      type: [Boolean, String],
+      default: false,
+    },
+    inputmode: {
+      type: String,
+      default: 'text',
+    },
+  },
+  emits: ['update:modelValue'],
+};
+</script>
+
+<template>
+  <MwFormElement
+    class="&"
+    v-bind="$props"
+  >
+    <div
+      v-if="$slots.before"
+      class="&__icon-before"
+    >
+      <slot name="before" />
+    </div>
+    <input
+      :value="modelValue"
+      :readonly="readonly"
+      type="text"
+      :inputmode="inputmode"
+      dir="ltr"
+      lang="en"
+      class="&__input"
+      autocorrect="off"
+      autocapitalize="off"
+      autocomplete="off"
+      spellcheck="false"
+      :placeholder="placeholder"
+      @input="$emit('update:modelValue', $event.target.value.trim())"
+    >
+    <div
+      v-if="$slots.after"
+      class="&__icon-after"
+    >
+      <slot name="after" />
+    </div>
+    <div
+      v-if="clear && modelValue && !readonly"
+      class="&__icon-after"
+      role="button"
+      :title="$t('Clear')"
+      :aria-label="$t('Clear')"
+      @click="$emit('update:modelValue', '')"
+    >
+      <CloseIcon />
+    </div>
+    <template #info>
+      <slot name="info" />
+    </template>
+    <template
+      v-if="$slots.infoFooter"
+      #infoFooter
+    >
+      <slot name="infoFooter" />
+    </template>
+    <template
+      v-if="$slots.button"
+      #button
+    >
+      <slot name="button" />
+    </template>
+  </MwFormElement>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    &__input {
+      @include ellipsis;
+      width: 100%;
+      flex-grow: 1;
+
+      &::placeholder {
+        color: var(--color-secondary);
+      }
+
+      [dir="rtl"] & {
+        text-align: end;
+      }
+    }
+
+    &__icon-before,
+    &__icon-after {
+      width: var(--spacing-xl);
+      height: var(--spacing-xl);
+      flex-shrink: 0;
+    }
+  }
+</style>

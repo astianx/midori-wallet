@@ -1,0 +1,191 @@
+<script>
+import MwButton from '../../../components/MwButton.vue';
+import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
+import MwFormTextareaReadonly from '../../../components/MwForm/MwFormTextareaReadonly.vue';
+import MwStep from '../../../components/MwStep.vue';
+import MainLayout from '../../../layouts/MainLayout.vue';
+
+import { hexToBytes } from '@noble/hashes/utils';
+import { onShowOnHide } from '../../../lib/mixins.js';
+import { Amount, WalletState } from '../../../lib/account/domain.js';
+
+export default {
+  components: {
+    MainLayout,
+    MwButton,
+    MwFormGroup,
+    MwFormTextareaReadonly,
+  },
+  extends: MwStep,
+  mixins: [onShowOnHide],
+  async onShow() {
+    const walletConnect = await this.$account.walletConnect();
+    walletConnect.on('eth_sendTransaction', this.send);
+    walletConnect.on('eth_signTypedData', this.signTypedData);
+    walletConnect.on('eth_sign', this.signMessage);
+    await walletConnect.getPendingSessionRequests();
+  },
+  async onHide() {
+    const walletConnect = await this.$account.walletConnect();
+    walletConnect.off('eth_sendTransaction', this.send);
+    walletConnect.off('eth_signTypedData', this.signTypedData);
+    walletConnect.off('eth_sign', this.signMessage);
+  },
+  data() {
+    return {
+      isLoading: false,
+      error: undefined,
+      isScam: this.storage.session.isScam,
+    };
+  },
+  methods: {
+    async disconnect() {
+      this.isLoading = true;
+      this.error = undefined;
+      try {
+        const walletConnect = await this.$account.walletConnect();
+        await walletConnect.disconnectSession();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.isLoading = false;
+        this.$router.replace({ name: 'settings.walletconnect', force: true });
+      }
+    },
+    async send(request) {
+      this.isLoading = true;
+      this.error = undefined;
+      try {
+        const params = request.params.request.params[0];
+        const wallet = this.$account.walletByChainId(request.params?.chainId);
+        await wallet.cleanup();
+        if (![WalletState.STATE_LOADED, WalletState.STATE_LOADING].includes(wallet.state)) {
+          await wallet.load();
+        }
+        const amount = new Amount(params.value || 0, wallet.crypto.decimals);
+        const gasLimit = params.gas ? BigInt(params.gas) : wallet.gasLimitSmartContract;
+        this.updateStorage({
+          method: request.params.request.method,
+          request,
+          gasLimit,
+          transaction: {
+            price: await this.$account.market.getPrice(wallet.crypto._id, this.$currency),
+            pricePlatform: await this.$account.market.getPrice(wallet.platform._id, this.$currency),
+            amount,
+            address: params.to,
+            crypto: wallet.crypto,
+            platform: wallet.platform,
+          },
+        });
+        this.next('gas');
+      } catch (err) {
+        this.error = this.$account.unknownError(err);
+        console.error(err);
+        const walletConnect = await this.$account.walletConnect();
+        await walletConnect.rejectSessionRequest(request, err.message);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async signTypedData(request) {
+      this.isLoading = true;
+      this.error = undefined;
+      try {
+        const wallet = this.$account.walletByChainId(request.params?.chainId);
+        await wallet.cleanup();
+        if (![WalletState.STATE_LOADED, WalletState.STATE_LOADING].includes(wallet.state)) {
+          await wallet.load();
+        }
+        const data = JSON.parse(request.params.request.params[1]);
+        this.updateStorage({
+          request,
+          data,
+          method: request.params.request.method,
+        });
+        this.next('sign');
+      } catch (err) {
+        this.error = this.$account.unknownError(err);
+        console.error(err);
+        const walletConnect = await this.$account.walletConnect();
+        await walletConnect.rejectSessionRequest(request, err.message);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    async signMessage(request) {
+      this.isLoading = true;
+      this.error = undefined;
+      try {
+        const raw = request.params.request.params[request.params.request.method === 'personal_sign' ? 0 : 1];
+        const hex = raw.replace(/^0x/i, '');
+        if (!/^[0-9a-fA-F]*$/.test(hex)) {
+          throw new Error(`Invalid message hex to sign: ${hex}`);
+        }
+        const wallet = this.$account.walletByChainId(request.params?.chainId);
+        await wallet.cleanup();
+        if (![WalletState.STATE_LOADED, WalletState.STATE_LOADING].includes(wallet.state)) {
+          await wallet.load();
+        }
+        const data = new TextDecoder().decode(hexToBytes(hex.length % 2 === 0 ? hex : '0' + hex));
+        this.updateStorage({
+          request,
+          data,
+          method: request.params.request.method,
+        });
+        this.next('sign');
+      } catch (err) {
+        this.error = this.$account.unknownError(err);
+        console.error(err);
+        const walletConnect = await this.$account.walletConnect();
+        await walletConnect.rejectSessionRequest(request, err.message);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+  },
+};
+</script>
+
+<template>
+  <MainLayout
+    :title="$t('WalletConnect')"
+    @back="disconnect"
+  >
+    <MwFormGroup class="&__container">
+      <div>{{ $t('Your wallet is connected to {name}.', { name: storage.session?.peer.metadata.name}) }}</div>
+      <MwFormTextareaReadonly
+        :value="storage.session?.peer.metadata.url"
+        :label="$t('URL')"
+        :error="isScam ? $t('This domain is flagged as malicious and potentially harmful.') : false"
+      />
+    </MwFormGroup>
+    <div
+      v-if="error"
+      class="&__error"
+    >
+      {{ error }}
+    </div>
+    <MwButton
+      type="danger-light"
+      :isLoading="isLoading"
+      @click="disconnect"
+    >
+      {{ $t('Disconnect') }}
+    </MwButton>
+  </MainLayout>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    $self: &;
+
+    &__container {
+      flex-grow: 1;
+    }
+
+    &__error {
+      @include text-md;
+      color: var(--color-danger);
+    }
+  }
+</style>

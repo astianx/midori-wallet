@@ -1,0 +1,67 @@
+<script>
+import { base64 } from '@scure/base';
+import { toSvg } from 'jdenticon';
+
+export default {
+  props: {
+    avatar: {
+      type: String,
+      default: '',
+    },
+    size: {
+      type: Number,
+      default: 48,
+    },
+    own: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  computed: {
+    src() {
+      const [type, hash] = this.avatar.split(':');
+      if (type === 'gravatar') {
+        return `https://www.gravatar.com/avatar/${hash}?size=${this.size}`;
+      } else if (type === 'identicon') {
+        const svg = toSvg(hash, this.size, { padding: 0 });
+        return `data:image/svg+xml;base64,${base64.encode(new TextEncoder().encode(svg))}`;
+      }
+    },
+  },
+};
+</script>
+
+<template>
+  <img
+    class="&"
+    :class="{
+      '&--own': own,
+      '&--own-tor': own && ($isOnion || env.VITE_DISTRIBUTION === 'tor'),
+    }"
+    :src="src"
+  >
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    width: var(--spacing-4xl);
+    height: var(--spacing-4xl);
+    border-radius: 50%;
+    animation: fix-ios 0.2s ease-in; // fix safari bug with initial render
+
+    &--own {
+      outline: 2px solid transparent;
+      transition: all 0.1s ease-out;
+    }
+
+    &--own-tor {
+      outline: 2px solid #8a2be2;
+      outline-offset: -2px;
+    }
+
+    @keyframes fix-ios {
+      0% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+  }
+</style>

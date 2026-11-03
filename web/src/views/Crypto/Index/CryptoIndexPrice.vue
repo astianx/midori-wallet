@@ -1,0 +1,141 @@
+<script>
+import MwCryptoLogo from '../../../components/MwCryptoLogo.vue';
+
+import ArrowDecreaseIcon from '../../../assets/svg/arrowDecrease.svg';
+import ArrowIncreaseIcon from '../../../assets/svg/arrowIncrease.svg';
+
+export default {
+  components: {
+    MwCryptoLogo,
+    ArrowDecreaseIcon,
+    ArrowIncreaseIcon,
+  },
+  props: {
+    price: {
+      type: Number,
+      default: 0,
+    },
+    change: {
+      type: Number,
+      default: 0,
+    },
+    chartPoint: {
+      type: Object,
+      default: undefined,
+    },
+  },
+  computed: {
+    fiat() {
+      const price = this.chartPoint ? this.chartPoint.price : this.price;
+      if (!price) return '';
+      return this.$fiatPrecise(price);
+    },
+    changePercent() {
+      if (!this.change) return '';
+      return this.$n(this.change, 'percent');
+    },
+    positive() {
+      return this.change > 0;
+    },
+    negative() {
+      return this.change < 0;
+    },
+  },
+};
+</script>
+
+<template>
+  <div class="&">
+    <MwCryptoLogo
+      class="&__crypto-logo"
+      :crypto="$wallet.crypto"
+      :platform="$wallet.platform"
+    />
+    <div v-if="$wallet.crypto.coingecko">
+      <div
+        class="&__price"
+        :title="fiat"
+        dir="ltr"
+      >
+        {{ fiat }}
+      </div>
+      <div
+        v-if="chartPoint"
+        class="&__timestamp"
+      >
+        {{ chartPoint.timestamp }}
+      </div>
+      <div
+        v-else
+        class="&__change"
+        :class="{
+          '&__change--positive': positive,
+          '&__change--negative': negative
+        }"
+      >
+        <ArrowIncreaseIcon
+          v-if="positive"
+          class="&__change_arrow"
+        />
+        <ArrowDecreaseIcon
+          v-if="negative"
+          class="&__change_arrow"
+        />
+        {{ changePercent }}
+      </div>
+    </div>
+  </div>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    display: flex;
+    flex-basis: 100%;
+    gap: var(--spacing-md);
+
+    @include breakpoint(md) {
+      flex-basis: auto;
+    }
+
+    &__crypto-logo {
+      width: var(--spacing-3xl);
+      height: var(--spacing-3xl);
+      flex-shrink: 0;
+    }
+
+    &__price {
+      @include text-md;
+      @include text-bold;
+    }
+
+    &__change {
+      @include text-sm;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-2xs);
+
+      &--positive {
+        color: var(--color-primary);
+      }
+
+      &--negative {
+        color: var(--color-danger);
+      }
+
+      &::after {
+        content: ".";
+        visibility: hidden;
+      }
+    }
+
+    &__change_arrow {
+      width: var(--spacing-sm);
+      height: var(--spacing-sm);
+    }
+
+    &__timestamp {
+      @include text-sm;
+      color: var(--color-secondary);
+    }
+  }
+</style>

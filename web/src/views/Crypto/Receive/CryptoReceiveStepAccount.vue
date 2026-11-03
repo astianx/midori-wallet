@@ -1,0 +1,93 @@
+<script>
+import MwButton from '../../../components/MwButton.vue';
+import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
+import MwFormInput from '../../../components/MwForm/MwFormInput.vue';
+import MwStep from '../../../components/MwStep.vue';
+import MainLayout from '../../../layouts/MainLayout.vue';
+import { isValidUsername } from '../../../lib/helpers.js';
+
+import { RequestError } from '../../../lib/ui-runtime/vendor/errors.js';
+
+export default {
+  components: {
+    MainLayout,
+    MwButton,
+    MwFormGroup,
+    MwFormInput,
+  },
+  extends: MwStep,
+  data() {
+    return {
+      isLoading: false,
+      username: this.$user.username,
+      errors: {},
+    };
+  },
+  methods: {
+    async save() {
+      if (!isValidUsername(this.username)) {
+        this.errors.username = this.$t('Invalid username');
+        return;
+      }
+      this.isLoading = true;
+      this.errors = {};
+      try {
+        this.username = await this.$account.updateUsername(this.username);
+        this.$account.details.set('userInfo', {
+          username: this.username,
+          email: this.$user.email,
+        });
+        await this.$account.details.save();
+        this.$account.emit('update', 'user');
+        this.back();
+      } catch (err) {
+        if (err instanceof RequestError && err.status === 400) {
+          this.errors.username = this.$t('Username already taken');
+          return;
+        }
+        console.error(err);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+  },
+};
+</script>
+
+<template>
+  <MainLayout :title="$t('Account')">
+    <div class="&__info">
+      {{ $t('Before you start using Mecto, you need to enter a name that will help others identify you.') }}
+    </div>
+    <MwFormGroup class="&__container">
+      <MwFormInput
+        v-model="username"
+        :label="$t('Your username')"
+        :error="errors.username"
+        :clear="true"
+        @update:modelValue="errors.username = undefined"
+      />
+    </MwFormGroup>
+    <MwButton
+      type="primary"
+      :isLoading="isLoading"
+      @click="save"
+    >
+      {{ $t('Save') }}
+    </MwButton>
+  </MainLayout>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    $self: &;
+
+    &__info {
+      @include text-md;
+    }
+
+    &__container {
+      flex-grow: 1;
+    }
+  }
+</style>

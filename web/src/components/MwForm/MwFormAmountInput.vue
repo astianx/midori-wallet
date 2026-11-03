@@ -1,0 +1,233 @@
+<script>
+import MwAmountInput from '../MwAmountInput.vue';
+import MwFormElement from './MwFormElement.vue';
+import { cryptoToFiat, fiatToCrypto } from '../../lib/helpers.js';
+
+import {
+  Amount,
+  utils,
+} from '../../lib/account/domain.js';
+
+import TrailingIcon from '../../assets/svg/trailing.svg';
+
+export default {
+  components: {
+    MwAmountInput,
+    MwFormElement,
+    TrailingIcon,
+  },
+  props: {
+    modelValue: {
+      type: Amount,
+      default: undefined,
+    },
+    decimals: {
+      type: Number,
+      required: true,
+    },
+    symbol: {
+      type: String,
+      required: true,
+    },
+    factors: {
+      type: Array,
+      default() {
+        return [];
+      },
+    },
+    price: {
+      type: Number,
+      default: undefined,
+    },
+    currency: {
+      type: String,
+      default: '',
+    },
+    label: {
+      type: String,
+      default: undefined,
+    },
+    error: {
+      type: [Boolean, String],
+      default: false,
+    },
+    small: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  emits: ['update:modelValue'],
+  data() {
+    return {
+      selectedName: this.symbol,
+    };
+  },
+  computed: {
+    options() {
+      const options = this.factors.length ? this.factors.map((item) => {
+        return {
+          name: item.name,
+          decimals: item.decimals,
+        };
+      }) : [{
+        name: this.symbol,
+        decimals: this.decimals,
+      }];
+      if (this.price !== undefined) {
+        options.push({
+          name: this.currency,
+          decimals: utils.getPrecision(this.price),
+          fiat: true,
+        });
+      }
+      return options;
+    },
+    option() {
+      return this.options.find((item) => item.name === this.selectedName) || this.options[0];
+    },
+    inputValue: {
+      get() {
+        if (this.modelValue === undefined) {
+          return undefined;
+        }
+        if (this.option.fiat) {
+          const fiat = cryptoToFiat(this.modelValue, this.price);
+          return Amount.fromString(fiat);
+        } else {
+          return new Amount(this.modelValue.value, this.option.decimals);
+        }
+      },
+      set(amount) {
+        if (amount === undefined) {
+          return this.$emit('update:modelValue', undefined);
+        }
+        if (this.option.fiat) {
+          this.$emit('update:modelValue', fiatToCrypto(amount.toString(), this.price, this.decimals));
+        } else {
+          this.$emit('update:modelValue', new Amount(amount.value, this.decimals));
+        }
+      },
+    },
+    optionValue: {
+      get() {
+        return this.option.name;
+      },
+      set(name) {
+        this.selectedName = name;
+      },
+    },
+    amountConverted() {
+      if (this.price === undefined) {
+        return;
+      }
+      if (this.modelValue === undefined) {
+        return '0';
+      }
+      if (this.option.fiat) {
+        return this.modelValue;
+      } else {
+        return cryptoToFiat(this.modelValue, this.price, this.decimals);
+      }
+    },
+  },
+  watch: {
+    decimals(decimals) {
+      if (this.option.fiat) return;
+      if (this.modelValue !== undefined) {
+        this.$emit('update:modelValue', Amount.fromString(this.modelValue.toString(), decimals));
+      }
+    },
+    price(price, oldPrice) {
+      if (!this.option.fiat) return;
+      if (this.modelValue === undefined || oldPrice === undefined || price === undefined) return;
+      const fiat = cryptoToFiat(this.modelValue, oldPrice);
+      this.$emit('update:modelValue', fiatToCrypto(fiat, price, this.decimals));
+    },
+  },
+};
+</script>
+
+<template>
+  <MwFormElement
+    class="&"
+    :label="label"
+    :error="error"
+    :small="small"
+  >
+    <MwAmountInput
+      v-model="inputValue"
+      class="&__amount"
+      :decimals="option.decimals"
+    />
+    <template
+      v-if="options.length > 1"
+      #extra
+    >
+      <div class="&__value">
+        {{ option.name }}
+      </div>
+      <select
+        v-model="optionValue"
+        class="&__select"
+      >
+        <option
+          v-for="item in options"
+          :key="item.name"
+          :value="item.name"
+        >
+          {{ item.name }}
+        </option>
+      </select>
+      <div
+        class="&__icon-after"
+      >
+        <TrailingIcon />
+      </div>
+    </template>
+    <template
+      v-else
+      #extra
+    >
+      <div class="&__value">
+        {{ option.name }}
+      </div>
+    </template>
+  </MwFormElement>
+  <div
+    v-if="price !== undefined"
+    class="&__info"
+  >
+    <span dir="ltr">
+      {{ option.fiat ? `${amountConverted} ${symbol}` : $fiatPrecise(amountConverted) }}
+    </span>
+  </div>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    &__amount {
+      @include ellipsis;
+      flex-grow: 1;
+    }
+
+    &__value {
+      @include ellipsis;
+      flex-grow: 1;
+    }
+
+    &__select {
+      @include text-md;
+      @include transparent-stretch;
+    }
+
+    &__icon-after {
+      width: var(--spacing-xl);
+      height: var(--spacing-xl);
+      flex-shrink: 0;
+    }
+
+    &__info {
+      @include text-md;
+    }
+  }
+</style>

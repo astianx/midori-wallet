@@ -1,0 +1,92 @@
+<script>
+import MwFormElement from './MwFormElement.vue';
+import TrailingIcon from '../../assets/svg/trailing.svg';
+
+export default {
+  components: {
+    MwFormElement,
+    TrailingIcon,
+  },
+  props: {
+    value: {
+      type: String,
+      default: '',
+    },
+    label: {
+      type: String,
+      default: '',
+    },
+    error: {
+      type: [Boolean, String],
+      default: false,
+    },
+    info: {
+      type: Boolean,
+      default: false,
+    },
+    writable: {
+      type: Boolean,
+      default: true,
+    },
+  },
+};
+</script>
+
+<template>
+  <MwFormElement
+    class="&"
+    v-bind="$props"
+  >
+    <div
+      v-if="$slots.before"
+      class="&__icon-before"
+    >
+      <slot name="before" />
+    </div>
+    <div class="&__text">
+      {{ value }}
+      <input
+        class="&__input"
+        :class="{
+          '&__input--writable': writable,
+        }"
+        type="text"
+        readonly
+        @keydown.enter.prevent="$event.target.click()"
+        @keydown.space.prevent
+        @keyup.space="$event.target.click()"
+      >
+    </div>
+    <div
+      v-if="writable"
+      class="&__icon-after"
+    >
+      <TrailingIcon />
+    </div>
+  </MwFormElement>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    &__text {
+      @include ellipsis;
+      flex-grow: 1;
+    }
+
+    &__input {
+      @include transparent-stretch;
+      cursor: default;
+
+      &--writable {
+        cursor: pointer;
+      }
+    }
+
+    &__icon-before,
+    &__icon-after {
+      width: var(--spacing-xl);
+      height: var(--spacing-xl);
+      flex-shrink: 0;
+    }
+  }
+</style>

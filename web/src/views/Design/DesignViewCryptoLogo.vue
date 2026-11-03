@@ -1,0 +1,93 @@
+<script>
+
+const bitcoinATbitcoin = {
+  _id: 'bitcoin@bitcoin',
+  asset: 'bitcoin',
+  platform: 'bitcoin',
+  type: 'coin',
+  name: 'Bitcoin',
+  symbol: 'BTC',
+  decimals: 8,
+  logo: 'bitcoin.svg',
+};
+const ethereumATethereum = {
+  _id: 'ethereum@ethereum',
+  asset: 'ethereum',
+  platform: 'ethereum',
+  type: 'coin',
+  name: 'Ethereum',
+  symbol: 'ETH',
+  decimals: 18,
+  logo: 'ethereum.svg',
+};
+const tetherATethereum = {
+  _id: 'tether@ethereum',
+  asset: 'tether',
+  platform: 'ethereum',
+  type: 'token',
+  name: 'Tether',
+  symbol: 'USDT',
+  address: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+  decimals: 6,
+  logo: 'tether.svg',
+};
+
+import MwCryptoLogo from '../../components/MwCryptoLogo.vue';
+
+export default {
+  components: {
+    MwCryptoLogo,
+  },
+  data() {
+    return {
+      items: [
+        { ...bitcoinATbitcoin, platform: bitcoinATbitcoin },
+        { ...ethereumATethereum, platform: ethereumATethereum },
+        { ...tetherATethereum, platform: ethereumATethereum },
+      ],
+    };
+  },
+};
+</script>
+
+<template>
+  <div class="&">
+    Medium size: 2rem
+
+    <MwCryptoLogo
+      v-for="item in items"
+      :key="item._id"
+      :crypto="item"
+      :platform="item.platform"
+      class="&__medium"
+    />
+
+    Custom size: 4rem
+
+    <MwCryptoLogo
+      v-for="item in items"
+      :key="item._id"
+      :crypto="item"
+      :platform="item.platform"
+      class="&__custom"
+    />
+  </div>
+</template>
+
+<style lang="scss">
+  .#{ $filename } {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+
+    &__medium {
+      width: var(--spacing-2xl);
+      height: var(--spacing-2xl);
+    }
+
+    &__custom {
+      width: var(--spacing-5xl);
+      height: var(--spacing-5xl);
+    }
+  }
+</style>

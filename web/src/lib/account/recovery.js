@@ -10,7 +10,7 @@ export async function beginRecovery(phrase, descriptor) {
   try {
     const account = descriptor ? await adapter.restore(seed, descriptor) : await adapter.create(seed);
     const handle = crypto.randomUUID();
-    drafts.set(handle, { seed, phrase: mnemonic, descriptor: account, wordsVerified: !!phrase, descriptorVerified: false });
+    drafts.set(handle, { seed, phrase: mnemonic, descriptor: account, wordsVerified: !!phrase });
     return handle;
   } catch (error) { seed.fill(0); throw error; }
   finally { adapter.lock(); }
@@ -23,15 +23,13 @@ export function verifyWords(handle, words) {
   value.wordsVerified = words.every(({ index, word }) => value.phrase.split(' ')[index] === word.trim());
   return value.wordsVerified;
 }
-export function verifyDescriptor(handle, text) {
-  const value = draft(handle);
-  const equal = (a, b) => a && b && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(key => typeof a[key] === 'object' ? equal(a[key], b[key]) : a[key] === b[key]);
-  value.descriptorVerified = !!equal(JSON.parse(text), value.descriptor);
-  if (!value.descriptorVerified) throw new Error('The recovery file does not match this account.');
+export function verifyDescriptor(descriptor, text) {
+  const equal = (a, b) => a && b && typeof a === 'object' && typeof b === 'object' && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(key => typeof a[key] === 'object' ? equal(a[key], b[key]) : a[key] === b[key]);
+  if (!equal(JSON.parse(text), descriptor)) throw new Error('The recovery file does not match this account.');
 }
 export async function consumeRecovery(handle, callback) {
   const value = draft(handle);
-  if (!value.wordsVerified || !value.descriptorVerified) throw new Error('Verify your passphrase and recovery file first.');
+  if (!value.wordsVerified) throw new Error('Verify your passphrase first.');
   const result = await callback(value.seed, value.descriptor);
   value.seed.fill(0); value.phrase = ''; drafts.delete(handle);
   return result;

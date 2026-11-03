@@ -507,5 +507,9 @@
   "Could not complete this step. Your payment has not been sent.": "Could not complete this step. Your payment has not been sent.",
   "This payment is already authorized. Keep checking its status.": "This payment is already authorized. Keep checking its status.",
   "This tag must be verified again by its owner.": "This tag must be verified again by its owner.",
-  "Network": "Network"
+  "Network": "Network",
+  "Recovery file": "Recovery file",
+  "Recovery file verified": "Recovery file verified",
+  "Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.": "Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.",
+  "This owner key controls your Safe account. Keep your 12 words safe to restore your wallet.": "This owner key controls your Safe account. Keep your 12 words safe to restore your wallet."
 }

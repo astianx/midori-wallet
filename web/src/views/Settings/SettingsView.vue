@@ -177,6 +177,10 @@ export default {
         @click="$router.push({ name: 'settings.pin' })"
       />
       <MwListItem
+        :title="$t('Recovery file')"
+        @click="$router.push({ name: 'settings.recovery' })"
+      />
+      <MwListItem
         :title="$t('Hardware security')"
         @click="$router.push({ name: 'settings.hardware' })"
       />

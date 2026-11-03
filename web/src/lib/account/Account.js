@@ -411,7 +411,6 @@ export default class Account extends EventEmitter {
     await Promise.allSettled(wallets.map(wallet => wallet.load()));
     this.#wallets.setMany(wallets);
 
-    if (this.connection === 'online') await this.#details.save();
     this.emit('update');
     this.#monitor?.stop();
     this.#monitor = new BalanceMonitor({ refresh: () => this.refreshBalances(), active: () => !this.isLocked && !document.hidden });

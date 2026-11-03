@@ -44,7 +44,7 @@ export default {
     :title="$t('Export private keys')"
   >
     <div v-if="$wallet?.isAccountRecoverySupported" class="&__item-subtitle">
-      {{ $t('This owner key controls your Safe account. Keep your recovery phrase and recovery file to restore it in Midori.') }}
+      {{ $t('This owner key controls your Safe account. Keep your 12 words safe to restore your wallet.') }}
     </div>
     <div
       v-if="storage.data.length === 0"

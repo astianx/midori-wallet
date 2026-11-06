@@ -12,7 +12,8 @@ env:
   MIDORI_ALLOW_PUBLISH: 'false'
   MIDORI_SIGN_ARTIFACTS: 'false'
   MIDORI_BUILD_PROFILE: debug
-  VITE_API_ORIGIN: https://wallet.astian.org
+  VITE_SITE_URL: https://midoriwallet.com/wallet/
+  VITE_API_ORIGIN: https://midoriwallet.com
   VITE_COMMIT: ${{ github.sha }}
 jobs:
   checks:

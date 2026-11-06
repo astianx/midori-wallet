@@ -1,0 +1,38 @@
+{
+  "name": "@midori/wdk-compat",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.22.2 <23",
+    "npm": ">=10 <13"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
+    "build": "vite build",
+    "check": "node --env-file-if-exists=.env check.mjs",
+    "local:chain": "node local-chain.mjs",
+    "local:test": "node local-runtime-tests.mjs",
+    "local:token-fees": "node local-token-fee-test.mjs"
+  },
+  "dependencies": {
+    "@midori/wallet-core": "file:../../packages/wallet-core",
+    "@tetherto/wdk": "1.0.0-beta.22",
+    "@tetherto/wdk-wallet-evm": "1.0.0-beta.19",
+    "@tetherto/wdk-wallet-evm-erc-4337": "1.0.0-beta.22",
+    "buffer": "6.0.3",
+    "ethers": "6.17.0",
+    "vue": "3.3.4"
+  },
+  "devDependencies": {
+    "@foundry-rs/anvil": "1.7.1",
+    "@pimlico/alto": "0.0.19",
+    "@pimlico/mock-paymaster": "0.0.4",
+    "prool": "0.0.23",
+    "solc": "0.8.30",
+    "vite": "6.4.5",
+    "zod": "3.24.2",
+    "zod-validation-error": "1.5.0",
+    "@vitejs/plugin-vue": "5.2.4"
+  }
+}

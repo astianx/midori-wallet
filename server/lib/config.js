@@ -1,3 +1,5 @@
+import { loadWdkIndexerConfig } from './wdk-indexer.js';
+
 function integer(value, fallback, min, max, name) {
   const number = Number(value ?? fallback);
   if (!Number.isSafeInteger(number) || number < min || number > max) throw new Error(`Invalid ${name}`);
@@ -63,6 +65,7 @@ export function loadConfig(env = process.env) {
   const headers = (value) => { const parsed=JSON.parse(value || '{}');if(!parsed || Array.isArray(parsed) || Object.values(parsed).some(item=>typeof item!=='string')) throw new Error('Invalid provider headers');return Object.freeze(parsed); };
   return Object.freeze({
     connectionString, publicOrigin, rpID, host, rpcUrl,
+    wdkIndexer: loadWdkIndexerConfig(env),
     indexRpcUrl: paymentUrl(env.MIDORI_INDEX_RPC_URL, 'MIDORI_INDEX_RPC_URL') || rpcUrl,
     paymentsEnabled, sponsorshipEnabled, bundlerUrl, paymasterUrl, paymasterAddress, gasToken, maxGasFeeAtomic, sponsorDailyBudget, paymasterProvider,
     entryPoint: '0x0000000071727de22e5e9d8baf0edac6f37da032',

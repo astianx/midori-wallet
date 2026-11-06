@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { createApp } from './app.js';
 import { createDatabase } from './lib/db.js';
 import { loadConfig } from './lib/config.js';
+import { inspectWdkIndexer } from './lib/wdk-indexer.js';
 
 export function createWebApp(directory = fileURLToPath(new URL('./dist/', import.meta.url))) {
   const metadata = path.join(directory, 'build-info.json');
@@ -38,6 +39,10 @@ export async function startServer(config = loadConfig()) {
     clearTimeout(deadline);
   })();
   console.log(JSON.stringify({ event: 'api_listening', host: config.host, port: config.port, apiVersion: 'v1', network: 'base', chainId: 8453 }));
+  if (config.wdkIndexer?.apiKey) {
+    try { logger({ event: 'wdk_indexer_checked', ...await inspectWdkIndexer(config.wdkIndexer) }); }
+    catch (error) { logger({ event: 'wdk_indexer_check_failed', code: error.code || 'WDK_INDEXER_UNAVAILABLE', historyProvider: 'rpc' }); }
+  }
   return { server, db, close };
 }
 

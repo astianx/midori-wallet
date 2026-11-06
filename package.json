@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "npm --prefix web run dev",
     "dev:server": "npm --prefix server run server",
+    "wdk:indexer:check": "npm --prefix server run wdk:indexer:check",
     "dev:electron": "npm --prefix electron run start",
     "build:web": "npm --prefix web run build",
     "build:electron": "npm --prefix electron run build",

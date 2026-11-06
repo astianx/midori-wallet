@@ -1,4 +1,6 @@
 import { createServer } from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
@@ -6,13 +8,22 @@ import { createApp } from './app.js';
 import { createDatabase } from './lib/db.js';
 import { loadConfig } from './lib/config.js';
 
+export function createWebApp(directory = fileURLToPath(new URL('./dist/', import.meta.url))) {
+  const metadata = path.join(directory, 'build-info.json');
+  const base = fs.existsSync(metadata) ? JSON.parse(fs.readFileSync(metadata, 'utf8')).basePath || '/' : '/';
+  const webApp = express();
+  const assets = express();
+  webApp.use((req, res, next) => { res.set('Content-Security-Policy', "frame-ancestors 'none'"); next(); });
+  assets.use(express.static(directory, { dotfiles:'deny', index:'index.html' }));
+  assets.get('*', (req, res, next) => !req.path.startsWith('/api/') && req.accepts('html') && req.get('accept')?.includes('text/html') ? res.sendFile(path.join(directory, 'index.html')) : next());
+  webApp.use(base, assets);
+  return webApp;
+}
+
 export async function startServer(config = loadConfig()) {
   const logger = entry => console.error(JSON.stringify(entry));
   const db = createDatabase(config, logger);
-  const webApp = express();
-  webApp.use((req, res, next) => { res.set('Content-Security-Policy', "frame-ancestors 'none'"); next(); });
-  webApp.use(express.static(fileURLToPath(new URL('./dist/', import.meta.url)), { dotfiles:'deny', index:'index.html' }));
-  webApp.get('*', (req, res, next) => !req.path.startsWith('/api/') && req.accepts('html') && req.get('accept')?.includes('text/html') ? res.sendFile(fileURLToPath(new URL('./dist/index.html', import.meta.url))) : next());
+  const webApp = createWebApp();
   const app = createApp({ db, config, logger, webApp });
   const server = createServer(app);
   server.requestTimeout = 30000;

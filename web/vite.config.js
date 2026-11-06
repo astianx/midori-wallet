@@ -3,16 +3,22 @@ import { ViteEjsPlugin } from 'vite-plugin-ejs';
 import { ViteMinifyPlugin } from 'vite-plugin-minify';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
+import { resolveBuildUrls } from '../config/environment.js';
 import svgLoader from 'vite-svg-loader';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv } from 'vite';
 
 
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const isHttps = process.argv.includes('--https');
-  const env = loadEnv(mode, './');
-  const development = { ...loadEnv(mode, './', 'MIDORI_'), ...process.env };
+  const directory = fileURLToPath(new URL('.', import.meta.url));
+  const development = { ...loadEnv(mode, path.resolve(directory, '..'), ''), ...loadEnv(mode, directory, ''), ...process.env };
+  const native = ['phonegap', 'electron'].includes(development.VITE_BUILD_TYPE);
+  const { siteUrl, apiOrigin: configuredApi } = resolveBuildUrls(development, { native, release: native && development.MIDORI_BUILD_PROFILE === 'release' });
+  const env = { VITE_BUILD_TYPE:'web', VITE_PLATFORM:'web', VITE_DISTRIBUTION:'web', ...Object.fromEntries(Object.entries(development).filter(([key]) => key.startsWith('VITE_'))), VITE_SITE_URL: siteUrl, VITE_API_ORIGIN: configuredApi, VITE_API_CSP: configuredApi || development.VITE_API_CSP || '' };
+  const base = native ? '/' : development.BASE_URL || (command === 'build' ? new URL(siteUrl).pathname : '/');
   const apiOrigin = development.MIDORI_DEV_API_ORIGIN || env.VITE_API_ORIGIN;
   if (apiOrigin && !['http:', 'https:'].includes(new URL(apiOrigin).protocol)) throw new Error('Invalid API origin');
   return {
@@ -28,7 +34,8 @@ export default defineConfig(({ mode }) => {
         ...(apiOrigin ? { '/api': { target: apiOrigin, headers: isHttps ? { 'X-Forwarded-Proto': 'https' } : {} } } : {}),
       },
     },
-    base: process.env.BASE_URL || '/',
+    base,
+    define: Object.fromEntries(Object.entries(env).map(([key, value]) => [`import.meta.env.${key}`, JSON.stringify(value)])),
     plugins: [
       nodePolyfills({ include: ['buffer','events','process','stream','util'] }),
 
@@ -41,7 +48,7 @@ export default defineConfig(({ mode }) => {
       }),
       svgLoader({ svgo: false }),
       sfcAutoName(),
-      { name:'midori-build-info', generateBundle() { this.emitFile({ type:'asset', fileName:'build-info.json', source:JSON.stringify({ product:'Midori Wallet', version:env.VITE_VERSION || '0.1.0', target:env.VITE_BUILD_TYPE || 'web', platform:env.VITE_PLATFORM || 'web', node:process.version, commit:process.env.GITHUB_SHA || 'local', published:false },null,2) }); } },
+      { name:'midori-build-info', generateBundle() { this.emitFile({ type:'asset', fileName:'build-info.json', source:JSON.stringify({ product:'Midori Wallet', version:env.VITE_VERSION || '0.1.0', target:env.VITE_BUILD_TYPE || 'web', platform:env.VITE_PLATFORM || 'web', basePath:base, node:process.version, commit:process.env.GITHUB_SHA || 'local', published:false },null,2) }); } },
       ViteEjsPlugin({ env }),
       ViteMinifyPlugin(),
       ...(isHttps ? [basicSsl()] : []),

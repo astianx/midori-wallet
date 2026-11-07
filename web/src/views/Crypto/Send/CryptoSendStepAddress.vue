@@ -38,7 +38,7 @@ export default {
         const recipient = await this.$wallet.resolveRecipient(this.address);
         this.updateStorage({ address: recipient.address, alias: recipient.alias || '', recipient, intent: undefined, temp: this.storage.temp });
         this.next('amount');
-      } catch (error) { this.error = paymentError(error, this.$t); }
+      } catch (error) { this.error = paymentError(error, this.$t, { symbol: this.$wallet.crypto.symbol }); }
       finally { this.isLoading = false; }
     },
     async paste() { try { this.address = await navigator.clipboard.readText(); this.error = ''; } catch { /* Clipboard permission can be declined. */ } },

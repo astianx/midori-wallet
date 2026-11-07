@@ -1,6 +1,6 @@
 # Midori Wallet
 
-Cliente Vue compartido por web, Electron, Android e iOS, con WDK, PostgreSQL, USDT y USDC en Base. Firma local, recuperación portable y costo de red en USDT; la comisión propia Midori es cero.
+Cliente Vue compartido por web, Electron, Android e iOS, con WDK, PostgreSQL, USDT y USDC en Base. Firma local, recuperación portable y costo de red en la misma moneda que se envía (USDT o USDC); la comisión propia Midori es cero.
 
 Node 22.22.2 y npm 10–12. Instalar desde los locks públicos:
 

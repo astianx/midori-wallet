@@ -5489,12 +5489,8 @@
               "preferredMode": {
                 "const": "token"
               },
-              "tokenSymbol": {
-                "const": "USDT"
-              },
-              "tokenContract": {
-                "type": "string",
-                "pattern": "^0x[0-9a-fA-F]{40}$"
+              "tokenPolicy": {
+                "const": "same_as_payment"
               },
               "paymaster": {
                 "anyOf": [
@@ -5519,8 +5515,7 @@
             "required": [
               "midoriFeeAtomic",
               "preferredMode",
-              "tokenSymbol",
-              "tokenContract",
+              "tokenPolicy",
               "paymaster",
               "maxFeeAtomic",
               "enabled"

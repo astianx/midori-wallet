@@ -26,6 +26,20 @@ const xml = value => value.replaceAll('&','&amp;').replaceAll('"','&quot;').repl
 const config = template.replaceAll('{{id}}', release ? 'org.astian.miwallet' : 'org.astian.miwallet.beta').replaceAll('{{name}}', release ? 'Midori Wallet' : 'Midori Wallet Beta').replaceAll('{{version}}', version).replaceAll('{{api}}',xml(api.origin)).replaceAll('{{cleartext}}', String(api.protocol === 'http:'));
 fs.writeFileSync(path.join(build,'config.xml'), config);
 if (!fs.existsSync(path.join(build,'package.json'))) fs.writeFileSync(path.join(build,'package.json'),JSON.stringify({ name: release ? 'midori-wallet' : 'midori-wallet-beta', version, private: true }));
+// Release signing is opt-in: when the four ANDROID_KEYSTORE_* variables are
+// present (CI secrets, or a local .env for a one-off signed build), write
+// Cordova's build.json so `cordova build android --release` produces a
+// signed, zipaligned app-release.apk instead of app-release-unsigned.apk.
+// Without them, release builds remain unsigned, matching prior behavior.
+if (platform === 'android' && release) {
+  const { ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD } = env;
+  if (ANDROID_KEYSTORE_PATH && ANDROID_KEYSTORE_PASSWORD && ANDROID_KEY_ALIAS && ANDROID_KEY_PASSWORD) {
+    fs.writeFileSync(path.join(build,'build.json'), JSON.stringify({ android: { release: {
+      keystore: path.resolve(ANDROID_KEYSTORE_PATH), storePassword: ANDROID_KEYSTORE_PASSWORD,
+      alias: ANDROID_KEY_ALIAS, password: ANDROID_KEY_PASSWORD, keystoreType: 'pkcs12',
+    } } }));
+  }
+}
 const cli = path.join(directory,'node_modules/cordova/bin/cordova');
 const run = args => execFileSync(process.execPath,[cli,...args],{cwd:build,env:{...env,CI:'true',CORDOVA_TELEMETRY_OPTOUT:'1',npm_config_ignore_scripts:'true',npm_config_audit:'false',npm_config_fund:'false'},stdio:'inherit'});
 const platformPackage = platform === 'android' ? 'cordova-android' : 'cordova-ios';

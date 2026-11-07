@@ -127,6 +127,38 @@ jobs:
             phonegap/build-native/debug/platforms/android/app/build/outputs/apk/debug/*.apk
             artifacts/*build.json
           if-no-files-found: error
+      # Signed release APK: only for pushes to main (never for pull_request,
+      # including same-repo branches) and only when the signing secrets are
+      # configured, so forks and unrelated branches never touch the keystore.
+      - name: Check Android signing secrets
+        id: android_signing
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          HAS_SECRETS: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+        run: echo "ready=$HAS_SECRETS" >> "$GITHUB_OUTPUT"
+      - name: Decode Android keystore
+        if: steps.android_signing.outputs.ready == 'true'
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/midori-wallet-release.p12"
+      - name: Build signed release APK
+        if: steps.android_signing.outputs.ready == 'true'
+        run: npm run build:android
+        env:
+          MIDORI_BUILD_PROFILE: release
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/midori-wallet-release.p12
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: Remove decoded keystore
+        if: always() && steps.android_signing.outputs.ready == 'true'
+        run: rm -f "$RUNNER_TEMP/midori-wallet-release.p12"
+      - uses: actions/upload-artifact@v4
+        if: steps.android_signing.outputs.ready == 'true'
+        with:
+          name: midori-android-release-${{ github.sha }}
+          path: |
+            phonegap/build-native/release/platforms/android/app/build/outputs/apk/release/*.apk
+            artifacts/*build.json
+          if-no-files-found: error
   ios:
     needs: checks
     runs-on: macos-15

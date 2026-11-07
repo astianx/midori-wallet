@@ -81,7 +81,12 @@ export function paymentService(db,config,provider=paymentProvider(config)) {
       requireValue(atomic(body.maxFeeAtomic),'Invalid network cost limit');
       const contract=parseAddress(body.contract);
       const feeToken=body.feeToken==null?null:parseAddress(body.feeToken);
-      requireValue(body.feeMode==='token'?same(feeToken,config.gasToken)&&BigInt(body.maxFeeAtomic)>0n&&BigInt(body.maxFeeAtomic)<=BigInt(config.maxGasFeeAtomic):feeToken===null&&body.maxFeeAtomic==='0','Unapproved gas token or limit');
+      // Network cost is always paid in the same token being sent (self-pay):
+      // the sender already holds a balance in that token, so no separate
+      // top-up in a different stablecoin is ever required. Both supported
+      // assets (USDT, USDC) share 6 decimals, so a single maxGasFeeAtomic
+      // cap applies to either without unit conversion.
+      requireValue(body.feeMode==='token'?same(feeToken,contract)&&BigInt(body.maxFeeAtomic)>0n&&BigInt(body.maxFeeAtomic)<=BigInt(config.maxGasFeeAtomic):feeToken===null&&body.maxFeeAtomic==='0','Unapproved gas token or limit');
       exactKeys(body.recipient,body.recipient?.kind==='address'?['kind','address']:['kind','resolutionId']);
       requireValue(['address','midori_tag'].includes(body.recipient.kind),'Invalid recipient');
       const request={...body,contract,feeToken,recipient:body.recipient.kind==='address'?{kind:'address',address:parseAddress(body.recipient.address)}:{kind:'midori_tag',resolutionId:body.recipient.resolutionId}};

@@ -225,7 +225,7 @@ export default {
 
     <MwFormGroup class="&__info">
       <MwFormTextareaReadonly v-if="transaction.intentId && !transaction.incoming" :label="$t('Midori fee')" value="0" />
-      <MwFormTextareaReadonly v-if="transaction.feeMode === 'token'" :label="$t('Network cost')" :value="transaction.networkFee !== undefined ? `${transaction.networkFee} USDT` : $t('Up to {amount} USDT', { amount: transaction.maxNetworkFee })" />
+      <MwFormTextareaReadonly v-if="transaction.feeMode === 'token'" :label="$t('Network cost')" :value="transaction.networkFee !== undefined ? `${transaction.networkFee} ${transaction.symbol}` : $t('Up to {amount} {symbol}', { amount: transaction.maxNetworkFee, symbol: transaction.symbol })" />
       <MwFormTextareaReadonly v-if="transaction.feeMode === 'sponsored'" :label="$t('Network cost')" :value="$t('Sponsored by Midori')" />
       <p v-if="transaction.accountingState === 'review'" role="status">{{ $t('The payment was processed. Its network cost is being checked.') }}</p>
       <MwFormTextareaReadonly v-if="transaction.chainId" :label="$t('Network')" value="Base" />

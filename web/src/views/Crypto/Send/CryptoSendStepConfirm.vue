@@ -20,7 +20,9 @@ export default {
       if (!this.intent) return '';
       const amount = BigInt(this.intent.amountAtomic);
       if (this.intent.feeMode === 'sponsored') return `${new Amount(amount,6)} ${this.$wallet.crypto.symbol}`;
-      return this.$wallet.crypto.symbol === 'USDT' ? `${new Amount(amount+BigInt(this.intent.quote.maxFeeAtomic),6)} USDT` : `${new Amount(amount,6)} USDC + ${this.maxFee} USDT`;
+      // Network cost is always paid in the same token being sent, so the
+      // total debit is one combined amount in that single currency.
+      return `${new Amount(amount+BigInt(this.intent.quote.maxFeeAtomic),6)} ${this.$wallet.crypto.symbol}`;
     },
   },
   onShow() { this.now = Date.now(); this.$options.timer = setInterval(() => { this.now = Date.now(); }, 1000); },
@@ -29,7 +31,7 @@ export default {
     formatAmount(value) { return new Amount(value, 6).toString(); },
     async edit() {
       try { const previous = this.intent; if (this.intent?.status === 'quoted') await this.$wallet.cancelPayment(this.intent.id); this.updateStorage({ intent: undefined, feeMode: previous.feeMode, temp: { address: previous.recipientTag ? `@${previous.recipientTag}` : previous.to, amount: new Amount(previous.amountAtomic, 6) } }); this.replace('index'); }
-      catch (error) { this.error = paymentError(error, this.$t); }
+      catch (error) { this.error = paymentError(error, this.$t, { symbol: this.$wallet.crypto.symbol }); }
     },
     confirm() {
       if (this.expired || this.isLoading) return;
@@ -42,7 +44,7 @@ export default {
           this.updateStorage({ intent }); this.next('status');
         } catch (error) {
           if (error.status === 401 || error.status === 429) throw error;
-          this.error = paymentError(error, this.$t); this.backTo('confirm');
+          this.error = paymentError(error, this.$t, { symbol: this.$wallet.crypto.symbol }); this.backTo('confirm');
         } finally { this.isLoading = false; }
       } });
     },
@@ -57,8 +59,8 @@ export default {
       <details v-if="intent.recipientTag"><summary>{{ $t('View wallet address') }}</summary><MwFormTextareaReadonly :value="intent.to" :label="$t('Wallet address')" /></details>
       <MwFormTextareaReadonly :label="$t('Midori fee')" value="0" />
       <template v-if="intent.feeMode === 'token'">
-        <MwFormTextareaReadonly :label="$t('Estimated network cost')" :value="`${fee} USDT`" />
-        <p>{{ $t('Maximum network cost: {amount} USDT', { amount: maxFee }) }}</p>
+        <MwFormTextareaReadonly :label="$t('Estimated network cost')" :value="`${fee} ${$wallet.crypto.symbol}`" />
+        <p>{{ $t('Maximum network cost: {amount} {symbol}', { amount: maxFee, symbol: $wallet.crypto.symbol }) }}</p>
       </template>
       <MwFormTextareaReadonly v-else :label="$t('Network cost')" :value="$t('Sponsored by Midori')" />
       <MwFormTextareaReadonly :label="$t('Maximum total debit')" :value="total" />

@@ -246,7 +246,11 @@ export default class MidoriSession {
     const quote = intent.quote;
     if (!expectedContract || expectedContract.toLowerCase() !== intent.contract.toLowerCase() || !this.assets.some(asset => asset.contract.toLowerCase() === intent.contract.toLowerCase()) || Date.parse(quote.expiresAt) > Date.now() + 300000) throw Object.assign(new Error(), { code: 'PAYMENT_CHANGED' });
     if (intent.from.toLowerCase() !== this.descriptor.address.toLowerCase() || quote.contract.toLowerCase() !== intent.contract.toLowerCase() || quote.recipient.toLowerCase() !== intent.to.toLowerCase() || quote.amountAtomic !== intent.amountAtomic || quote.feeMode !== intent.feeMode || quote.expiresAt !== intent.expiresAt || Date.parse(quote.expiresAt) <= Date.now()) throw Object.assign(new Error(), { code: 'PAYMENT_CHANGED' });
-    if (quote.feeMode === 'token' && (!this.assets.some(asset => asset.symbol === 'USDT' && asset.contract.toLowerCase() === quote.feeToken.toLowerCase()) || BigInt(quote.maxFeeAtomic) > BigInt(this.config.gas.maxFeeAtomic))) throw Object.assign(new Error(), { code: 'PAYMENT_CHANGED' });
+    // Network cost is always paid in the same token being sent (self-pay):
+    // the quoted feeToken must match the intent's own contract, not a fixed
+    // gas token. `intent.contract` was already confirmed above to be one of
+    // this account's known assets.
+    if (quote.feeMode === 'token' && (quote.feeToken.toLowerCase() !== intent.contract.toLowerCase() || BigInt(quote.maxFeeAtomic) > BigInt(this.config.gas.maxFeeAtomic))) throw Object.assign(new Error(), { code: 'PAYMENT_CHANGED' });
     const payload = await this.vault.open(pinHash);
     const seed = decode(payload.walletSeed);
     try {

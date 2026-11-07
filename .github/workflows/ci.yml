@@ -173,13 +173,21 @@ jobs:
       - name: Remove decoded keystore
         if: always()
         run: rm -f "$RUNNER_TEMP/midori-wallet-release.p12"
+      # Flatten the deep Cordova/Gradle output paths into a single folder
+      # with a predictable name, so downloading the artifact zip doesn't
+      # require digging through platforms/android/app/build/outputs/...
+      - name: Stage release files
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./phonegap/package.json').version")"
+          mkdir -p dist/release
+          cp phonegap/build-native/release/platforms/android/app/build/outputs/apk/release/app-release.apk "dist/release/midori-wallet-android-v${version}.apk"
+          cp phonegap/build-native/release/platforms/android/app/build/outputs/bundle/release/app-release.aab "dist/release/midori-wallet-android-v${version}.aab"
+          cp artifacts/*build.json "dist/release/" 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         with:
           name: midori-android-release-${{ github.sha }}
-          path: |
-            phonegap/build-native/release/platforms/android/app/build/outputs/apk/release/*.apk
-            phonegap/build-native/release/platforms/android/app/build/outputs/bundle/release/*.aab
-            artifacts/*build.json
+          path: dist/release
           if-no-files-found: error
   ios:
     needs: checks

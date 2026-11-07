@@ -61,6 +61,12 @@ export function loadConfig(env = process.env) {
   const paymasterProvider = env.MIDORI_PAYMASTER_PROVIDER || 'candide';
   if (!['candide','pimlico'].includes(paymasterProvider)) throw new Error('Invalid paymaster provider');
   const headers = (value) => { const parsed=JSON.parse(value || '{}');if(!parsed || Array.isArray(parsed) || Object.values(parsed).some(item=>typeof item!=='string')) throw new Error('Invalid provider headers');return Object.freeze(parsed); };
+  if (env.MIDORI_TRANSAK_ENABLED && !['true','false'].includes(env.MIDORI_TRANSAK_ENABLED)) throw new Error('Invalid MIDORI_TRANSAK_ENABLED');
+  const transakEnabled = env.MIDORI_TRANSAK_ENABLED === 'true';
+  const transakEnvironment = env.MIDORI_TRANSAK_ENVIRONMENT || 'STAGING';
+  if (!['STAGING','PRODUCTION'].includes(transakEnvironment)) throw new Error('Invalid MIDORI_TRANSAK_ENVIRONMENT');
+  const transakReferrerDomain = env.MIDORI_TRANSAK_REFERRER_DOMAIN || origin.hostname;
+  if (transakEnabled && (!env.MIDORI_TRANSAK_API_KEY || !env.MIDORI_TRANSAK_API_SECRET)) throw new Error('Configure the Transak API key and secret before enabling buying or selling crypto');
   return Object.freeze({
     connectionString, publicOrigin, rpID, host, rpcUrl,
     indexRpcUrl: paymentUrl(env.MIDORI_INDEX_RPC_URL, 'MIDORI_INDEX_RPC_URL') || rpcUrl,
@@ -89,5 +95,7 @@ export function loadConfig(env = process.env) {
     indexAccountBatch: integer(env.MIDORI_INDEX_ACCOUNT_BATCH, 10, 1, 100, 'account batch'),
     indexConfirmations: integer(env.MIDORI_INDEX_CONFIRMATIONS, 12, 1, 10000, 'confirmations'),
     workerIntervalMs: integer(env.MIDORI_WORKER_INTERVAL_MS, 60000, 1000, 3600000, 'worker interval'),
+    transakEnabled, transakApiKey: env.MIDORI_TRANSAK_API_KEY || null, transakApiSecret: env.MIDORI_TRANSAK_API_SECRET || null,
+    transakEnvironment, transakReferrerDomain,
   });
 }

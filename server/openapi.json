@@ -4512,6 +4512,504 @@
         }
       }
     },
+    "/api/v1/accounts/{id}/ramp/orders": {
+      "post": {
+        "operationId": "Startabuyorsellorderanditsonetimewidgetsession",
+        "summary": "Start a buy or sell order and its one-time widget session",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiatOrderWithWidget"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FiatOrderRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "Listownbuysellorders",
+        "summary": "List own buy/sell orders",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FiatOrder"
+                      }
+                    }
+                  },
+                  "required": [
+                    "orders"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ramp/orders/{id}": {
+      "get": {
+        "operationId": "Trackabuysellorder",
+        "summary": "Track a buy/sell order",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiatOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/transak": {
+      "post": {
+        "operationId": "Transakorderstatuswebhook",
+        "summary": "Transak order status webhook",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "received": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "received"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "data"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/updates/{platform}/{arch}": {
       "get": {
         "operationId": "VerifiedMidorireleasemanifest",
@@ -5451,6 +5949,9 @@
               "sponsorship": {
                 "type": "boolean"
               },
+              "ramp": {
+                "type": "boolean"
+              },
               "tags": {
                 "const": true
               },
@@ -5471,6 +5972,7 @@
               "encryptedBlobs",
               "payments",
               "sponsorship",
+              "ramp",
               "tags",
               "history",
               "signing",
@@ -6169,6 +6671,269 @@
           "feeMode",
           "feeToken",
           "maxFeeAtomic"
+        ],
+        "additionalProperties": false
+      },
+      "FiatOrder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "const": "transak"
+          },
+          "kind": {
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "status": {
+            "enum": [
+              "created",
+              "awaiting_payment",
+              "processing",
+              "completed",
+              "failed",
+              "refunded",
+              "expired"
+            ]
+          },
+          "fiatCurrency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "cryptoCurrency": {
+            "enum": [
+              "USDC",
+              "USDT"
+            ]
+          },
+          "network": {
+            "const": "base"
+          },
+          "walletAddress": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "fiatAmount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cryptoAmount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paymentMethod": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transactionHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "failureReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "provider",
+          "kind",
+          "status",
+          "fiatCurrency",
+          "cryptoCurrency",
+          "network",
+          "walletAddress",
+          "fiatAmount",
+          "cryptoAmount",
+          "paymentMethod",
+          "transactionHash",
+          "failureReason",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "FiatOrderWithWidget": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "const": "transak"
+          },
+          "kind": {
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "status": {
+            "enum": [
+              "created",
+              "awaiting_payment",
+              "processing",
+              "completed",
+              "failed",
+              "refunded",
+              "expired"
+            ]
+          },
+          "fiatCurrency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "cryptoCurrency": {
+            "enum": [
+              "USDC",
+              "USDT"
+            ]
+          },
+          "network": {
+            "const": "base"
+          },
+          "walletAddress": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "fiatAmount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cryptoAmount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paymentMethod": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transactionHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "failureReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "widgetUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "provider",
+          "kind",
+          "status",
+          "fiatCurrency",
+          "cryptoCurrency",
+          "network",
+          "walletAddress",
+          "fiatAmount",
+          "cryptoAmount",
+          "paymentMethod",
+          "transactionHash",
+          "failureReason",
+          "createdAt",
+          "updatedAt",
+          "widgetUrl"
+        ],
+        "additionalProperties": false
+      },
+      "FiatOrderRequest": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "enum": [
+              "buy",
+              "sell"
+            ]
+          },
+          "cryptoCurrency": {
+            "enum": [
+              "USDC",
+              "USDT"
+            ]
+          },
+          "fiatCurrency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "fiatAmount": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}(\\.[0-9]{1,18})?$"
+          },
+          "cryptoAmount": {
+            "type": "string",
+            "pattern": "^[0-9]{1,18}(\\.[0-9]{1,18})?$"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{1,64}$"
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "kind",
+          "cryptoCurrency",
+          "fiatCurrency"
         ],
         "additionalProperties": false
       }

@@ -36,7 +36,7 @@ before(async () => {
   config = loadConfig({ DATABASE_URL: url.href, MIDORI_RATE_LIMIT: '10000', MIDORI_PUBLIC_ORIGIN: 'http://localhost:5173' });
   db = createDatabase(config);
   const initial = await migrate(db);
-  assert.equal(initial.length, 4);
+  assert.equal(initial.length, 5);
   assert.deepEqual(await migrate(db), []);
   if (process.env.MIDORI_TEST_RUNTIME_DATABASE_URL) {
     const runtimeUrl = new URL(process.env.MIDORI_TEST_RUNTIME_DATABASE_URL);
@@ -240,6 +240,62 @@ scenario('real WebAuthn signature verification persists newCounter and rejects c
   assert.equal((await publicCall('/api/v1/auth/webauthn/verify', { id: stale.id, challenge: stale.challenge, response: credential.assertion(stale.challenge, 0) })).status, 401);
   await alice.client.request('DELETE', `/api/v1/authenticators/${credential.id}`);
   assert.equal((await publicCall('/api/v1/auth/webauthn/options', { deviceId: alice.session.deviceId })).status, 401);
+});
+
+scenario('buy/sell ramp orders are idempotent, track status from a verified webhook, and stay disabled by default', async () => {
+  assert.equal((await alice.client.request('GET', '/api/v1/config')).capabilities.ramp, false);
+  await assert.rejects(alice.client.request('POST', `/api/v1/accounts/${alice.session.accountId}/ramp/orders`, { idempotencyKey: randomUUID(), kind: 'buy', cryptoCurrency: 'USDT', fiatCurrency: 'USD', fiatAmount: '100' }), { status: 503, code: 'RAMP_UNAVAILABLE' });
+  const rampConfig = loadConfig({ DATABASE_URL: process.env.MIDORI_TEST_DATABASE_URL, MIDORI_RATE_LIMIT: '10000', MIDORI_PUBLIC_ORIGIN: 'http://localhost:5173', MIDORI_TRANSAK_ENABLED: 'true', MIDORI_TRANSAK_API_KEY: 'test-partner-key', MIDORI_TRANSAK_API_SECRET: 'test-partner-secret', MIDORI_TRANSAK_REFERRER_DOMAIN: 'midoriwallet.com' });
+  const sessions = [];
+  const rampProvider = {
+    async widgetSession(widgetParams, userIp) {
+      assert.equal(widgetParams.apiKey, 'test-partner-key'); assert.equal(widgetParams.referrerDomain, 'midoriwallet.com');
+      assert.ok(typeof userIp === 'string' && userIp.length > 0);
+      sessions.push(widgetParams);
+      return `https://global-stg.transak.com/?apiKey=${widgetParams.apiKey}&sessionId=fake-${sessions.length}`;
+    },
+    async findOrderByPartnerOrderId() { return null; },
+    // Test-only encoding (base64url JSON); the real HS256 JWT verification
+    // in lib/transak.js is covered directly in unit.test.mjs.
+    async verifyWebhook(token) { try { return JSON.parse(Buffer.from(token, 'base64url').toString('utf8')); } catch { return null; } },
+  };
+  const rampServer = createServer(createApp({ db: apiDb || db, config: rampConfig, rampProvider }));
+  await new Promise(resolve => rampServer.listen(0, '127.0.0.1', resolve));
+  try {
+    const rampOrigin = `http://127.0.0.1:${rampServer.address().port}`;
+    const client = new MidoriClient({ origin: rampOrigin, privateKey: alice.device.privateKey, session: alice.session, fetchImpl: async (url, init) => {
+      const response = await fetch(url, init); validateResponse(init.method, url.pathname, response.status, await response.clone().json()); return response;
+    } });
+    assert.equal((await client.request('GET', '/api/v1/config')).capabilities.ramp, true);
+    const idempotencyKey = randomUUID();
+    const request = { idempotencyKey, kind: 'buy', cryptoCurrency: 'USDT', fiatCurrency: 'USD', fiatAmount: '100' };
+    const order = await client.request('POST', `/api/v1/accounts/${alice.session.accountId}/ramp/orders`, request);
+    assert.equal(order.status, 'created'); assert.equal(order.walletAddress.toLowerCase(), alice.descriptor.address.toLowerCase()); assert.match(order.widgetUrl, /^https:\/\/global-stg\.transak\.com\/\?apiKey=test-partner-key&sessionId=fake-1$/);
+    assert.equal(sessions[0].partnerOrderId, order.id); assert.equal(sessions[0].walletAddress.toLowerCase(), alice.descriptor.address.toLowerCase()); assert.equal(sessions[0].disableWalletAddressForm, true);
+    const repeated = await client.request('POST', `/api/v1/accounts/${alice.session.accountId}/ramp/orders`, request);
+    assert.equal(repeated.id, order.id); assert.match(repeated.widgetUrl, /sessionId=fake-2$/);
+    await assert.rejects(client.request('POST', `/api/v1/accounts/${alice.session.accountId}/ramp/orders`, { ...request, idempotencyKey, fiatAmount: '200' }), { status: 409, code: 'IDEMPOTENCY_CONFLICT' });
+    await assert.rejects(client.request('POST', `/api/v1/accounts/${bob.session.accountId}/ramp/orders`, request), { status: 404 });
+    assert.deepEqual((await client.request('GET', `/api/v1/accounts/${alice.session.accountId}/ramp/orders`)).orders.map(item => item.id), [order.id]);
+    assert.equal((await client.request('GET', `/api/v1/ramp/orders/${order.id}`)).status, 'created');
+    await assert.rejects(client.request('GET', `/api/v1/ramp/orders/${bob.session.accountId}`), { status: 404 });
+    const sign = payload => Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const webhook = async data => {
+      const response = await fetch(rampOrigin + '/api/v1/webhooks/transak', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }) });
+      const body = await response.json(); validateResponse('POST', '/api/v1/webhooks/transak', response.status, body); return { status: response.status, body };
+    };
+    assert.equal((await webhook('not-a-jwt')).status, 401);
+    const processing = await webhook(sign({ eventID: 'ORDER_PROCESSING', webhookData: { partnerOrderId: order.id, status: 'PROCESSING' } }));
+    assert.equal(processing.status, 200); assert.equal((await client.request('GET', `/api/v1/ramp/orders/${order.id}`)).status, 'processing');
+    const completed = await webhook(sign({ eventID: 'ORDER_COMPLETED', webhookData: { partnerOrderId: order.id, status: 'COMPLETED', id: 'transak-order-1', transactionHash: '0x' + 'ab'.repeat(32) } }));
+    assert.equal(completed.status, 200);
+    const final = await client.request('GET', `/api/v1/ramp/orders/${order.id}`);
+    assert.equal(final.status, 'completed'); assert.equal(final.transactionHash, '0x' + 'ab'.repeat(32));
+    // A terminal order is final: a later event for the same order is accepted but ignored.
+    await webhook(sign({ eventID: 'ORDER_FAILED', webhookData: { partnerOrderId: order.id, status: 'FAILED' } }));
+    assert.equal((await client.request('GET', `/api/v1/ramp/orders/${order.id}`)).status, 'completed');
+    await assert.rejects(client.request('POST', `/api/v1/accounts/${alice.session.accountId}/ramp/orders`, { idempotencyKey: randomUUID(), kind: 'sell', cryptoCurrency: 'USDT', fiatCurrency: 'USD' }), { status: 400 });
+  } finally { await new Promise(resolve => rampServer.close(resolve)); }
 });
 
 scenario('maintenance removes expired rows; client and API report unavailable PostgreSQL without claiming saved data', async () => {

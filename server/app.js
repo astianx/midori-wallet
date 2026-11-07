@@ -5,7 +5,7 @@ import { ApiError, exactKeys, notFound, requireValue } from './lib/errors.js';
 import { uuidPattern } from './lib/crypto.js';
 import { checkSchema } from './lib/migrations.js';
 import { authenticate, enrollDevice, limitUnauthenticated, revokeDevice } from './lib/auth.js';
-import { account, activePrincipal, catalog } from './lib/repositories.js';
+import { account, activePrincipal, catalog, limitAttempts } from './lib/repositories.js';
 import { walletService } from './lib/wallets.js';
 import { webauthnService } from './lib/webauthn.js';
 import { readBlob, writeBlob } from './lib/storage.js';
@@ -14,15 +14,21 @@ import { history } from './lib/history.js';
 import { paymentService } from './lib/payments.js';
 import { chainRpc } from './lib/chain-rpc.js';
 import { ownTag, tagOptions, registerTag, resolveTag, verifyTagRegistration, verifyTagSnapshot } from './lib/tags.js';
+import { rampService } from './lib/ramp.js';
 
 const route = action => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
+// nginx (container/nginx-reverse.conf) overwrites X-Forwarded-For with
+// $remote_addr, so a client cannot spoof it; falls back to the raw socket
+// for local/dev, where there is no reverse proxy in front of the app.
+const requestIp = req => req.get('x-forwarded-for') || req.socket.remoteAddress || '';
 
-export function createApp({ db, config, webApp, provider, logger = () => {} }) {
+export function createApp({ db, config, webApp, provider, rampProvider, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
   const webauthn = webauthnService(db, config);
   const payments = paymentService(db, config, provider);
+  const ramp = rampService(db, config, rampProvider);
   app.disable('x-powered-by');
   app.set('query parser', 'simple');
   app.use((req, res, next) => {
@@ -42,7 +48,7 @@ export function createApp({ db, config, webApp, provider, logger = () => {} }) {
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'unavailable', database: ready ? 'ready' : 'unavailable' });
   }));
   app.get('/api/v1/openapi.json', (req, res) => res.sendFile(new URL('./openapi.json', import.meta.url).pathname));
-  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, ramp: config.transakEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
   app.get('/api/v1/updates/:platform/:arch', route(async (req, res) => {
     requireValue(['win32','darwin','linux','android','ios','web'].includes(req.params.platform) && ['x64','arm64','any'].includes(req.params.arch));
     try { res.json({ enabled: githubUpdates.enabled, update: await githubUpdates.getUpdate(req.params.platform, req.params.arch) || null }); }
@@ -59,6 +65,19 @@ export function createApp({ db, config, webApp, provider, logger = () => {} }) {
   publicPost('/api/v1/recovery/verify', body => wallets.recover(body), 201);
   publicPost('/api/v1/auth/webauthn/options', body => webauthn.loginOptions(body));
   publicPost('/api/v1/auth/webauthn/verify', body => webauthn.login(body));
+  // Server-to-server from Transak, not a browser call: no session, no CORS
+  // origin to check (the shared middleware above only enforces one when an
+  // Origin header is present). Authenticity comes from verifying `data` as
+  // an HS256 JWT signed with our Transak Partner Access Token (lib/ramp.js
+  // handleWebhook / lib/transak.js verifyWebhook), not from a shared secret
+  // header. The envelope around `data` is Transak's, not ours, so it is
+  // read loosely instead of with the strict exactKeys used for our own API.
+  app.post('/api/v1/webhooks/transak', route(async (req, res) => {
+    await limitAttempts(db, 'webhook:transak', config.rateLimit * 2);
+    requireValue(typeof req.body?.data === 'string' && req.body.data.length > 0 && req.body.data.length <= 65536, 'Invalid webhook payload');
+    await ramp.handleWebhook(req.body.data);
+    res.json({ received: true });
+  }));
 
   const protectedRoute = (method, path, action, status = 200, transaction = true) => app[method](path, route(async (req, res) => {
     const principal = await authenticate(db, req);
@@ -78,6 +97,9 @@ export function createApp({ db, config, webApp, provider, logger = () => {} }) {
   protectedRoute('get', '/api/v1/intents/:id', (req, client, principal) => { uuid(req.params.id); return payments.get(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/authorize', (req, client, principal) => { uuid(req.params.id); return payments.authorize(principal, req.params.id, req.body); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/cancel', (req, client, principal) => { uuid(req.params.id); exactKeys(req.body, []); return payments.cancel(principal, req.params.id); }, 200, false);
+  protectedRoute('post', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.create(principal, req.params.id, req.body, requestIp(req)); }, 200, false);
+  protectedRoute('get', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.list(principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/ramp/orders/:id', (req, client, principal) => { uuid(req.params.id); return ramp.get(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/tag', (req, client, principal) => ownTag(client, principal.wallet_id));
   protectedRoute('post', '/api/v1/tag/options', (req, client, principal) => tagOptions(client, config, principal, req.body));
   protectedRoute('post', '/api/v1/tag/verify', async (req, client, principal) => {

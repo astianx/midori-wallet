@@ -4,6 +4,7 @@ import { loadConfig } from './lib/config.js';
 import { createDatabase } from './lib/db.js';
 import { expireQuotes, deliverPayments, reconcilePayments } from './lib/payments.js';
 import { synchronizeHistory } from './lib/indexer.js';
+import { rampService } from './lib/ramp.js';
 
 export async function maintainExpirations(db) {
   return db.transaction(async client => {
@@ -21,6 +22,7 @@ export async function runWorker(config = loadConfig()) {
   const controller = new AbortController();
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => controller.abort());
   const provider = config.paymentsEnabled ? (await import('./lib/payment-provider.js')).paymentProvider(config) : undefined;
+  const ramp = config.transakEnabled ? rampService(db, config) : undefined;
   const once = process.argv.includes('--once');
   const loop = async (name, interval, action, initialDelayMs = 0) => {
     // A small stagger on the very first iteration keeps concurrent loops
@@ -49,6 +51,7 @@ export async function runWorker(config = loadConfig()) {
         if (!config.paymentsEnabled) return null;
         return { delivered: await deliverPayments(db, config, provider), checked: await reconcilePayments(db, config, provider) };
       }),
+      loop('ramp_reconciled', config.workerIntervalMs, async () => ramp ? { updated: await ramp.reconcile() } : null),
     ]);
   } finally { await db.close(); }
 }

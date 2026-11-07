@@ -48,4 +48,14 @@ const scheme = release ? 'midoriwallet' : 'midoriwallet-beta';
 const plugins = [ ['org.astian.midori.vault',path.join(directory,'plugins/midori-vault')], ['cordova-plugin-inappbrowser','cordova-plugin-inappbrowser@7.0.0'], ['cordova-plugin-customurlscheme','cordova-plugin-customurlscheme@5.0.2'], ['cordova-plugin-fingerprint-aio','cordova-plugin-fingerprint-aio@6.0.1'] ];
 for (const [id,source] of plugins) if (!fs.existsSync(path.join(build,'plugins',id))) run(['plugin','add',source,'--save', ...(id === 'cordova-plugin-customurlscheme' ? ['--variable',`URL_SCHEME=${scheme}`] : [])]);
 run(['prepare',platform]);
-run(platform === 'android' ? ['build','android',release ? '--release' : '--debug','--','--packageType=apk'] : ['build','ios','--debug','--emulator','--buildFlag=CODE_SIGNING_ALLOWED=NO']);
+if (platform === 'android') {
+  // Google Play requires an .aab (Android App Bundle) for new app
+  // submissions; it no longer accepts a plain .apk. Release builds produce
+  // both from the same prepared project: the .apk for direct/sideload
+  // distribution (GitHub release, manual install) and the .aab for Play
+  // Store. Debug builds keep producing only the .apk, which is what's
+  // actually installed/tested locally or in CI.
+  for (const packageType of release ? ['apk','bundle'] : ['apk']) run(['build','android',release ? '--release' : '--debug','--',`--packageType=${packageType}`]);
+} else {
+  run(['build','ios','--debug','--emulator','--buildFlag=CODE_SIGNING_ALLOWED=NO']);
+}

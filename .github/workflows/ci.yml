@@ -178,6 +178,7 @@ jobs:
           name: midori-android-release-${{ github.sha }}
           path: |
             phonegap/build-native/release/platforms/android/app/build/outputs/apk/release/*.apk
+            phonegap/build-native/release/platforms/android/app/build/outputs/bundle/release/*.aab
             artifacts/*build.json
           if-no-files-found: error
   ios:

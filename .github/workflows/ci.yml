@@ -127,20 +127,42 @@ jobs:
             phonegap/build-native/debug/platforms/android/app/build/outputs/apk/debug/*.apk
             artifacts/*build.json
           if-no-files-found: error
-      # Signed release APK: only for pushes to main (never for pull_request,
-      # including same-repo branches) and only when the signing secrets are
-      # configured, so forks and unrelated branches never touch the keystore.
-      - name: Check Android signing secrets
-        id: android_signing
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          HAS_SECRETS: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
-        run: echo "ready=$HAS_SECRETS" >> "$GITHUB_OUTPUT"
+  # Signed release APK: separate job, gated by the "release-signing"
+  # GitHub Environment (manual approval required every run, admins included;
+  # see repo Settings > Environments). Only runs for pushes to main, never
+  # for pull_request (including same-repo branches), so the keystore is
+  # never reachable from an unreviewed change.
+  android-release:
+    needs: android
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: release-signing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.2'
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
       - name: Decode Android keystore
-        if: steps.android_signing.outputs.ready == 'true'
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/midori-wallet-release.p12"
       - name: Build signed release APK
-        if: steps.android_signing.outputs.ready == 'true'
         run: npm run build:android
         env:
           MIDORI_BUILD_PROFILE: release
@@ -149,10 +171,9 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       - name: Remove decoded keystore
-        if: always() && steps.android_signing.outputs.ready == 'true'
+        if: always()
         run: rm -f "$RUNNER_TEMP/midori-wallet-release.p12"
       - uses: actions/upload-artifact@v4
-        if: steps.android_signing.outputs.ready == 'true'
         with:
           name: midori-android-release-${{ github.sha }}
           path: |

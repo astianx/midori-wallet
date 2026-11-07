@@ -1,7 +1,7 @@
 {
   "name": "@midori/web",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.4",
   "description": "Original shared Midori Wallet Vue interface; WDK compatibility experiments are isolated",
   "license": "MIT",
   "type": "module",

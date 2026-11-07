@@ -1,7 +1,7 @@
 {
   "name": "midori-wallet",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.4",
   "description": "Shared Midori Wallet preparation and development tools",
   "license": "MIT",
   "type": "module",

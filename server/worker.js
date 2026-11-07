@@ -22,7 +22,12 @@ export async function runWorker(config = loadConfig()) {
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => controller.abort());
   const provider = config.paymentsEnabled ? (await import('./lib/payment-provider.js')).paymentProvider(config) : undefined;
   const once = process.argv.includes('--once');
-  const loop = async (name, interval, action) => {
+  const loop = async (name, interval, action, initialDelayMs = 0) => {
+    // A small stagger on the very first iteration keeps concurrent loops
+    // that share the same rate-limited chain RPC (history sync, payment
+    // reconciliation) from firing their first requests in the same instant
+    // at process boot.
+    if (initialDelayMs && !once) { try { await delay(initialDelayMs, undefined, { signal: controller.signal }); } catch { return; } }
     do {
       let nextInterval = interval;
       try { const result = await action(); if (result) console.log(JSON.stringify({ event: name, ...result })); }
@@ -38,7 +43,7 @@ export async function runWorker(config = loadConfig()) {
   try {
     await Promise.all([
       loop('expiration_cleanup', config.workerIntervalMs, async () => ({ removed: await maintainExpirations(db) })),
-      loop('history_synchronized', config.workerIntervalMs, () => synchronizeHistory(db, config)),
+      loop('history_synchronized', config.workerIntervalMs, () => synchronizeHistory(db, config), 2000),
       loop('payments_reconciled', config.paymentPollMs || 3000, async () => {
         await expireQuotes(db);
         if (!config.paymentsEnabled) return null;

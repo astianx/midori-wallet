@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { captureServerError } from './sentry.js';
 
 export function createDatabase(config, onError = () => {}) {
   const pool = new pg.Pool({
@@ -11,7 +12,10 @@ export function createDatabase(config, onError = () => {}) {
     application_name: 'midori-api',
     options: '-c search_path=midori,pg_catalog',
   });
-  pool.on('error', error => onError({ event: 'database_error', code: error.code || 'UNAVAILABLE' }));
+  pool.on('error', error => {
+    captureServerError(error, { operation: 'database.pool', code: error.code });
+    onError({ event: 'database_error', code: error.code || 'UNAVAILABLE' });
+  });
   let closing;
   return {
     query: (sql, values) => pool.query(sql, values),

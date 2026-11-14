@@ -1,3 +1,4 @@
+import { captureWalletError } from '../sentry.js';
 import i18n from '../i18n/i18n.js';
 import os from '../detectOs.js';
 import {
@@ -117,7 +118,7 @@ export default class Biometry {
       return true;
     } catch (err) {
       if (err?.message === 'fingerprint_error') return false;
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Biometry.operation');
       return false;
     }
   }
@@ -134,7 +135,7 @@ export default class Biometry {
       this.#clientStorage.setBiometryEnabled(false);
       return true;
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Biometry.operation');
       return false;
     }
   }
@@ -168,7 +169,7 @@ export default class Biometry {
       });
       return res.deviceToken;
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Biometry.operation');
       return false;
     }
   }
@@ -189,7 +190,7 @@ export default class Biometry {
       });
       return res;
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Biometry.operation');
       return false;
     }
   }

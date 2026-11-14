@@ -8,17 +8,22 @@ async function digest(value) {
 }
 
 export class MidoriApiError extends Error {
-  constructor(message, { code, status, details } = {}) {
+  constructor(message, { code, status, details, requestId } = {}) {
     super(message);
-    Object.assign(this, { code, status, details });
+    Object.assign(this, { code, status, details, requestId });
   }
 }
 
 export class MidoriClient {
-  constructor({ origin, session, signMessage, fetchImpl = globalThis.fetch.bind(globalThis) }) {
+  constructor({ origin, session, signMessage, fetchImpl = globalThis.fetch.bind(globalThis), reportError = () => {} }) {
     const base = new URL(origin);
     if (base.origin !== origin.replace(/\/$/,'') || base.username || base.password || (base.protocol !== 'https:' && !(base.protocol === 'http:' && ['localhost','127.0.0.1','10.0.2.2'].includes(base.hostname)))) throw new Error('Invalid API origin');
-    Object.assign(this, { origin: base.origin, session, signMessage, fetchImpl });
+    Object.assign(this, { origin: base.origin, session, signMessage, fetchImpl, reportError });
+  }
+
+  #report(error, operation, route) {
+    try { this.reportError(error, operation, { route, code: error.code, ...(error.requestId ? { request_id: error.requestId } : {}) }); } catch { /* Reporting must preserve request behavior. */ }
+    return error;
   }
 
   async request(method, target, value) {
@@ -38,10 +43,14 @@ export class MidoriClient {
     }
     let response;
     try { response = await this.fetchImpl(new URL(target, this.origin), { method, headers, redirect: 'error', credentials: 'omit', cache: 'no-store', ...(body ? { body } : {}), signal: AbortSignal.timeout(15000) }); }
-    catch { throw new MidoriApiError('No se pudo confirmar la respuesta del servidor. Vuelve a consultar antes de reintentar.', { code: 'NETWORK_UNCONFIRMED' }); }
+    catch { throw this.#report(new MidoriApiError('No se pudo confirmar la respuesta del servidor. Vuelve a consultar antes de reintentar.', { code: 'NETWORK_UNCONFIRMED' }), 'api.network', url.pathname); }
     let result;
-    try { result = await response.json(); } catch { throw new MidoriApiError('The server response could not be confirmed. Check the payment before retrying.', { code: 'NETWORK_UNCONFIRMED' }); }
-    if (!response.ok) throw new MidoriApiError(result.error?.message || 'API request failed', { status: response.status, code: result.error?.code, details: result.error?.details });
+    try { result = await response.json(); } catch { throw this.#report(new MidoriApiError('The server response could not be confirmed. Check the payment before retrying.', { code: 'NETWORK_UNCONFIRMED' }), 'api.response', url.pathname); }
+    if (!response.ok) {
+      const error = new MidoriApiError(result.error?.message || 'API request failed', { status: response.status, code: result.error?.code, details: result.error?.details, requestId: result.error?.requestId });
+      if (response.status >= 500) this.#report(error, 'api.request', url.pathname);
+      throw error;
+    }
     return result;
   }
 }

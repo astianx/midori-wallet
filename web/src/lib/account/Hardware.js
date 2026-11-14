@@ -1,3 +1,4 @@
+import { captureWalletError } from '../sentry.js';
 import {
   WebAuthnAbortService,
   browserSupportsWebAuthn,
@@ -64,7 +65,7 @@ export default class Hardware {
       if (err.message === 'hardware_not_supported') {
         eventBus.emit('MwErrorHardwareNotSupported');
       } else {
-        console.error('Midori Wallet operation failed');
+        captureWalletError(err, 'Hardware.operation');
       }
       return false;
     }
@@ -82,7 +83,7 @@ export default class Hardware {
       });
       return true;
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Hardware.operation');
       return false;
     }
   }
@@ -121,7 +122,7 @@ export default class Hardware {
       if (err.message === 'hardware_not_supported') {
         eventBus.emit('MwErrorHardwareNotSupported');
       } else {
-        console.error('Midori Wallet operation failed');
+        captureWalletError(err, 'Hardware.operation');
       }
       return false;
     }

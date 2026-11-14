@@ -1,3 +1,4 @@
+import { captureWalletError } from '../sentry.js';
 import {
   Amount,
   errors,
@@ -101,7 +102,7 @@ export default class BaseExchange {
     try {
       return this.#loadExchanges();
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'BaseExchange.operation');
     }
   }
 

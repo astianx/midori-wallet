@@ -7,6 +7,8 @@ export const VITE_SITE_URL = import.meta.env.VITE_SITE_URL;
 export const VITE_NAME = import.meta.env.VITE_NAME;
 export const VITE_VERSION = import.meta.env.VITE_VERSION;
 export const VITE_SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
+export const VITE_SENTRY_ENABLED = import.meta.env.VITE_SENTRY_ENABLED;
+export const VITE_SENTRY_TRACES_SAMPLE_RATE = import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE;
 export const VITE_SENTRY_ENVIRONMENT = import.meta.env.VITE_SENTRY_ENVIRONMENT;
 export const VITE_GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 export { prettyVersion, release } from './lib/version.js?inline';

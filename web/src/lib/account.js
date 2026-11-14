@@ -100,11 +100,11 @@ export async function createAccount({ app, router }) {
         if (import.meta.env.VITE_PLATFORM === 'ios') {
           window.saveCryptosForExtensions(result);
         }
-        setSentryUser();
+        setSentryUser(!account.isLocked);
       }
     }
   });
-  account.on('locked', () => { state.reset(); router.replace({ name: 'unlock' }); });
+  account.on('locked', () => { setSentryUser(false); state.reset(); router.replace({ name: 'unlock' }); });
   account.on('logout', async () => {
     eventBus.emit('discardRampCheckout');
     removeLifecycle();

@@ -6,11 +6,11 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "server": "node --env-file-if-exists=.env server.js",
+    "server": "node --env-file-if-exists=.env --import ./instrument.js server.js",
     "wdk:indexer:check": "node --env-file-if-exists=.env scripts/check-wdk-indexer.mjs",
-    "server:watch": "node --env-file-if-exists=.env --watch server.js",
+    "server:watch": "node --env-file-if-exists=.env --watch --import ./instrument.js server.js",
     "test": "node --test --experimental-test-isolation=none test/*.test.mjs",
-    "worker": "node --env-file-if-exists=.env worker.js",
+    "worker": "node --env-file-if-exists=.env --import ./instrument.js worker.js",
     "db:migrate": "node --env-file-if-exists=.env.migrations scripts/migrate.mjs",
     "db:bootstrap": "node --env-file-if-exists=.env scripts/bootstrap.mjs",
     "db:backup": "node --env-file-if-exists=.env.migrations scripts/backup.mjs",
@@ -19,10 +19,12 @@
     "db:verify": "node --env-file-if-exists=.env.migrations scripts/verify-postgres.mjs",
     "contract:build": "node scripts/build-openapi.mjs",
     "account:inspect": "node --env-file-if-exists=.env scripts/inspect-account.mjs",
-    "server:transak-staging": "node --env-file=.env.transak-staging server.js",
-    "worker:transak-staging": "node --env-file=.env.transak-staging worker.js"
+    "server:transak-staging": "node --env-file=.env.transak-staging --import ./instrument.js server.js",
+    "worker:transak-staging": "node --env-file=.env.transak-staging --import ./instrument.js worker.js",
+    "sentry:check": "node --env-file-if-exists=.env scripts/check-sentry.mjs"
   },
   "dependencies": {
+    "@sentry/node": "11.12.0",
     "@simplewebauthn/server": "14.0.3",
     "@transak/wdk-protocol-fiat-transak": "1.0.2",
     "abstractionkit": "0.4.0",

@@ -1,3 +1,4 @@
+import './lib/sentry.js';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import log from 'electron-log';

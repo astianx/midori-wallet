@@ -1,3 +1,4 @@
+import { captureWalletError } from '../sentry.js';
 import CountryList from 'country-list';
 import { Amount, errors, utils } from './domain.js';
 
@@ -111,7 +112,7 @@ export default class Cards {
       this.#enabled = enabled;
       this.#config = config;
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Cards.operation');
     }
   }
 
@@ -154,7 +155,7 @@ export default class Cards {
         });
         if (CountryList.getName(country)) this.#countryCode = country;
       } catch (err) {
-        console.error('Midori Wallet operation failed');
+        captureWalletError(err, 'Cards.operation');
       }
     }
     return this.#countryCode;
@@ -254,7 +255,7 @@ export default class Cards {
       });
       return true;
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Cards.operation');
     }
   }
 
@@ -267,7 +268,7 @@ export default class Cards {
       });
       return true;
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Cards.operation');
     }
   }
 
@@ -310,7 +311,7 @@ export default class Cards {
         seed: 'cardholder',
       });
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Cards.operation');
     }
   }
 

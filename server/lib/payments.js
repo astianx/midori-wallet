@@ -1,3 +1,4 @@
+import { captureServerError } from './sentry.js';
 import { randomUUID } from 'node:crypto';
 import { getAddress, ZeroAddress } from 'ethers';
 import { ApiError, exactKeys, requireValue, notFound } from './errors.js';
@@ -196,7 +197,7 @@ export async function deliverPayments(db,config,provider=paymentProvider(config)
     const claimed=await db.query('UPDATE user_operations SET attempted_at=clock_timestamp() WHERE intent_id=$1 AND attempted_at IS NULL RETURNING intent_id',[item.intent_id]);
     if(!claimed.rowCount)continue;
     let status='ambiguous';
-    try {const hash=await provider.submit(op.operation);if(hash?.toLowerCase()===op.user_operation_hash)status='submitted';}catch{ /* A lost acknowledgement is reconciled before any further action. */ }
+    try {const hash=await provider.submit(op.operation);if(hash?.toLowerCase()===op.user_operation_hash)status='submitted';}catch(error){ captureServerError(error, { operation: 'payment.submit', code: error.code }); /* A lost acknowledgement is reconciled before any further action. */ }
     await db.transaction(async client=>{await client.query("UPDATE tx_intents SET status=$2,updated_at=clock_timestamp() WHERE id=$1 AND status='authorized'",[item.intent_id,status]);await client.query('UPDATE payment_outbox SET completed_at=clock_timestamp() WHERE intent_id=$1',[item.intent_id]);});
   }
   return rows.length;
@@ -216,7 +217,7 @@ export async function reconcilePayments(db,config,provider=paymentProvider(confi
         continue;
       }
       if(op.block_hash&&['confirmed','reverted'].includes(row.status)&&op.accounting_state==='settled') {await db.query('UPDATE user_operations SET checked_at=clock_timestamp() WHERE intent_id=$1',[item.id]);continue;}
-      let bundled;try{bundled=await provider.receipt(op.user_operation_hash);}catch{bundled=null;}
+      let bundled;try{bundled=await provider.receipt(op.user_operation_hash);}catch(error){captureServerError(error,{operation:'payment.receipt',code:error.code});bundled=null;}
       const tx=bundled?.receipt?.transactionHash||op.transaction_hash;
       let receipt=tx?await provider.transactionReceipt(tx):null;
       if(receipt){const canonicalBlock=await provider.chain('eth_getBlockByNumber',[receipt.blockNumber,false]);if(!canonicalBlock||!same(canonicalBlock.hash,receipt.blockHash))receipt=null;}
@@ -243,7 +244,7 @@ export async function reconcilePayments(db,config,provider=paymentProvider(confi
         await client.query("UPDATE chain_events SET intent_id=$1,event_kind='payment' WHERE chain_id=8453 AND transaction_hash=$2 AND log_index=$3 AND sender=$4 AND recipient=$5 AND contract=$6 AND amount_atomic=$7",[item.id,receipt.transactionHash.toLowerCase(),result.paymentLogIndex??-1,row.sender,row.recipient,row.contract,row.amount_atomic]);
         if(result.gasLogIndexes.length)await client.query("UPDATE chain_events SET intent_id=$1,event_kind='gas' WHERE chain_id=8453 AND transaction_hash=$2 AND log_index=ANY($3::integer[])",[item.id,receipt.transactionHash.toLowerCase(),result.gasLogIndexes]);
       });
-    } catch(error) {await db.query('UPDATE user_operations SET checked_at=clock_timestamp() WHERE intent_id=$1',[item.id]);if(error.code==='PAYMENT_PROVIDER_LIMITED')throw error;}
+    } catch(error) {await db.query('UPDATE user_operations SET checked_at=clock_timestamp() WHERE intent_id=$1',[item.id]);if(error.code==='PAYMENT_PROVIDER_LIMITED')throw error;captureServerError(error,{operation:'payment.reconcile',code:error.code});}
   }
   return rows.length;
 }

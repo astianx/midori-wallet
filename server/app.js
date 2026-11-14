@@ -1,4 +1,5 @@
 import express from 'express';
+import { captureServerError } from './lib/sentry.js';
 import githubUpdates from './lib/github.js';
 import { randomUUID } from 'node:crypto';
 import { ApiError, exactKeys, notFound, requireValue } from './lib/errors.js';
@@ -20,7 +21,7 @@ const route = action => (req, res, next) => Promise.resolve(action(req, res)).ca
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
 const requestIp = req => (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
-export function createApp({ db, config, webApp, provider, rampProvider, logger = () => {} }) {
+export function createApp({ db, config, webApp, provider, rampProvider, reportError = captureServerError, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
   const webauthn = webauthnService(db, config);
@@ -34,7 +35,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, logger =
     res.set({ 'X-Request-ID': req.requestId, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
     const origin = req.get('origin');
     if (origin && !config.allowedOrigins.includes(origin)) return next(new ApiError(403, 'ORIGIN_DENIED', 'Origin not allowed'));
-    if (origin) res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Midori-Timestamp,X-Midori-Nonce,X-Midori-Signature', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS', 'Access-Control-Expose-Headers': 'X-Request-ID' });
+    if (origin) res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Midori-Timestamp,X-Midori-Nonce,X-Midori-Signature,sentry-trace,baggage', 'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS', 'Access-Control-Expose-Headers': 'X-Request-ID' });
     if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
   });
@@ -143,7 +144,10 @@ export function createApp({ db, config, webApp, provider, rampProvider, logger =
     if (['23514', '23503', '22P02', '22003'].includes(error.code)) { status = 400; code = 'INVALID_REQUEST'; message = 'Data violates a persistence constraint'; }
     if (error.type === 'entity.parse.failed' || error.type === 'entity.too.large') { status = error.status; code = 'INVALID_BODY'; message = 'Invalid or oversized JSON body'; }
     if (/^(08|53|57P)/.test(error.code || '') || ['55000', '3D000', '28P01', '28000', 'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNRESET'].includes(error.code) || /connection timeout|timeout exceeded|pool.*end/i.test(error.message)) { status = 503; code = 'DATABASE_UNAVAILABLE'; message = 'Persistence is temporarily unavailable'; }
-    if (status >= 500) logger({ event: 'request_failed', requestId: req.requestId, code });
+    if (status >= 500) {
+      logger({ event: 'request_failed', requestId: req.requestId, code });
+      try { reportError(error, { operation: 'api.request', code, requestId: req.requestId, route: req.route?.path, status }); } catch { /* Reporting must preserve the API response. */ }
+    }
     if (status === 429) res.set('Retry-After', String(error.details?.retryAfter || 60));
     res.status(status).json({ error: { code, message, requestId: req.requestId, ...(error instanceof ApiError && error.details ? { details: error.details } : {}) } });
   });

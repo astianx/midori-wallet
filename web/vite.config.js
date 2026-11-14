@@ -1,3 +1,5 @@
+import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { FRONT_DSN, sentryOrigin, clientRelease } from '../packages/telemetry/index.js';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { ViteEjsPlugin } from 'vite-plugin-ejs';
 import { ViteMinifyPlugin } from 'vite-plugin-minify';
@@ -18,6 +20,8 @@ export default defineConfig(({ mode, command }) => {
   const native = ['phonegap', 'electron'].includes(development.VITE_BUILD_TYPE);
   const { siteUrl, apiOrigin: configuredApi } = resolveBuildUrls(development, { native, release: native && development.MIDORI_BUILD_PROFILE === 'release' });
   const env = { VITE_BUILD_TYPE:'web', VITE_PLATFORM:'web', VITE_DISTRIBUTION:'web', ...Object.fromEntries(Object.entries(development).filter(([key]) => key.startsWith('VITE_'))), VITE_SITE_URL: siteUrl, VITE_API_ORIGIN: configuredApi, VITE_API_CSP: configuredApi || development.VITE_API_CSP || '' };
+  const sentryCsp = env.VITE_SENTRY_ENABLED === 'false' ? '' : sentryOrigin(env.VITE_SENTRY_DSN || FRONT_DSN);
+  const uploadSourcemaps = Boolean(development.SENTRY_AUTH_TOKEN && development.SENTRY_ORG && development.SENTRY_PROJECT);
   const base = native ? '/' : development.BASE_URL || (command === 'build' ? new URL(siteUrl).pathname : '/');
   const apiOrigin = development.MIDORI_DEV_API_ORIGIN || env.VITE_API_ORIGIN;
   if (apiOrigin && !['http:', 'https:'].includes(new URL(apiOrigin).protocol)) throw new Error('Invalid API origin');
@@ -49,16 +53,25 @@ export default defineConfig(({ mode, command }) => {
       svgLoader({ svgo: false }),
       sfcAutoName(),
       { name:'midori-build-info', generateBundle() { this.emitFile({ type:'asset', fileName:'build-info.json', source:JSON.stringify({ product:'Midori Wallet', version:env.VITE_VERSION || '1.0.5', target:env.VITE_BUILD_TYPE || 'web', platform:env.VITE_PLATFORM || 'web', basePath:base, node:process.version, commit:process.env.GITHUB_SHA || 'local', published:false },null,2) }); } },
-      ViteEjsPlugin({ env }),
+      ViteEjsPlugin({ env, sentryCsp }),
       ViteMinifyPlugin(),
       ...(isHttps ? [basicSsl()] : []),
+      sentryVitePlugin({
+        org: development.SENTRY_ORG,
+        project: development.SENTRY_PROJECT,
+        authToken: development.SENTRY_AUTH_TOKEN,
+        telemetry: false,
+        disable: !uploadSourcemaps,
+        release: { name: clientRelease(env), inject: false },
+        sourcemaps: { filesToDeleteAfterUpload: path.resolve(directory, outDir(env.VITE_BUILD_TYPE), '**/*.map') },
+      }),
     ],
     build: {
       target: 'es2022',
       minify: true,
       outDir: outDir(env.VITE_BUILD_TYPE),
       emptyOutDir: true,
-      sourcemap: false,
+      sourcemap: uploadSourcemaps ? 'hidden' : false,
       rollupOptions: {
         input: inputs(env.VITE_BUILD_TYPE),
         preserveEntrySignatures: env.VITE_BUILD_TYPE === 'electron' ? 'exports-only' : undefined,

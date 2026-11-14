@@ -45,3 +45,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+WalletConnect SDK: @reown/walletkit 1.6.0 and @walletconnect/core and utils 2.25.0.
+Copyright Reown, Inc. WalletConnect Community License Agreement (20 August 2025).
+The complete license is included in web/public/licenses/walletconnect.txt (licenses/walletconnect.txt in built clients).
+
+Noto Sans Khmer, Thai, JP, KR and SC interface font subsets are distributed under the SIL Open Font License 1.1. Their individual copyright notices and complete licenses are included in web/public/fonts/noto-*-OFL.txt (fonts/ in built clients). Source: https://github.com/google/fonts

@@ -4,7 +4,7 @@ html {
   box-sizing: border-box;
   color: var(--color-text);
   /* stylelint-disable-next-line max-line-length */
-  font-family: system-ui, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  font-family: system-ui, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", var(--font-locale, "Noto Sans SC"), "Noto Sans Khmer", "Noto Sans Thai", "Noto Sans JP", "Noto Sans KR", "Noto Sans SC", sans-serif;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-regular);
   letter-spacing: 0.01em;

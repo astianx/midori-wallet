@@ -268,6 +268,35 @@ export default class MidoriSession {
     } finally { seed.fill(0); this.#adapter.lock(); }
   }
 
+  async signDappRequest(method, data, pinHash, stillApproved = () => true) {
+    if (!this.#payload || !stillApproved()) throw new Error('Wallet is locked');
+    const generation = this.#generation;
+    const descriptor = structuredClone(this.descriptor);
+    const payload = await this.vault.open(pinHash);
+    const seed = decode(payload.walletSeed);
+    const adapter = new AccountAdapter();
+    const checkApproval = () => {
+      if (generation !== this.#generation || !stillApproved() || payload.descriptor.address !== descriptor.address) throw new Error('WalletConnect request changed');
+    };
+    try {
+      checkApproval();
+      const rpc = async (method, params) => {
+        const response = await fetch(import.meta.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }), signal: AbortSignal.timeout(15000) });
+        const result = await response.json();
+        if (!response.ok || result.error || result.result == null) throw new Error('Base is unavailable');
+        return result.result;
+      };
+      if (BigInt(await rpc('eth_chainId', [])) !== 8453n) throw new Error('Only Base is supported');
+      const code = await rpc('eth_getCode', [descriptor.address, 'latest']);
+      if (typeof code !== 'string' || !/^0x(?:[0-9a-fA-F]{2})*$/.test(code)) throw new Error('Invalid account code');
+      checkApproval();
+      await adapter.restore(seed, descriptor);
+      const signature = await adapter.signDappRequest(method, structuredClone(data), code !== '0x');
+      checkApproval();
+      return signature;
+    } finally { seed.fill(0); adapter.lock(); }
+  }
+
   async updateTag(value) {
     if (!this.session || !this.account?.id || this.connection !== 'online') throw Object.assign(new Error('Midori is offline; the tag was not saved.'), { code: 'NETWORK_UNCONFIRMED' });
     const generation = this.#generation;

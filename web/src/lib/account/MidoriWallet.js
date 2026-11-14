@@ -4,7 +4,7 @@ export default class MidoriWallet {
   #session;
   constructor({ crypto, platform, session }) {
     this.#session = session;
-    Object.assign(this, { crypto, platform, chainId: 8453, state: WalletState.STATE_INITIALIZED, settings: Object.freeze({ bip44: session.account.descriptor.derivationPath }), isAccountRecoverySupported: true, isExportSupported: true, isSettingsSupported: true, isDerivationPathFixed: true, isAddressTypesSupported: false, isAddressChangeSupported: false, addressTypes: [], isWalletConnectSupported: false, isStakingSupported: false, isImportSupported: false });
+    Object.assign(this, { crypto, platform, chainId: 8453, state: WalletState.STATE_INITIALIZED, settings: Object.freeze({ bip44: session.account.descriptor.derivationPath }), isAccountRecoverySupported: true, isExportSupported: true, isSettingsSupported: true, isDerivationPathFixed: true, isAddressTypesSupported: false, isAddressChangeSupported: false, addressTypes: [], isWalletConnectSupported: true, isStakingSupported: false, isImportSupported: false });
   }
 
   get address() { return this.#session.account?.address; }

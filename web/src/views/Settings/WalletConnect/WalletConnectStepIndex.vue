@@ -25,16 +25,30 @@ export default {
   extends: MwStep,
   mixins: [onShowOnHide],
   async onShow() {
-    if (this.storage.uri) {
+    this.active = true;
+    const incomingUri = typeof this.storage.uri === 'string' ? this.storage.uri.trim() : '';
+    if (incomingUri) {
       this.error = undefined;
-      this.uri = this.storage.uri;
-      this.storage.uri = undefined;
+      this.uri = incomingUri;
+      this.updateStorage({ uri: undefined });
     }
     this.isQrScanAvailable = await isQrScanAvailable();
+    try {
+      const client = await this.$account.walletConnect();
+      if (!this.active) return;
+      if (client.session) {
+        this.updateStorage({ session: client.session });
+        this.replace('main');
+        return;
+      }
+      if (incomingUri) await this.connect();
+    } catch (error) { if (this.active) this.error = this.$t(error.message); }
   },
+  onHide() { this.active = false; },
   data() {
     return {
       isLoading: false,
+      active: false,
       isPasteAvailable: typeof navigator.clipboard?.readText === 'function',
       isQrScanAvailable: false,
       uri: '',
@@ -43,15 +57,19 @@ export default {
   },
   methods: {
     async connect() {
+      if (this.isLoading || !this.active || !this.uri.trim()) return;
       this.isLoading = true;
       this.error = undefined;
       try {
         const walletConnect = await this.$account.walletConnect();
         const proposal = await walletConnect.pair(this.uri);
-        const session = await walletConnect.approveSession(proposal);
-        this.updateStorage({ session });
-        this.next('main');
+        if (!this.active) { await walletConnect.rejectProposal(proposal); return; }
+        try { walletConnect.reviewProposal(proposal); }
+        catch (error) { await walletConnect.rejectProposal(proposal); throw error; }
+        this.updateStorage({ proposal });
+        this.next('proposal');
       } catch (err) {
+        if (!this.active) return;
         if (err.message?.startsWith?.('Missing or invalid. pair() uri')) {
           this.error = this.$t('Invalid URI');
           return;
@@ -76,7 +94,7 @@ export default {
           this.error = this.$t('Error! Please check your internet connection and try again.');
           return;
         }
-        this.error = this.$account.unknownError(err);
+        this.error = typeof err.code === 'number' ? this.$t(err.message) : this.$account.unknownError(err);
         console.error('Midori Wallet operation failed');
       } finally {
         this.isLoading = false;
@@ -98,6 +116,8 @@ export default {
     :title="$t('WalletConnect')"
   >
     <MwFormGroup class="&__container">
+      <p>{{ $t('Open the app you want to connect, choose WalletConnect, then paste its connection link or scan its QR code here.') }}</p>
+      <p>{{ $t('Links opened from an app go directly to permission review.') }}</p>
       <MwFormInput
         v-model="uri"
         :label="$t('WalletConnect URI')"
@@ -136,6 +156,7 @@ export default {
       <MwButton
         type="primary"
         :isLoading="isLoading"
+        :disabled="!uri.trim()"
         @click="connect"
       >
         {{ $t('Connect') }}

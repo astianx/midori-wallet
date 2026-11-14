@@ -11,6 +11,13 @@
       connect-src
         'self'
         https://mainnet.base.org/
+        wss://relay.walletconnect.org
+        wss://relay.walletconnect.com
+        https://relay.walletconnect.org
+        https://relay.walletconnect.com
+        https://verify.walletconnect.org
+        https://verify.walletconnect.com
+        https://pulse.walletconnect.org
         <% if (NODE_ENV === 'development') { %>http://localhost:*/ http://127.0.0.1:*/ ws://localhost:*/ ws://127.0.0.1:*/<% } %>
         <%= env.VITE_SITE_URL %>
         <%= env.VITE_API_CSP %>

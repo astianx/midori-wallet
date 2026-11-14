@@ -71,7 +71,7 @@ class WalletManager {
 
   getByChainId(chainId) {
     return [...this.#wallets.values()].find((wallet) => {
-      return wallet.isWalletConnectSupported && wallet.chainId === chainId;
+      return wallet.isWalletConnectSupported && String(wallet.chainId) === String(chainId).replace(/^eip155:/, '');
     });
   }
 
@@ -553,6 +553,7 @@ export default class Account extends EventEmitter {
   lock() {
     this.#generation++;
     this.#monitor?.stop();
+    this.#walletConnect = undefined;
     this.#midori.lock();
     this.#deviceSeed?.fill(0);
     this.#deviceSeed = undefined;
@@ -784,9 +785,17 @@ export default class Account extends EventEmitter {
     if (!this.#walletConnect) {
       this.#walletConnect = import('./WalletConnect.js').then(({ WalletConnect }) => {
         return new WalletConnect({ account: this }).init();
-      });
+      }).catch(error => { this.#walletConnect = undefined; throw error; });
     }
     return this.#walletConnect;
+  }
+
+  async authorizeWalletConnect(event, pin, stillApproved) {
+    const walletConnect = await this.walletConnect();
+    const { method, data } = walletConnect.validateRequest(event);
+    const signature = await this.#midori.signDappRequest(method, data, this.pinHash(pin), stillApproved);
+    walletConnect.validateRequest(event);
+    return signature;
   }
 
   async getInvitationStatus() {

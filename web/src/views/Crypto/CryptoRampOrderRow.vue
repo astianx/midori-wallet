@@ -1,4 +1,6 @@
 <script>
+import { Amount } from '../../lib/account/domain.js';
+
 export default {
   props: {
     order: {
@@ -11,9 +13,9 @@ export default {
       return this.order.kind === 'buy' ? this.$t('Buy {symbol}', { symbol: this.order.cryptoCurrency }) : this.$t('Sell {symbol}', { symbol: this.order.cryptoCurrency });
     },
     amount() {
-      return this.order.kind === 'buy'
-        ? (this.order.fiatAmount ? `${this.order.fiatAmount} ${this.order.fiatCurrency}` : '')
-        : (this.order.cryptoAmount ? `${this.order.cryptoAmount} ${this.order.cryptoCurrency}` : '');
+      const value = this.order.kind === 'buy' ? this.order.fiatAmount : this.order.cryptoAmount;
+      const currency = this.order.kind === 'buy' ? this.order.fiatCurrency : this.order.cryptoCurrency;
+      return value == null ? '' : `${Amount.fromString(value, 18).toString()} ${currency}`;
     },
     status() {
       return {
@@ -73,8 +75,11 @@ export default {
     &__title {
       @include text-md;
       display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
       justify-content: space-between;
       gap: var(--spacing-sm);
+      row-gap: var(--spacing-2xs);
     }
 
     &__subtitle {
@@ -90,8 +95,13 @@ export default {
     }
 
     &__amount {
+      min-width: 0;
+      max-width: 100%;
+      margin-inline-start: auto;
       flex-shrink: 1;
-      @include ellipsis;
+      overflow-wrap: anywhere;
+      text-align: end;
+      font-variant-numeric: tabular-nums;
     }
 
     &__status {

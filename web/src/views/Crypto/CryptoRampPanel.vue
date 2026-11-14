@@ -29,10 +29,14 @@ export default {
       options: null,
       fiatCurrency: this.$currency,
       checkoutUrl: '',
-      pollTimer: null,
+      awaitingCheckoutReturn: false,
+      disposed: false,
+      ordersRequest: null,
       isLoading: false,
       isLoadingOrders: true,
+      isRefreshing: false,
       error: '',
+      ordersError: '',
       request: null,
       orders: [],
     };
@@ -47,26 +51,49 @@ export default {
   mounted() {
     this.loadOptions();
     this.loadOrders();
-    this.pollTimer = setInterval(() => { if (!document.hidden && this.orders.some(order => !['completed','failed','refunded','expired'].includes(order.status))) this.loadOrders(); }, 15000);
-    window.addEventListener('focus', this.loadOrders);
+    window.addEventListener('focus', this.onFocus);
   },
   beforeUnmount() {
-    clearInterval(this.pollTimer);
-    window.removeEventListener('focus', this.loadOrders);
+    this.disposed = true;
+    window.removeEventListener('focus', this.onFocus);
   },
   methods: {
     async loadOptions() {
       try {
-        this.options = await this.$wallet.rampOptions();
+        const options = await this.$wallet.rampOptions();
+        if (this.disposed) return;
+        this.options = options;
         if (!this.currencies.some(item => item.value === this.fiatCurrency)) this.fiatCurrency = this.currencies.find(item => item.value === 'USD')?.value || this.currencies[0]?.value || '';
-      } catch (error) { this.error = rampError(error, this.$t); }
+      } catch (error) { if (!this.disposed) this.error = rampError(error, this.$t); }
     },
     reset() { this.amountValue = undefined; this.error = ''; this.request = null; this.checkoutUrl = ''; },
-    async loadOrders() {
-      this.isLoadingOrders = true;
-      try { this.orders = (await this.$wallet.rampOrders()).orders.filter(order => order.cryptoCurrency === this.$wallet.crypto.symbol); }
-      catch (error) { this.error = rampError(error, this.$t); }
-      finally { this.isLoadingOrders = false; }
+    onFocus() {
+      if (!this.awaitingCheckoutReturn || document.hidden || this.disposed) return;
+      this.awaitingCheckoutReturn = false;
+      this.loadOrders();
+    },
+    async refresh() {
+      if (this.isRefreshing || this.disposed) return;
+      this.isRefreshing = true;
+      try { await Promise.all([this.loadOptions(), this.loadOrders()]); }
+      finally { if (!this.disposed) this.isRefreshing = false; }
+    },
+    loadOrders() {
+      if (this.disposed) return Promise.resolve();
+      if (this.ordersRequest) return this.ordersRequest;
+      const wallet = this.$wallet;
+      this.ordersError = '';
+      this.ordersRequest = Promise.resolve()
+        .then(() => wallet.rampOrders())
+        .then(data => {
+          if (!this.disposed) this.orders = data.orders.filter(order => order.cryptoCurrency === wallet.crypto.symbol);
+        })
+        .catch(error => { if (!this.disposed) this.ordersError = rampError(error, this.$t); })
+        .finally(() => {
+          this.ordersRequest = null;
+          if (!this.disposed) this.isLoadingOrders = false;
+        });
+      return this.ordersRequest;
     },
     upsertOrder(order) {
       const index = this.orders.findIndex(item => item.id === order.id);
@@ -90,6 +117,7 @@ export default {
         this.amountValue = undefined; this.request = null;
         this.upsertOrder(order);
         this.checkoutUrl = order.widgetUrl;
+        this.awaitingCheckoutReturn = true;
         this.$safeOpen(order.widgetUrl);
       } catch (error) {
         this.error = rampError(error, this.$t);
@@ -132,7 +160,7 @@ export default {
     {{ kind === 'buy' ? $t('Continue to buy') : $t('Continue to sell') }}
   </MwButton>
 
-  <a v-if="checkoutUrl" :href="checkoutUrl" target="_blank" rel="noopener noreferrer" class="&__checkout">
+  <a v-if="checkoutUrl" :href="checkoutUrl" target="_blank" rel="noopener noreferrer" class="&__checkout" @click="awaitingCheckoutReturn = true">
     {{ kind === 'buy' ? $t('Continue to buy') : $t('Continue to sell') }} · Transak
   </a>
   <div class="&__orders">
@@ -143,15 +171,18 @@ export default {
       <MwButton
         type="secondary"
         small
-        :disabled="isLoadingOrders"
-        @click="loadOptions(); loadOrders()"
+        :disabled="isLoadingOrders || isRefreshing"
+        @click="refresh"
       >
         {{ $t('Refresh') }}
       </MwButton>
     </div>
+    <div v-if="ordersError" class="&__error" role="alert">
+      {{ ordersError }}
+    </div>
     <MwLoader v-if="isLoadingOrders" />
     <div
-      v-else-if="!orders.length"
+      v-else-if="!orders.length && !ordersError"
       class="&__empty"
     >
       {{ $t('No orders yet.') }}
@@ -207,6 +238,12 @@ export default {
     &__empty {
       @include text-md;
       color: var(--color-secondary);
+    }
+
+    &__error {
+      @include text-sm;
+      margin-bottom: var(--spacing-sm);
+      color: var(--color-danger);
     }
   }
 </style>

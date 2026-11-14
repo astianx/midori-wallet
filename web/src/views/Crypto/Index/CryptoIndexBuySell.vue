@@ -18,7 +18,7 @@ export default {
 
 <template>
   <MwButtonGroup
-    v-if="$showRampsAndExchangeAndStaking"
+    v-if="$showRampsAndExchangeAndStaking && $account.capabilities.ramp"
     type="horizontal"
   >
     <MwButton

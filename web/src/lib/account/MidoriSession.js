@@ -268,6 +268,16 @@ export default class MidoriSession {
     } finally { seed.fill(0); this.#adapter.lock(); }
   }
 
+  async reviewRamp(request) {
+    if (!this.session || !this.account?.id) throw Object.assign(new Error(), { code: 'NETWORK_UNCONFIRMED' });
+    return this.client.request('POST', `/api/v1/accounts/${this.account.id}/ramp/orders`, request);
+  }
+  async rampOrders() {
+    if (!this.session || !this.account?.id) return { orders: [] };
+    return this.client.request('GET', `/api/v1/accounts/${this.account.id}/ramp/orders`);
+  }
+  async rampOrder(id) { return this.client.request('GET', `/api/v1/ramp/orders/${id}`); }
+
   async updateTag(value) {
     if (!this.session || !this.account?.id || this.connection !== 'online') throw Object.assign(new Error('Midori is offline; the tag was not saved.'), { code: 'NETWORK_UNCONFIRMED' });
     const generation = this.#generation;

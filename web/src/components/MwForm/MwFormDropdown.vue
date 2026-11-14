@@ -17,7 +17,7 @@ export default {
       default: '',
     },
     error: {
-      type: [Boolean, String],
+      type: [String, Boolean],
       default: false,
     },
     info: {

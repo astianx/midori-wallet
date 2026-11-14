@@ -20,7 +20,7 @@ export default {
       default: undefined,
     },
     error: {
-      type: [Boolean, String],
+      type: [String, Boolean],
       default: false,
     },
     small: {
@@ -109,7 +109,7 @@ export default {
       <slot name="button" />
     </div>
     <div
-      v-if="error"
+      v-if="typeof error === 'string' && error"
       class="&__error"
     >
       {{ error }}

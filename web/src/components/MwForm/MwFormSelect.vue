@@ -22,7 +22,7 @@ export default {
       default: undefined,
     },
     error: {
-      type: [Boolean, String],
+      type: [String, Boolean],
       default: false,
     },
     small: {

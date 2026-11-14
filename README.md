@@ -77,6 +77,18 @@ Clients can check for updates on the stable or beta channel when the release rep
 | [`electron/`](electron/) | Desktop shell and Electron Forge packaging. |
 | [`phonegap/`](phonegap/) | Cordova builds for Android and iOS. The [Midori Vault plugin](phonegap/plugins/midori-vault/) provides native access to Android Keystore, iOS Keychain, and the recovery file picker. |
 
+## Transak buy and sell
+
+The existing Buy/Sell screens use `@transak/wdk-protocol-fiat-transak` on the server. Configure `MIDORI_TRANSAK_ENABLED=true`, `MIDORI_TRANSAK_ENVIRONMENT=STAGING`, `MIDORI_TRANSAK_API_KEY`, `MIDORI_TRANSAK_API_SECRET` and `MIDORI_TRANSAK_REFERRER_DOMAIN` in `server/.env`, then run `npm run db:migrate`. The secret and partner access token remain server-side. API and workers coordinate token renewal through PostgreSQL because refreshing a token invalidates its predecessor.
+
+The screens load the provider's available assets, fiat currencies and the API key's enabled products before opening a session. SELL must be enabled in the Transak partner dashboard; an API key with only BUY cannot open sell sessions. Partner permissions refresh after 30 seconds. Staging currently offers USDC on Base Sepolia (84532), with 18 decimals; USDT on Base is absent from its coverage. These test orders do not change Midori's Base mainnet balances. The widget handles quotes, payment methods and KYC. For staging sell tests use test funds on the network shown by Transak; Midori's Send screen sends on Base mainnet.
+
+For the prepared local instance, run `npm --prefix server run server:transak-staging` and `npm --prefix server run worker:transak-staging`; they read the private `server/.env.transak-staging` and serve the compiled app at `http://localhost:8081`.
+
+Keep `npm --prefix server run worker` running for order reconciliation. It searches both BUY and SELL orders by the exact partner order ID, then fetches the order through WDK. Configure `POST /api/v1/webhooks/transak` in the partner dashboard for signed updates when Transak has approved webhooks. A local instance uses polling without requiring public webhook access. The UI refreshes pending orders while visible and on returning from Transak. Session URLs expire after five minutes and can be used once.
+
+For a loopback reverse proxy that overwrites `X-Forwarded-For`, set `MIDORI_TRUST_PROXY=true`. It defaults to false; arbitrary client forwarding headers are ignored. Only enable PRODUCTION with its matching credentials and verified Base mainnet asset coverage.
+
 ## WalletConnect
 
 Set `VITE_WALLETCONNECT_ID` in the root `.env` (shared by web, Electron and Cordova), then restart the development server or rebuild the client. Configure the production origins/application IDs in the WalletConnect Dashboard allowlist. The Project ID is public client configuration, not a signing key.
@@ -92,16 +104,19 @@ Supported: Base mainnet (`eip155:8453`), `personal_sign`, EIP-712 typed data, an
 ```sh
 npm run lint
 npm --prefix web run check:i18n
+npm --prefix server test
 npm --prefix server run contract:build
 git diff --exit-code -- server/openapi.json
 npm run build:web
 ```
 
+For the PostgreSQL integration tests, use a separate test database and follow the database setup in the [CI workflow](.github/workflows/ci.yml).
+
 When adding or changing interface messages, update every language registered in `web/src/lib/i18n/languages.js`. The translation check verifies matching keys, nonempty text, interpolation variables and message syntax in every catalog; CI runs it before building.
 
 Asian interface fonts are bundled locally under `web/public/fonts` so Khmer, Thai, Japanese, Korean and Chinese remain readable without installed system fonts or runtime font downloads. If a new translation introduces characters outside a font subset, run `npm --prefix web run fonts:update` and include the updated fonts and coverage manifest. The locale check verifies this coverage too.
 
-CI validates code, all language catalogs, the API contract and production builds. It does not run unit test suites or provision test databases.
+CI validates code, all language catalogs, unit and PostgreSQL integration tests, the API contract and production builds.
 
 Before publishing, validate the running app: `/healthz` and `/readyz` must return HTTP 200; open a wallet, connect a Base dApp through WalletConnect, approve its permissions, confirm a signature with the PIN, reject a request and disconnect. Keep functional validation scripts and reports outside this repository and leave local services running for review.
 

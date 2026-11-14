@@ -17,7 +17,6 @@ import Exchanges from '../exchanges/Exchanges.js';
 import Hardware from './Hardware.js';
 import AccountMarket from './AccountMarket.js';
 import Mecto from './Mecto.js';
-import Ramps from './Ramps.js';
 import Seeds from './Seeds.js';
 import Settings from './Settings.js';
 import MidoriSession from './MidoriSession.js';
@@ -115,7 +114,6 @@ export default class Account extends EventEmitter {
   #deviceSeed;
   #biometry;
   #hardware;
-  #ramps;
   #cards;
   #exchanges;
   #needToMigrateV5Balance = false;
@@ -171,10 +169,6 @@ export default class Account extends EventEmitter {
 
   get hardware() {
     return this.#hardware;
-  }
-
-  get ramps() {
-    return this.#ramps;
   }
 
   get cards() {
@@ -267,10 +261,6 @@ export default class Account extends EventEmitter {
       clientStorage: this.#clientStorage,
     });
     this.#hardware = new Hardware({
-      request: this.request,
-      account: this,
-    });
-    this.#ramps = new Ramps({
       request: this.request,
       account: this,
     });

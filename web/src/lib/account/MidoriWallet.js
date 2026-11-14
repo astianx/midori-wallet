@@ -16,6 +16,10 @@ export default class MidoriWallet {
   pendingPayments() { return this.#session.payments(); }
   payment(id) { return this.#session.payment(id); }
   cancelPayment(id) { return this.#session.cancelPayment(id); }
+  reviewRamp(request) { return this.#session.reviewRamp({ ...request, cryptoCurrency: this.crypto.symbol }); }
+  rampOptions() { return this.#session.rampOptions(); }
+  rampOrders() { return this.#session.rampOrders(); }
+  rampOrder(id) { return this.#session.rampOrder(id); }
   transaction(item) {
     return { ...item, amount: new Amount(item.amountAtomic, item.decimals), timestamp: new Date(item.timestamp), chainStatus: item.status,
       status: item.status === 'confirmed' ? Transaction.STATUS_SUCCESS : ['reorganized','reverted','expired'].includes(item.status) ? Transaction.STATUS_FAILED : Transaction.STATUS_PENDING,

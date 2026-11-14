@@ -1,44 +1,18 @@
 <script>
-import MwFormSelect from '../../components/MwForm/MwFormSelect.vue';
-import MwLoader from '../../components/MwLoader.vue';
-import MwProviderList from '../../components/MwProviderList.vue';
+import CryptoRampPanel from './CryptoRampPanel.vue';
 import MainLayout from '../../layouts/MainLayout.vue';
 
 import { cryptoSubtitle } from '../../lib/helpers.js';
 
 export default {
   components: {
+    CryptoRampPanel,
     MainLayout,
-    MwFormSelect,
-    MwLoader,
-    MwProviderList,
   },
   data() {
     return {
-      isLoading: true,
       subtitle: cryptoSubtitle(this.$wallet),
-      countryCode: '',
-      countries: this.$account.ramps.countries,
-      providers: [],
     };
-  },
-  async mounted() {
-    this.countryCode = await this.$account.ramps.getCountryCode();
-    this.load();
-  },
-  methods: {
-    async load() {
-      this.isLoading = true;
-      try {
-        this.$account.ramps.setCountryCode(this.countryCode);
-        this.providers = await this.$account.ramps.sell(this.countryCode, this.$wallet, this.$resolvedTheme);
-      } catch (err) {
-        this.providers = [];
-        console.error('Midori Wallet operation failed');
-      } finally {
-        this.isLoading = false;
-      }
-    },
   },
 };
 </script>
@@ -48,35 +22,6 @@ export default {
     :title="$t('Sell {symbol}', { symbol: $wallet.crypto.symbol })"
     :description="subtitle"
   >
-    <MwFormSelect
-      v-model="countryCode"
-      :label="$t('Select your country/region of residence')"
-      :options="countries"
-      @update:modelValue="load"
-    />
-
-    <MwLoader v-if="isLoading" />
-    <div v-else>
-      <MwProviderList
-        v-if="providers.length"
-        :items="providers"
-        type="sell"
-        @click="(item) => $safeOpen(item.url)"
-      />
-      <div
-        v-else
-        class="&__empty"
-      >
-        {{ $t('There are currently no providers available.') }}
-      </div>
-    </div>
+    <CryptoRampPanel kind="sell" />
   </MainLayout>
 </template>
-
-<style lang="scss">
-  .#{ $filename } {
-    &__empty {
-      @include text-md;
-    }
-  }
-</style>

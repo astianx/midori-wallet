@@ -32,11 +32,5 @@ __pycache__/
 /phonegap/build-native/
 /phonegap/build/
 
-**/test/
-**/tests/
-**/__tests__/
-**/__mocks__/
-**/*.test.*
-**/*.spec.*
 /validation/
 /experiments/wdk-compat/

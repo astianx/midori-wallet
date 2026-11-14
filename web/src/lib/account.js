@@ -1,3 +1,4 @@
+import eventBus from './eventBus.js';
 import * as state from './state.js';
 import Account from './account/Account.js';
 import { installAccountLifecycle } from './account/lifecycle.js';
@@ -105,6 +106,7 @@ export async function createAccount({ app, router }) {
   });
   account.on('locked', () => { state.reset(); router.replace({ name: 'unlock' }); });
   account.on('logout', async () => {
+    eventBus.emit('discardRampCheckout');
     removeLifecycle();
     if (import.meta.env.VITE_PLATFORM === 'ios') {
       window.saveCryptosForExtensions();

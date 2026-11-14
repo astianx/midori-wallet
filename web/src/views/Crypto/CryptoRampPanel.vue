@@ -2,16 +2,15 @@
 import { rampError } from '../../lib/account/ramp-errors.js';
 import MwButton from '../../components/MwButton.vue';
 import MwFormAmountInput from '../../components/MwForm/MwFormAmountInput.vue';
-import MwFormGroup from '../../components/MwForm/MwFormGroup.vue';
 import MwFormSelect from '../../components/MwForm/MwFormSelect.vue';
 import MwLoader from '../../components/MwLoader.vue';
 import CryptoRampOrderRow from './CryptoRampOrderRow.vue';
+import eventBus from '../../lib/eventBus.js';
 
 export default {
   components: {
     MwButton,
     MwFormAmountInput,
-    MwFormGroup,
     MwLoader,
     MwFormSelect,
     CryptoRampOrderRow,
@@ -28,8 +27,6 @@ export default {
       amountValue: undefined,
       options: null,
       fiatCurrency: this.$currency,
-      checkoutUrl: '',
-      awaitingCheckoutReturn: false,
       disposed: false,
       ordersRequest: null,
       isLoading: false,
@@ -51,11 +48,13 @@ export default {
   mounted() {
     this.loadOptions();
     this.loadOrders();
-    window.addEventListener('focus', this.onFocus);
+    eventBus.on('rampCheckoutUpdate', this.onCheckoutUpdate);
+    eventBus.on('rampCheckoutError', this.onCheckoutError);
   },
   beforeUnmount() {
     this.disposed = true;
-    window.removeEventListener('focus', this.onFocus);
+    eventBus.off('rampCheckoutUpdate', this.onCheckoutUpdate);
+    eventBus.off('rampCheckoutError', this.onCheckoutError);
   },
   methods: {
     async loadOptions() {
@@ -66,11 +65,12 @@ export default {
         if (!this.currencies.some(item => item.value === this.fiatCurrency)) this.fiatCurrency = this.currencies.find(item => item.value === 'USD')?.value || this.currencies[0]?.value || '';
       } catch (error) { if (!this.disposed) this.error = rampError(error, this.$t); }
     },
-    reset() { this.amountValue = undefined; this.error = ''; this.request = null; this.checkoutUrl = ''; },
-    onFocus() {
-      if (!this.awaitingCheckoutReturn || document.hidden || this.disposed) return;
-      this.awaitingCheckoutReturn = false;
-      this.loadOrders();
+    reset() { this.amountValue = undefined; this.error = ''; this.request = null; },
+    onCheckoutUpdate(order) {
+      if (order.cryptoCurrency === this.$wallet?.crypto.symbol) this.loadOrders();
+    },
+    onCheckoutError(order) {
+      if (order.cryptoCurrency === this.$wallet?.crypto.symbol) this.error = rampError({ code: 'RAMP_PROVIDER_UNAVAILABLE' }, this.$t);
     },
     async refresh() {
       if (this.isRefreshing || this.disposed) return;
@@ -114,11 +114,10 @@ export default {
         const fingerprint = JSON.stringify(payload);
         if (this.request?.fingerprint !== fingerprint) this.request = { fingerprint, id: crypto.randomUUID() };
         const order = await this.$wallet.reviewRamp({ ...payload, idempotencyKey: this.request.id });
-        this.amountValue = undefined; this.request = null;
+        if (this.disposed) return;
+        this.request = null;
         this.upsertOrder(order);
-        this.checkoutUrl = order.widgetUrl;
-        this.awaitingCheckoutReturn = true;
-        this.$safeOpen(order.widgetUrl);
+        eventBus.emit('openRampCheckout', order);
       } catch (error) {
         this.error = rampError(error, this.$t);
       } finally {
@@ -134,7 +133,10 @@ export default {
   <div v-if="options && !available" class="&__notice" role="status">
     {{ kind === 'sell' && !options.products.includes('SELL') ? $t('Buying or selling crypto is temporarily unavailable.') : $t('This asset or currency is unavailable through Transak.') }}
   </div>
-  <MwFormGroup class="&__form">
+  <fieldset
+    class="&__form"
+    :disabled="isLoading"
+  >
     <MwFormSelect
       v-if="currencies.length"
       v-model="fiatCurrency"
@@ -148,21 +150,18 @@ export default {
       :error="error"
       :decimals="decimals"
       :symbol="symbol"
-      @update:modelValue="error = ''; request = null; checkoutUrl = ''"
+      @update:modelValue="error = ''; request = null"
     />
-  </MwFormGroup>
+  </fieldset>
   <MwButton
     type="primary"
     :isLoading="isLoading"
-    :disabled="!available"
+    :disabled="!available || isLoading"
     @click="submit"
   >
     {{ kind === 'buy' ? $t('Continue to buy') : $t('Continue to sell') }}
   </MwButton>
 
-  <a v-if="checkoutUrl" :href="checkoutUrl" target="_blank" rel="noopener noreferrer" class="&__checkout" @click="awaitingCheckoutReturn = true">
-    {{ kind === 'buy' ? $t('Continue to buy') : $t('Continue to sell') }} · Transak
-  </a>
   <div class="&__orders">
     <div class="&__orders-header">
       <h2 class="&__orders-title">
@@ -171,7 +170,7 @@ export default {
       <MwButton
         type="secondary"
         small
-        :disabled="isLoadingOrders || isRefreshing"
+        :disabled="isLoadingOrders || isRefreshing || isLoading"
         @click="refresh"
       >
         {{ $t('Refresh') }}
@@ -208,14 +207,15 @@ export default {
       border-radius: 0.625rem;
     }
 
-    &__checkout {
-      display: block;
-      margin-top: var(--spacing-md);
-      text-align: center;
-    }
-
     &__form {
+      display: flex;
+      min-width: 0;
       flex-grow: 1;
+      flex-direction: column;
+      padding: 0;
+      border: none;
+      margin: 0;
+      gap: var(--spacing-lg);
     }
 
     &__orders {

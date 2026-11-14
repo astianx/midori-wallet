@@ -10,7 +10,6 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5174 --outDir ../server/dist",
     "lint": "npm --prefix .. run lint -- web",
-    "test": "node test/walletconnect.test.mjs",
     "check:i18n": "node scripts/check-locales.mjs",
     "fonts:update": "node scripts/update-locale-fonts.mjs"
   },

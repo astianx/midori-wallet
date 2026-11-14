@@ -1,107 +1,60 @@
 <script>
 import MwButton from '../../../components/MwButton.vue';
+import MwButtonGroup from '../../../components/MwButtonGroup.vue';
 import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
 import MwFormTextareaReadonly from '../../../components/MwForm/MwFormTextareaReadonly.vue';
 import MwStep from '../../../components/MwStep.vue';
 import MainLayout from '../../../layouts/MainLayout.vue';
 
-import { walletSeed } from '../../../lib/mixins.js';
-
 export default {
-  components: {
-    MainLayout,
-    MwButton,
-    MwFormGroup,
-    MwFormTextareaReadonly,
-  },
+  components: { MainLayout, MwButton, MwButtonGroup, MwFormGroup, MwFormTextareaReadonly },
   extends: MwStep,
-  mixins: [walletSeed],
-  data() {
-    return {
-      isLoading: false,
-    };
-  },
+  data() { return { error: '' }; },
   computed: {
     message() {
-      return ['eth_signTypedData', 'eth_signTypedData_v4'].includes(this.storage.method)
-        ? JSON.stringify(this.storage.data)
-        : this.storage.data;
+      if (this.storage.method !== 'personal_sign') return JSON.stringify(this.storage.data, null, 2);
+      const bytes = new Uint8Array((this.storage.data.slice(2).match(/../g) || []).map(byte => Number.parseInt(byte, 16)));
+      try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+      catch { return this.storage.data; }
     },
   },
   methods: {
-    async confirm() {
-      this.isLoading = true;
-      const walletConnect = await this.$account.walletConnect();
-      await this.walletSeed(async (walletSeed) => {
+    confirm() {
+      const approved = JSON.stringify(this.storage.request);
+      this.next('pin', { layout: 'MainLayout', mode: 'payment', success: async (_, pin, pinActive) => {
+        const client = await this.$account.walletConnect();
         try {
-          const { params } = this.storage.request;
-          const wallet = this.$account.walletByChainId(params?.chainId);
-          if (!wallet) {
-            throw new Error(`Unknown wallet chainId: ${params?.chainId}`);
-          }
-          const data = this.storage.method === 'personal_sign'
-            ? params.request.params[0]
-            : params.request.params[1];
-          const sign = ['eth_signTypedData', 'eth_signTypedData_v4'].includes(this.storage.method)
-            ? await wallet.eth_signTypedData(data, walletSeed)
-            : await wallet.eth_sign(data, walletSeed);
-          await walletConnect.resolveSessionRequest(this.storage.request, sign);
-          this.$account.emit('update');
-          this.updateStorage({ status: true });
-        } catch (err) {
-          await walletConnect.rejectSessionRequest(this.storage.request, err.message);
-          this.updateStorage({ status: false });
-          console.error('Midori Wallet operation failed');
-        } finally {
-          this.next('status');
+          const event = JSON.parse(approved);
+          const signature = await this.$account.authorizeWalletConnect(event, pin, () => pinActive() && this.$route.name === 'settings.walletconnect' && JSON.stringify(this.storage.request) === approved);
+          await client.resolveSessionRequest(event, signature);
+          this.updateStorage({ status: true }); this.next('status');
+        } catch (error) {
+          if (error.status === 401 || error.status === 429) throw error;
+          await client.rejectSessionRequest(JSON.parse(approved), error.message, error.code).catch(() => {});
+          this.error = this.$t(error.message); this.backTo('sign');
         }
-      });
-      this.isLoading = false;
+      } });
     },
     async reject() {
-      this.isLoading = true;
-      try {
-        const walletConnect = await this.$account.walletConnect();
-        await walletConnect.rejectSessionRequest(this.storage.request);
-      } catch (err) {
-        console.error('Midori Wallet operation failed');
-      } finally {
-        this.isLoading = false;
-        this.back();
-      }
+      try { await (await this.$account.walletConnect()).rejectSessionRequest(this.storage.request); }
+      finally { this.back(); }
     },
   },
 };
 </script>
-
 <template>
-  <MainLayout
-    :title="$t('Signature request')"
-    @back="reject"
-  >
-    <MwFormGroup class="&__container">
-      <div>{{ $t('Sign this message only if you completely understand it.') }}</div>
-      <MwFormTextareaReadonly
-        :value="message"
-        :label="$t('Message')"
-      />
+  <MainLayout :title="$t('Signature request')" :onBack="reject" allowReadFailure>
+    <MwFormGroup>
+      <MwFormTextareaReadonly :value="storage.session?.peer.metadata.url" :label="$t('URL')" />
+      <p>{{ $t('Sign this message only if you completely understand it.') }}</p>
+      <MwFormTextareaReadonly :value="message" :label="$t('Message')" />
+      <details v-if="storage.method === 'personal_sign'"><summary>{{ $t('Message bytes') }}</summary><MwFormTextareaReadonly :value="storage.data" :label="$t('Message bytes')" /></details>
+      <p>{{ $t('Smart account signatures require an app that supports contract wallets.') }}</p>
     </MwFormGroup>
-    <MwButton
-      type="primary"
-      :isLoading="isLoading"
-      @click="confirm"
-    >
-      {{ $t('Confirm') }}
-    </MwButton>
+    <p v-if="error" role="alert">{{ error }}</p>
+    <MwButtonGroup>
+      <MwButton type="primary" :disabled="!!error" @click="confirm">{{ $t('Confirm') }}</MwButton>
+      <MwButton type="primary-link" @click="reject">{{ $t('Reject') }}</MwButton>
+    </MwButtonGroup>
   </MainLayout>
 </template>
-
-<style lang="scss">
-  .#{ $filename } {
-    $self: &;
-
-    &__container {
-      flex-grow: 1;
-    }
-  }
-</style>

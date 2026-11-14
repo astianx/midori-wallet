@@ -77,14 +77,36 @@ Clients can check for updates on the stable or beta channel when the release rep
 | [`electron/`](electron/) | Desktop shell and Electron Forge packaging. |
 | [`phonegap/`](phonegap/) | Cordova builds for Android and iOS. The [Midori Vault plugin](phonegap/plugins/midori-vault/) provides native access to Android Keystore, iOS Keychain, and the recovery file picker. |
 
+## WalletConnect
+
+Set `VITE_WALLETCONNECT_ID` in the root `.env` (shared by web, Electron and Cordova), then restart the development server or rebuild the client. Configure the production origins/application IDs in the WalletConnect Dashboard allowlist. The Project ID is public client configuration, not a signing key.
+
+For GitHub Actions, create the repository variable `WALLETCONNECT_PROJECT_ID` under **Settings → Secrets and variables → Actions → Variables**. The workflow maps it to `VITE_WALLETCONNECT_ID`; no Project ID is stored in the workflow or environment examples.
+
+In a dApp, select Base and copy its WalletConnect v2 URI or display its QR. In Midori, open **Settings → Connections → WalletConnect**, paste or scan it, then review the domain, account and requested permissions before approving. Opening `/wc?uri=<encoded WalletConnect URI>` from a dApp, or scanning its QR, starts pairing and opens permission review automatically. Entering from Settings without a dApp request keeps the manual connection form. Each signature or payment requires a separate approval and PIN. Sessions can be disconnected from this screen; locking Midori disconnects them too.
+
+Supported: Base mainnet (`eip155:8453`), `personal_sign`, EIP-712 typed data, and USDT/USDC ERC-20 transfers through Midori's existing quoted payment flow. Transfers require the configured payment API and fee provider; this integration does not enable disabled payments or sponsorship. Arbitrary calls, token approvals, native ETH transfers and other chains are rejected. Smart account signatures use ERC-1271 and ERC-6492 for undeployed accounts; the dApp must support contract wallets. Keep the WalletConnect screen open to review incoming requests.
+
 ## Checks
 
 ```sh
 npm run lint
+npm --prefix web run check:i18n
 npm --prefix server test
+npm --prefix server run contract:build
+git diff --exit-code -- server/openapi.json
+npm run build:web
 ```
 
 For the PostgreSQL integration tests, use a separate test database and follow the database setup in the [CI workflow](.github/workflows/ci.yml).
+
+When adding or changing interface messages, update every language registered in `web/src/lib/i18n/languages.js`. The translation check verifies matching keys, nonempty text, interpolation variables and message syntax in every catalog; CI runs it before building.
+
+Asian interface fonts are bundled locally under `web/public/fonts` so Khmer, Thai, Japanese, Korean and Chinese remain readable without installed system fonts or runtime font downloads. If a new translation introduces characters outside a font subset, run `npm --prefix web run fonts:update` and include the updated fonts and coverage manifest. The locale check verifies this coverage too.
+
+CI validates code, all language catalogs, unit and PostgreSQL integration tests, the API contract and production builds.
+
+Before publishing, validate the running app: `/healthz` and `/readyz` must return HTTP 200; open a wallet, connect a Base dApp through WalletConnect, approve its permissions, confirm a signature with the PIN, reject a request and disconnect. Keep functional validation scripts and reports outside this repository and leave local services running for review.
 
 ## License
 

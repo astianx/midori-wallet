@@ -1,0 +1,45 @@
+@font-face {
+  font-family: "Noto Sans Khmer";
+  src: local("Noto Sans Khmer"), url('/fonts/noto-km-ui.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans Thai";
+  src: local("Noto Sans Thai"), url('/fonts/noto-th-ui.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans JP";
+  src: local("Noto Sans JP"), url('/fonts/noto-ja-ui.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans KR";
+  src: local("Noto Sans KR"), url('/fonts/noto-ko-ui.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  src: local("Noto Sans SC"), url('/fonts/noto-zh-cn-ui.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+html[lang="km"] { --font-locale: "Noto Sans Khmer"; }
+html[lang="th"] { --font-locale: "Noto Sans Thai"; }
+html[lang="ja"] { --font-locale: "Noto Sans JP"; }
+html[lang="ko"] { --font-locale: "Noto Sans KR"; }
+html[lang="zh-cn"] { --font-locale: "Noto Sans SC"; }

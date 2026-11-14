@@ -198,7 +198,7 @@ const app = [
         window.close();
         return 'notfound';
       }
-      return { name: 'settings.walletconnect' };
+      return { name: 'settings.walletconnect', query: { uri: to.query.uri } };
     },
   },
   {

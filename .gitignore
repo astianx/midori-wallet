@@ -31,3 +31,6 @@ __pycache__/
 
 /phonegap/build-native/
 /phonegap/build/
+
+/validation/
+/experiments/wdk-compat/

@@ -1,7 +1,7 @@
 {
   "name": "@midori/web",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Original shared Midori Wallet Vue interface; WDK compatibility experiments are isolated",
   "license": "MIT",
   "type": "module",
@@ -9,17 +9,22 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5174 --outDir ../server/dist",
-    "lint": "npm --prefix .. run lint -- web"
+    "lint": "npm --prefix .. run lint -- web",
+    "check:i18n": "node scripts/check-locales.mjs",
+    "fonts:update": "node scripts/update-locale-fonts.mjs"
   },
   "dependencies": {
     "@midori/wallet-core": "file:../packages/wallet-core",
     "@noble/ciphers": "1.3.0",
     "@noble/curves": "1.9.1",
     "@noble/hashes": "1.8.0",
+    "@reown/walletkit": "1.6.0",
     "@scure/base": "1.2.6",
     "@scure/bip39": "1.6.0",
     "@simplewebauthn/browser": "8.3.1",
     "@suchipi/femver": "1.0.0",
+    "@walletconnect/core": "2.25.0",
+    "@walletconnect/utils": "2.25.0",
     "@zxing/browser": "0.2.1",
     "apexcharts": "4.5.0",
     "big.js": "6.2.2",
@@ -40,6 +45,7 @@
     "vue3-apexcharts": "1.8.0"
   },
   "devDependencies": {
+    "@intlify/message-compiler": "11.4.17",
     "@vitejs/plugin-basic-ssl": "1.2.0",
     "@vitejs/plugin-vue": "5.2.4",
     "core-js": "3.33.1",

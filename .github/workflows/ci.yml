@@ -14,6 +14,7 @@ env:
   MIDORI_BUILD_PROFILE: debug
   VITE_SITE_URL: https://midoriwallet.com/wallet/
   VITE_API_ORIGIN: https://midoriwallet.com
+  VITE_WALLETCONNECT_ID: ${{ vars.WALLETCONNECT_PROJECT_ID }}
   VITE_COMMIT: ${{ github.sha }}
 jobs:
   checks:
@@ -40,6 +41,7 @@ jobs:
         run: |
           if rg -i '@coinspace|npm.pkg.github.com|github.com/CoinSpace|"mongodb"' package-lock.json web/package-lock.json server/package-lock.json electron/package-lock.json phonegap/package-lock.json .npmrc web/.npmrc server/.npmrc; then exit 1; fi
       - run: npm run lint
+      - run: npm --prefix web run check:i18n
       - name: Prepare isolated PostgreSQL database
         run: |
           sudo systemctl start postgresql

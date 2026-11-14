@@ -1,3 +1,5 @@
+import { loadWdkIndexerConfig } from './wdk-indexer.js';
+
 function integer(value, fallback, min, max, name) {
   const number = Number(value ?? fallback);
   if (!Number.isSafeInteger(number) || number < min || number > max) throw new Error(`Invalid ${name}`);
@@ -69,6 +71,7 @@ export function loadConfig(env = process.env) {
   if (transakEnabled && (!env.MIDORI_TRANSAK_API_KEY || !env.MIDORI_TRANSAK_API_SECRET)) throw new Error('Configure the Transak API key and secret before enabling buying or selling crypto');
   return Object.freeze({
     connectionString, publicOrigin, rpID, host, rpcUrl,
+    wdkIndexer: loadWdkIndexerConfig(env),
     indexRpcUrl: paymentUrl(env.MIDORI_INDEX_RPC_URL, 'MIDORI_INDEX_RPC_URL') || rpcUrl,
     paymentsEnabled, sponsorshipEnabled, bundlerUrl, paymasterUrl, paymasterAddress, gasToken, maxGasFeeAtomic, sponsorDailyBudget, paymasterProvider,
     entryPoint: '0x0000000071727de22e5e9d8baf0edac6f37da032',

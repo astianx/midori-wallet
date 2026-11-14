@@ -1,3 +1,4 @@
+import { signSafeMessage } from './dapp-signatures.js';
 import { validatePaymentOperation, paymentSigningData } from './payment.js';
 import WDK from '@tetherto/wdk';
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm';
@@ -78,6 +79,7 @@ export async function createWalletSession(seed, { chainId = 84532, index = 0, pr
       receiveAddress(symbol) { ready(); if (!['USDT', 'USDC'].includes(symbol)) throw new Error('Unsupported stablecoin'); return address; },
       async signMessage(message) { ready(); return account.sign(message); },
       async signTypedData(data) { ready(); return account.signTypedData(data); },
+      async signDappRequest(method, data, deployed) { ready(); return signSafeMessage(account, descriptor, method, data, deployed); },
       async signPayment(operation, expiresAt, payment) {
         ready(); if (Date.parse(expiresAt) <= Date.now()) throw new Error('Payment quote expired');
         validatePaymentOperation(operation, descriptor, payment);

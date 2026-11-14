@@ -26,6 +26,10 @@ export class AccountAdapter {
     try { return await this.#session.signMessage(message); }
     catch { throw new AccountError('SIGNING_FAILED'); }
   }
+  async signDappRequest(method, data, deployed) {
+    if (!this.#session) throw new AccountError('ACCOUNT_LOCKED');
+    return this.#session.signDappRequest(method, data, deployed);
+  }
   async exportPrivateKeys(seed, descriptor) {
     try { return await exportOwnerKey(seed, descriptor); }
     catch { throw new AccountError('KEY_EXPORT_FAILED', 'The account keys could not be exported.'); }

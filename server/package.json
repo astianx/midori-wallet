@@ -9,14 +9,12 @@
     "server": "node --env-file-if-exists=.env server.js",
     "wdk:indexer:check": "node --env-file-if-exists=.env scripts/check-wdk-indexer.mjs",
     "server:watch": "node --env-file-if-exists=.env --watch server.js",
-    "test": "node --test --experimental-test-isolation=none test/*.test.mjs",
     "worker": "node --env-file-if-exists=.env worker.js",
     "db:migrate": "node --env-file-if-exists=.env.migrations scripts/migrate.mjs",
     "db:bootstrap": "node --env-file-if-exists=.env scripts/bootstrap.mjs",
     "db:backup": "node --env-file-if-exists=.env.migrations scripts/backup.mjs",
     "db:restore": "node --env-file-if-exists=.env.migrations scripts/restore.mjs",
     "account:create": "node --env-file-if-exists=.env scripts/create-account.mjs",
-    "db:verify": "node --env-file-if-exists=.env.migrations scripts/verify-postgres.mjs",
     "contract:build": "node scripts/build-openapi.mjs",
     "account:inspect": "node --env-file-if-exists=.env scripts/inspect-account.mjs"
   },
@@ -30,9 +28,5 @@
   "engines": {
     "node": ">=22.22.2 <23",
     "npm": ">=10 <13"
-  },
-  "devDependencies": {
-    "ajv": "8.20.0",
-    "ajv-formats": "3.0.1"
   }
 }

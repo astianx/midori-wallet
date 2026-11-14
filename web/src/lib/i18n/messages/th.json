@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "ผู้ให้บริการซื้อ/ขายไม่พร้อมใช้งานชั่วคราว โปรดลองอีกครั้งในไม่ช้า",
   "This order was already reviewed with different details. Start again.": "คำสั่งนี้ได้รับการตรวจสอบด้วยรายละเอียดอื่นแล้ว เริ่มใหม่อีกครั้ง",
   "The connection was interrupted. Check this order before trying again.": "การเชื่อมต่อถูกขัดจังหวะ ตรวจสอบคำสั่งนี้ก่อนลองอีกครั้ง",
-  "Could not start this order.": "ไม่สามารถเริ่มคำสั่งนี้ได้"
+  "Could not start this order.": "ไม่สามารถเริ่มคำสั่งนี้ได้",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "โหมดทดสอบ Transak ใช้เงินทดสอบเท่านั้น คำสั่งจะไม่เปลี่ยนยอดคงเหลือบนเครือข่ายหลัก Base",
+  "This asset or currency is unavailable through Transak.": "สินทรัพย์หรือสกุลเงินนี้ไม่พร้อมใช้งานผ่าน Transak",
+  "Selling is not enabled for this Transak API key.": "ยังไม่ได้เปิดใช้งานการขายสำหรับคีย์ API ของ Transak นี้"
 }

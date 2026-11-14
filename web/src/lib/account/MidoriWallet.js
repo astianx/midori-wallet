@@ -17,6 +17,7 @@ export default class MidoriWallet {
   payment(id) { return this.#session.payment(id); }
   cancelPayment(id) { return this.#session.cancelPayment(id); }
   reviewRamp(request) { return this.#session.reviewRamp({ ...request, cryptoCurrency: this.crypto.symbol }); }
+  rampOptions() { return this.#session.rampOptions(); }
   rampOrders() { return this.#session.rampOrders(); }
   rampOrder(id) { return this.#session.rampOrder(id); }
   transaction(item) {

@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Furnizorul de cumpărare/vânzare este temporar indisponibil. Încercați din nou în curând.",
   "This order was already reviewed with different details. Start again.": "Această comandă a fost deja verificată cu alte detalii. Începeți din nou.",
   "The connection was interrupted. Check this order before trying again.": "Conexiunea a fost întreruptă. Verificați această comandă înainte de a încerca din nou.",
-  "Could not start this order.": "Nu s-a putut iniția această comandă."
+  "Could not start this order.": "Nu s-a putut iniția această comandă.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Mod de testare Transak. Folosește doar fonduri de test; ordinele nu modifică soldul din rețeaua principală Base.",
+  "This asset or currency is unavailable through Transak.": "Acest activ sau această monedă nu este disponibilă prin Transak.",
+  "Selling is not enabled for this Transak API key.": "Vânzarea nu este activată pentru această cheie API Transak."
 }

@@ -1,9 +1,9 @@
 <script>
-import { Amount } from '../../lib/account/domain.js';
 import { rampError } from '../../lib/account/ramp-errors.js';
 import MwButton from '../../components/MwButton.vue';
 import MwFormAmountInput from '../../components/MwForm/MwFormAmountInput.vue';
 import MwFormGroup from '../../components/MwForm/MwFormGroup.vue';
+import MwFormSelect from '../../components/MwForm/MwFormSelect.vue';
 import MwLoader from '../../components/MwLoader.vue';
 import CryptoRampOrderRow from './CryptoRampOrderRow.vue';
 
@@ -13,6 +13,7 @@ export default {
     MwFormAmountInput,
     MwFormGroup,
     MwLoader,
+    MwFormSelect,
     CryptoRampOrderRow,
   },
   props: {
@@ -25,6 +26,10 @@ export default {
   data() {
     return {
       amountValue: undefined,
+      options: null,
+      fiatCurrency: this.$currency,
+      checkoutUrl: '',
+      pollTimer: null,
       isLoading: false,
       isLoadingOrders: true,
       error: '',
@@ -33,17 +38,34 @@ export default {
     };
   },
   computed: {
-    decimals() { return this.kind === 'buy' ? 2 : this.$wallet.crypto.decimals; },
-    symbol() { return this.kind === 'buy' ? this.$currency : this.$wallet.crypto.symbol; },
+    providerAsset() { return this.options?.assets.find(item => item.symbol === this.$wallet.crypto.symbol); },
+    currencies() { return (this.options?.fiatCurrencies || []).filter(item => item[this.kind]).map(item => ({ value: item.code, name: item.code })); },
+    available() { return this.options?.assets.some(item => item.symbol === this.$wallet.crypto.symbol && item[this.kind]) && this.currencies.some(item => item.value === this.fiatCurrency); },
+    decimals() { return this.kind === 'buy' ? this.options?.fiatCurrencies.find(item => item.code === this.fiatCurrency)?.decimals ?? 2 : Math.min(this.$wallet.crypto.decimals, this.providerAsset?.roundOff ?? this.$wallet.crypto.decimals); },
+    symbol() { return this.kind === 'buy' ? this.fiatCurrency : this.$wallet.crypto.symbol; },
   },
   mounted() {
+    this.loadOptions();
     this.loadOrders();
+    this.pollTimer = setInterval(() => { if (!document.hidden && this.orders.some(order => !['completed','failed','refunded','expired'].includes(order.status))) this.loadOrders(); }, 15000);
+    window.addEventListener('focus', this.loadOrders);
+  },
+  beforeUnmount() {
+    clearInterval(this.pollTimer);
+    window.removeEventListener('focus', this.loadOrders);
   },
   methods: {
+    async loadOptions() {
+      try {
+        this.options = await this.$wallet.rampOptions();
+        if (!this.currencies.some(item => item.value === this.fiatCurrency)) this.fiatCurrency = this.currencies.find(item => item.value === 'USD')?.value || this.currencies[0]?.value || '';
+      } catch (error) { this.error = rampError(error, this.$t); }
+    },
+    reset() { this.amountValue = undefined; this.error = ''; this.request = null; this.checkoutUrl = ''; },
     async loadOrders() {
       this.isLoadingOrders = true;
-      try { this.orders = (await this.$wallet.rampOrders()).orders; }
-      catch { this.orders = []; }
+      try { this.orders = (await this.$wallet.rampOrders()).orders.filter(order => order.cryptoCurrency === this.$wallet.crypto.symbol); }
+      catch (error) { this.error = rampError(error, this.$t); }
       finally { this.isLoadingOrders = false; }
     },
     upsertOrder(order) {
@@ -52,14 +74,14 @@ export default {
       else this.orders.splice(index, 1, order);
     },
     async submit() {
-      if (this.isLoading) return;
+      if (this.isLoading || !this.available) return;
       this.isLoading = true; this.error = '';
       try {
         if (!this.amountValue || this.amountValue.value <= 0n) throw { code: 'INVALID_REQUEST' };
         const payload = {
           kind: this.kind,
           cryptoCurrency: this.$wallet.crypto.symbol,
-          fiatCurrency: this.$currency,
+          fiatCurrency: this.fiatCurrency,
           ...(this.kind === 'buy' ? { fiatAmount: this.amountValue.toString() } : { cryptoAmount: this.amountValue.toString() }),
         };
         const fingerprint = JSON.stringify(payload);
@@ -67,6 +89,7 @@ export default {
         const order = await this.$wallet.reviewRamp({ ...payload, idempotencyKey: this.request.id });
         this.amountValue = undefined; this.request = null;
         this.upsertOrder(order);
+        this.checkoutUrl = order.widgetUrl;
         this.$safeOpen(order.widgetUrl);
       } catch (error) {
         this.error = rampError(error, this.$t);
@@ -79,24 +102,43 @@ export default {
 </script>
 
 <template>
+  <div v-if="options?.environment === 'STAGING'" class="&__notice" role="note">
+    <strong>Transak · STAGING<span v-if="providerAsset?.chainId"> · {{ providerAsset.chainId === '84532' ? 'Base Sepolia' : 'Base' }} ({{ providerAsset.chainId }})</span></strong>
+    <p>{{ $t('Transak test mode. Use test funds only; orders do not change your Base mainnet balance.') }}</p>
+  </div>
+  <MwLoader v-if="!options && !error" />
+  <div v-if="options && !available" class="&__notice" role="status">
+    {{ kind === 'sell' && !options.products.includes('SELL') ? $t('Selling is not enabled for this Transak API key.') : $t('This asset or currency is unavailable through Transak.') }}
+  </div>
   <MwFormGroup class="&__form">
+    <MwFormSelect
+      v-if="currencies.length"
+      v-model="fiatCurrency"
+      :label="$t('Local currency')"
+      :options="currencies"
+      @update:modelValue="reset"
+    />
     <MwFormAmountInput
       v-model="amountValue"
       :label="kind === 'buy' ? $t('You pay') : $t('You sell')"
-      :error="error"
+      :error="error || false"
       :decimals="decimals"
       :symbol="symbol"
-      @update:modelValue="error = ''; request = null"
+      @update:modelValue="error = ''; request = null; checkoutUrl = ''"
     />
   </MwFormGroup>
   <MwButton
     type="primary"
     :isLoading="isLoading"
+    :disabled="!available"
     @click="submit"
   >
     {{ kind === 'buy' ? $t('Continue to buy') : $t('Continue to sell') }}
   </MwButton>
 
+  <a v-if="checkoutUrl" :href="checkoutUrl" target="_blank" rel="noopener noreferrer" class="&__checkout">
+    {{ kind === 'buy' ? $t('Continue to buy') : $t('Continue to sell') }} · Transak
+  </a>
   <div class="&__orders">
     <div class="&__orders-header">
       <h2 class="&__orders-title">
@@ -106,7 +148,7 @@ export default {
         type="secondary"
         small
         :disabled="isLoadingOrders"
-        @click="loadOrders"
+        @click="loadOptions(); loadOrders()"
       >
         {{ $t('Refresh') }}
       </MwButton>
@@ -130,6 +172,21 @@ export default {
 
 <style lang="scss">
   .#{ $filename } {
+    &__notice {
+      @include text-sm;
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+      background: var(--color-background-secondary);
+      border: 1px solid var(--color-secondary);
+      border-radius: 0.625rem;
+    }
+
+    &__checkout {
+      display: block;
+      margin-top: var(--spacing-md);
+      text-align: center;
+    }
+
     &__form {
       flex-grow: 1;
     }

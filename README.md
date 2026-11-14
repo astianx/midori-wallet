@@ -77,6 +77,18 @@ Clients can check for updates on the stable or beta channel when the release rep
 | [`electron/`](electron/) | Desktop shell and Electron Forge packaging. |
 | [`phonegap/`](phonegap/) | Cordova builds for Android and iOS. The [Midori Vault plugin](phonegap/plugins/midori-vault/) provides native access to Android Keystore, iOS Keychain, and the recovery file picker. |
 
+## Transak buy and sell
+
+The existing Buy/Sell screens use `@transak/wdk-protocol-fiat-transak` on the server. Configure `MIDORI_TRANSAK_ENABLED=true`, `MIDORI_TRANSAK_ENVIRONMENT=STAGING`, `MIDORI_TRANSAK_API_KEY`, `MIDORI_TRANSAK_API_SECRET` and `MIDORI_TRANSAK_REFERRER_DOMAIN` in `server/.env`, then run `npm run db:migrate`. The secret and partner access token remain server-side. API and workers coordinate token renewal through PostgreSQL because refreshing a token invalidates its predecessor.
+
+The screens load the provider's available assets, fiat currencies and the API key's enabled products before opening a session. SELL must be enabled in the Transak partner dashboard; an API key with only BUY cannot open sell sessions. Partner permissions refresh after 30 seconds. Staging currently offers USDC on Base Sepolia (84532), with 18 decimals; USDT on Base is absent from its coverage. These test orders do not change Midori's Base mainnet balances. The widget handles quotes, payment methods and KYC. For staging sell tests use test funds on the network shown by Transak; Midori's Send screen sends on Base mainnet.
+
+For the prepared local instance, run `npm --prefix server run server:transak-staging` and `npm --prefix server run worker:transak-staging`; they read the private `server/.env.transak-staging` and serve the compiled app at `http://localhost:8081`.
+
+Keep `npm --prefix server run worker` running for order reconciliation. It searches both BUY and SELL orders by the exact partner order ID, then fetches the order through WDK. Configure `POST /api/v1/webhooks/transak` in the partner dashboard for signed updates when Transak has approved webhooks. A local instance uses polling without requiring public webhook access. The UI refreshes pending orders while visible and on returning from Transak. Session URLs expire after five minutes and can be used once.
+
+For a loopback reverse proxy that overwrites `X-Forwarded-For`, set `MIDORI_TRUST_PROXY=true`. It defaults to false; arbitrary client forwarding headers are ignored. Only enable PRODUCTION with its matching credentials and verified Base mainnet asset coverage.
+
 ## WalletConnect
 
 Set `VITE_WALLETCONNECT_ID` in the root `.env` (shared by web, Electron and Cordova), then restart the development server or rebuild the client. Configure the production origins/application IDs in the WalletConnect Dashboard allowlist. The Project ID is public client configuration, not a signing key.

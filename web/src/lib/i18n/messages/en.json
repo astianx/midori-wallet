@@ -569,5 +569,8 @@
   "Check payment status": "Check payment status",
   "WalletConnect request expired": "WalletConnect request expired",
   "Invalid account code": "Could not verify the account on Base.",
-  "Unsupported signing method": "This signature request is not supported."
+  "Unsupported signing method": "This signature request is not supported.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.",
+  "This asset or currency is unavailable through Transak.": "This asset or currency is unavailable through Transak.",
+  "Selling is not enabled for this Transak API key.": "Selling is not enabled for this Transak API key."
 }

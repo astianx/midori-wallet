@@ -18,10 +18,7 @@ import { rampService } from './lib/ramp.js';
 
 const route = action => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
-// nginx (container/nginx-reverse.conf) overwrites X-Forwarded-For with
-// $remote_addr, so a client cannot spoof it; falls back to the raw socket
-// for local/dev, where there is no reverse proxy in front of the app.
-const requestIp = req => req.get('x-forwarded-for') || req.socket.remoteAddress || '';
+const requestIp = req => (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
 export function createApp({ db, config, webApp, provider, rampProvider, logger = () => {} }) {
   const app = express();
@@ -30,6 +27,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, logger =
   const payments = paymentService(db, config, provider);
   const ramp = rampService(db, config, rampProvider);
   app.disable('x-powered-by');
+  app.set('trust proxy', config.trustProxy ? 'loopback' : false);
   app.set('query parser', 'simple');
   app.use((req, res, next) => {
     req.requestId = randomUUID();
@@ -97,6 +95,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, logger =
   protectedRoute('get', '/api/v1/intents/:id', (req, client, principal) => { uuid(req.params.id); return payments.get(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/authorize', (req, client, principal) => { uuid(req.params.id); return payments.authorize(principal, req.params.id, req.body); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/cancel', (req, client, principal) => { uuid(req.params.id); exactKeys(req.body, []); return payments.cancel(principal, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/ramp/options', () => ramp.options(), 200, false);
   protectedRoute('post', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.create(principal, req.params.id, req.body, requestIp(req)); }, 200, false);
   protectedRoute('get', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.list(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/ramp/orders/:id', (req, client, principal) => { uuid(req.params.id); return ramp.get(principal.wallet_id, req.params.id); }, 200, false);

@@ -18,10 +18,13 @@
     "account:create": "node --env-file-if-exists=.env scripts/create-account.mjs",
     "db:verify": "node --env-file-if-exists=.env.migrations scripts/verify-postgres.mjs",
     "contract:build": "node scripts/build-openapi.mjs",
-    "account:inspect": "node --env-file-if-exists=.env scripts/inspect-account.mjs"
+    "account:inspect": "node --env-file-if-exists=.env scripts/inspect-account.mjs",
+    "server:transak-staging": "node --env-file=.env.transak-staging server.js",
+    "worker:transak-staging": "node --env-file=.env.transak-staging worker.js"
   },
   "dependencies": {
     "@simplewebauthn/server": "14.0.3",
+    "@transak/wdk-protocol-fiat-transak": "1.0.2",
     "abstractionkit": "0.4.0",
     "ethers": "6.17.0",
     "express": "4.22.3",

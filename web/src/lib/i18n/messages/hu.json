@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "A vásárlási/eladási szolgáltató átmenetileg nem érhető el. Próbálja újra hamarosan.",
   "This order was already reviewed with different details. Start again.": "Ezt a megbízást már ellenőrizték más adatokkal. Kezdje újra.",
   "The connection was interrupted. Check this order before trying again.": "A kapcsolat megszakadt. Ellenőrizze ezt a megbízást, mielőtt újra próbálkozna.",
-  "Could not start this order.": "Nem sikerült elindítani ezt a megbízást."
+  "Could not start this order.": "Nem sikerült elindítani ezt a megbízást.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Transak tesztmód. Csak tesztpénzt használj; a megbízások nem módosítják a Base főhálózati egyenlegedet.",
+  "This asset or currency is unavailable through Transak.": "Ez az eszköz vagy pénznem nem érhető el a Transakon keresztül.",
+  "Selling is not enabled for this Transak API key.": "Az eladás nincs engedélyezve ehhez a Transak API-kulcshoz."
 }

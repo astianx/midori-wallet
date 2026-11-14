@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Nhà cung cấp mua/bán tạm thời không khả dụng. Vui lòng thử lại sau.",
   "This order was already reviewed with different details. Start again.": "Lệnh này đã được xem xét với các chi tiết khác. Hãy bắt đầu lại.",
   "The connection was interrupted. Check this order before trying again.": "Kết nối đã bị gián đoạn. Kiểm tra lệnh này trước khi thử lại.",
-  "Could not start this order.": "Không thể bắt đầu lệnh này."
+  "Could not start this order.": "Không thể bắt đầu lệnh này.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Chế độ thử nghiệm Transak. Chỉ dùng tiền thử nghiệm; lệnh không thay đổi số dư trên mạng chính Base.",
+  "This asset or currency is unavailable through Transak.": "Tài sản hoặc tiền tệ này không khả dụng qua Transak.",
+  "Selling is not enabled for this Transak API key.": "Chức năng bán chưa được bật cho khóa API Transak này."
 }

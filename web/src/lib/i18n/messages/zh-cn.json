@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "购买/出售服务商暂时不可用,请稍后重试。",
   "This order was already reviewed with different details. Start again.": "此订单已使用其他详细信息进行审核。请重新开始。",
   "The connection was interrupted. Check this order before trying again.": "连接已中断。请在重试之前检查此订单。",
-  "Could not start this order.": "无法开始此订单。"
+  "Could not start this order.": "无法开始此订单。",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Transak 测试模式。请仅使用测试资金；订单不会更改您的 Base 主网余额。",
+  "This asset or currency is unavailable through Transak.": "Transak 不支持此资产或货币。",
+  "Selling is not enabled for this Transak API key.": "此 Transak API 密钥未启用出售功能。"
 }

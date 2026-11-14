@@ -268,6 +268,7 @@ export default class MidoriSession {
     } finally { seed.fill(0); this.#adapter.lock(); }
   }
 
+  async rampOptions() { return this.client.request('GET', '/api/v1/ramp/options'); }
   async reviewRamp(request) {
     if (!this.session || !this.account?.id) throw Object.assign(new Error(), { code: 'NETWORK_UNCONFIRMED' });
     return this.client.request('POST', `/api/v1/accounts/${this.account.id}/ramp/orders`, request);

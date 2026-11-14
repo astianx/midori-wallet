@@ -4512,6 +4512,112 @@
         }
       }
     },
+    "/api/v1/ramp/options": {
+      "get": {
+        "operationId": "SupportedTransakassetsandfiatcurrencies",
+        "summary": "Supported Transak assets and fiat currencies",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RampOptions"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/accounts/{id}/ramp/orders": {
       "post": {
         "operationId": "Startabuyorsellorderanditsonetimewidgetsession",
@@ -6677,6 +6783,12 @@
       "FiatOrder": {
         "type": "object",
         "properties": {
+          "environment": {
+            "enum": [
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -6762,6 +6874,7 @@
           }
         },
         "required": [
+          "environment",
           "id",
           "accountId",
           "provider",
@@ -6784,6 +6897,12 @@
       "FiatOrderWithWidget": {
         "type": "object",
         "properties": {
+          "environment": {
+            "enum": [
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
           "id": {
             "type": "string",
             "format": "uuid"
@@ -6873,6 +6992,7 @@
           }
         },
         "required": [
+          "environment",
           "id",
           "accountId",
           "provider",
@@ -6934,6 +7054,140 @@
           "kind",
           "cryptoCurrency",
           "fiatCurrency"
+        ],
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "fiatAmount"
+            ],
+            "not": {
+              "required": [
+                "cryptoAmount"
+              ]
+            }
+          },
+          {
+            "required": [
+              "cryptoAmount"
+            ],
+            "not": {
+              "required": [
+                "fiatAmount"
+              ]
+            }
+          }
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "sell"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "cryptoAmount"
+              ]
+            }
+          }
+        ]
+      },
+      "RampOptions": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "BUY",
+                "SELL"
+              ]
+            }
+          },
+          "environment": {
+            "enum": [
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
+          "network": {
+            "const": "base"
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "symbol": {
+                  "enum": [
+                    "USDC",
+                    "USDT"
+                  ]
+                },
+                "decimals": {
+                  "type": "integer"
+                },
+                "roundOff": {
+                  "type": "integer"
+                },
+                "chainId": {
+                  "type": "string"
+                },
+                "buy": {
+                  "type": "boolean"
+                },
+                "sell": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "symbol",
+                "decimals",
+                "roundOff",
+                "chainId",
+                "buy",
+                "sell"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "fiatCurrencies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "decimals": {
+                  "type": "integer"
+                },
+                "buy": {
+                  "type": "boolean"
+                },
+                "sell": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "code",
+                "decimals",
+                "buy",
+                "sell"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "products",
+          "environment",
+          "network",
+          "assets",
+          "fiatCurrencies"
         ],
         "additionalProperties": false
       }

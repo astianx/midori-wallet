@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Penyedia beli/jual untuk sementara tidak tersedia. Coba lagi sebentar lagi.",
   "This order was already reviewed with different details. Start again.": "Pesanan ini sudah ditinjau dengan detail yang berbeda. Mulai lagi.",
   "The connection was interrupted. Check this order before trying again.": "Koneksi terputus. Periksa pesanan ini sebelum mencoba lagi.",
-  "Could not start this order.": "Tidak dapat memulai pesanan ini."
+  "Could not start this order.": "Tidak dapat memulai pesanan ini.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Mode uji Transak. Gunakan hanya dana uji; pesanan tidak mengubah saldo Anda di jaringan utama Base.",
+  "This asset or currency is unavailable through Transak.": "Aset atau mata uang ini tidak tersedia melalui Transak.",
+  "Selling is not enabled for this Transak API key.": "Penjualan belum diaktifkan untuk kunci API Transak ini."
 }

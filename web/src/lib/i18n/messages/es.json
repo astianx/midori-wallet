@@ -569,5 +569,8 @@
   "Check payment status": "Comprobar el estado del pago",
   "WalletConnect request expired": "La solicitud de WalletConnect expiró",
   "Invalid account code": "No se pudo verificar la cuenta en Base.",
-  "Unsupported signing method": "Esta solicitud de firma no es compatible."
+  "Unsupported signing method": "Esta solicitud de firma no es compatible.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Modo de prueba de Transak. Usa solo fondos de prueba; las órdenes no cambian tu saldo en la red principal de Base.",
+  "This asset or currency is unavailable through Transak.": "Este activo o moneda no está disponible a través de Transak.",
+  "Selling is not enabled for this Transak API key.": "La venta no está habilitada para esta clave API de Transak."
 }

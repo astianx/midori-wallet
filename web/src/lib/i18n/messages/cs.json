@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Poskytovatel nákupu/prodeje je dočasně nedostupný. Zkuste to znovu za chvíli.",
   "This order was already reviewed with different details. Start again.": "Tato objednávka již byla zkontrolována s jinými údaji. Začněte znovu.",
   "The connection was interrupted. Check this order before trying again.": "Spojení bylo přerušeno. Před dalším pokusem zkontrolujte tuto objednávku.",
-  "Could not start this order.": "Tuto objednávku se nepodařilo zahájit."
+  "Could not start this order.": "Tuto objednávku se nepodařilo zahájit.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Testovací režim Transak. Používejte pouze testovací prostředky; objednávky nemění zůstatek v hlavní síti Base.",
+  "This asset or currency is unavailable through Transak.": "Toto aktivum nebo měna není přes Transak dostupná.",
+  "Selling is not enabled for this Transak API key.": "Prodej není pro tento API klíč Transak povolen."
 }

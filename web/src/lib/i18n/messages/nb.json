@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Kjøp-/salgsleverandøren er midlertidig utilgjengelig. Prøv igjen om en stund.",
   "This order was already reviewed with different details. Start again.": "Denne ordren er allerede gjennomgått med andre detaljer. Start på nytt.",
   "The connection was interrupted. Check this order before trying again.": "Tilkoblingen ble avbrutt. Kontroller denne ordren før du prøver igjen.",
-  "Could not start this order.": "Kunne ikke starte denne ordren."
+  "Could not start this order.": "Kunne ikke starte denne ordren.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Transak-testmodus. Bruk bare testmidler; ordrer endrer ikke saldoen din på Base-hovednettet.",
+  "This asset or currency is unavailable through Transak.": "Denne eiendelen eller valutaen er ikke tilgjengelig via Transak.",
+  "Selling is not enabled for this Transak API key.": "Salg er ikke aktivert for denne Transak-API-nøkkelen."
 }

@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Alım/satım sağlayıcısı geçici olarak kullanılamıyor. Kısa süre sonra tekrar deneyin.",
   "This order was already reviewed with different details. Start again.": "Bu sipariş farklı bilgilerle zaten incelendi. Yeniden başlayın.",
   "The connection was interrupted. Check this order before trying again.": "Bağlantı kesildi. Tekrar denemeden önce bu siparişi kontrol edin.",
-  "Could not start this order.": "Bu sipariş başlatılamadı."
+  "Could not start this order.": "Bu sipariş başlatılamadı.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Transak test modu. Yalnızca test fonlarını kullanın; emirler Base ana ağ bakiyenizi değiştirmez.",
+  "This asset or currency is unavailable through Transak.": "Bu varlık veya para birimi Transak üzerinden kullanılamıyor.",
+  "Selling is not enabled for this Transak API key.": "Bu Transak API anahtarı için satış etkinleştirilmemiş."
 }

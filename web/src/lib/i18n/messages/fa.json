@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "ارائه‌دهنده خرید/فروش موقتاً در دسترس نیست. کمی بعد دوباره امتحان کنید.",
   "This order was already reviewed with different details. Start again.": "این سفارش قبلاً با جزئیات متفاوتی بررسی شده است. دوباره شروع کنید.",
   "The connection was interrupted. Check this order before trying again.": "اتصال قطع شد. قبل از تلاش دوباره، این سفارش را بررسی کنید.",
-  "Could not start this order.": "امکان شروع این سفارش وجود نداشت."
+  "Could not start this order.": "امکان شروع این سفارش وجود نداشت.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "حالت آزمایشی Transak. فقط از وجوه آزمایشی استفاده کنید؛ سفارش‌ها موجودی شما در شبکه اصلی Base را تغییر نمی‌دهند.",
+  "This asset or currency is unavailable through Transak.": "این دارایی یا ارز از طریق Transak در دسترس نیست.",
+  "Selling is not enabled for this Transak API key.": "فروش برای این کلید API در Transak فعال نیست."
 }

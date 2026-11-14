@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Dobavljač kupovine/prodaje je privremeno nedostupan. Pokušajte ponovo uskoro.",
   "This order was already reviewed with different details. Start again.": "Ova porudžbina je već pregledana sa drugim detaljima. Počnite ponovo.",
   "The connection was interrupted. Check this order before trying again.": "Veza je prekinuta. Proverite ovu porudžbinu pre nego što pokušate ponovo.",
-  "Could not start this order.": "Nije moguće pokrenuti ovu porudžbinu."
+  "Could not start this order.": "Nije moguće pokrenuti ovu porudžbinu.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Transak probni režim. Koristite samo probna sredstva; nalozi ne menjaju stanje na glavnoj Base mreži.",
+  "This asset or currency is unavailable through Transak.": "Ova imovina ili valuta nije dostupna preko Transaka.",
+  "Selling is not enabled for this Transak API key.": "Prodaja nije omogućena za ovaj Transak API ključ."
 }

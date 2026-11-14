@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "購入/売却プロバイダーは一時的にご利用いただけません。しばらくしてからもう一度お試しください。",
   "This order was already reviewed with different details. Start again.": "この注文はすでに別の内容で確認されています。もう一度やり直してください。",
   "The connection was interrupted. Check this order before trying again.": "接続が中断されました。再試行する前にこの注文を確認してください。",
-  "Could not start this order.": "この注文を開始できませんでした。"
+  "Could not start this order.": "この注文を開始できませんでした。",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Transakのテストモードです。テスト資金のみを使用してください。注文はBaseメインネットの残高に影響しません。",
+  "This asset or currency is unavailable through Transak.": "この資産または通貨はTransakでは利用できません。",
+  "Selling is not enabled for this Transak API key.": "このTransak APIキーでは売却を利用できません。"
 }

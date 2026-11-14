@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "អ្នកផ្តល់សេវាទិញ/លក់មិនអាចប្រើបានជាបណ្តោះអាសន្ន។ សូមសាកល្បងម្តងទៀតឆាប់ៗនេះ។",
   "This order was already reviewed with different details. Start again.": "ការបញ្ជាទិញនេះត្រូវបានពិនិត្យរួចជាមួយព័ត៌មានលម្អិតផ្សេង។ ចាប់ផ្តើមម្តងទៀត។",
   "The connection was interrupted. Check this order before trying again.": "ការតភ្ជាប់ត្រូវបានផ្តាច់។ ពិនិត្យការបញ្ជាទិញនេះមុននឹងសាកល្បងម្តងទៀត។",
-  "Could not start this order.": "មិនអាចចាប់ផ្តើមការបញ្ជាទិញនេះបានទេ។"
+  "Could not start this order.": "មិនអាចចាប់ផ្តើមការបញ្ជាទិញនេះបានទេ។",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "របៀបសាកល្បង Transak។ ប្រើតែមូលនិធិសាកល្បងប៉ុណ្ណោះ។ ការបញ្ជាទិញមិនផ្លាស់ប្តូរសមតុល្យនៅលើបណ្តាញមេ Base ទេ។",
+  "This asset or currency is unavailable through Transak.": "ទ្រព្យសកម្ម ឬរូបិយប័ណ្ណនេះមិនមានតាមរយៈ Transak ទេ។",
+  "Selling is not enabled for this Transak API key.": "ការលក់មិនត្រូវបានបើកសម្រាប់សោ API របស់ Transak នេះទេ។"
 }

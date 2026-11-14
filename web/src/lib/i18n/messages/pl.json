@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Dostawca kupna/sprzedaży jest tymczasowo niedostępny. Spróbuj ponownie wkrótce.",
   "This order was already reviewed with different details. Start again.": "To zlecenie zostało już sprawdzone z innymi danymi. Zacznij od nowa.",
   "The connection was interrupted. Check this order before trying again.": "Połączenie zostało przerwane. Sprawdź to zlecenie przed ponowną próbą.",
-  "Could not start this order.": "Nie udało się rozpocząć tego zlecenia."
+  "Could not start this order.": "Nie udało się rozpocząć tego zlecenia.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Tryb testowy Transak. Używaj tylko środków testowych; zlecenia nie zmieniają salda w sieci głównej Base.",
+  "This asset or currency is unavailable through Transak.": "Ten zasób lub waluta jest niedostępna przez Transak.",
+  "Selling is not enabled for this Transak API key.": "Sprzedaż nie jest włączona dla tego klucza API Transak."
 }

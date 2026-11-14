@@ -569,5 +569,8 @@
   "The buy/sell provider is temporarily unavailable. Try again shortly.": "Pansamantalang hindi available ang tagapagbigay ng bili/benta. Subukan ulit sa ilang sandali.",
   "This order was already reviewed with different details. Start again.": "Na-review na ang order na ito gamit ang ibang detalye. Magsimula ulit.",
   "The connection was interrupted. Check this order before trying again.": "Naputol ang koneksyon. Tingnan ang order na ito bago subukan ulit.",
-  "Could not start this order.": "Hindi nasimulan ang order na ito."
+  "Could not start this order.": "Hindi nasimulan ang order na ito.",
+  "Transak test mode. Use test funds only; orders do not change your Base mainnet balance.": "Test mode ng Transak. Gumamit lang ng test funds; hindi binabago ng mga order ang balanse mo sa Base mainnet.",
+  "This asset or currency is unavailable through Transak.": "Hindi available ang asset o currency na ito sa Transak.",
+  "Selling is not enabled for this Transak API key.": "Hindi naka-enable ang pagbebenta para sa API key na ito ng Transak."
 }

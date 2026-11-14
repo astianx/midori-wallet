@@ -102,13 +102,9 @@ export default {
 </script>
 
 <template>
-  <div v-if="options?.environment === 'STAGING'" class="&__notice" role="note">
-    <strong>Transak · STAGING<span v-if="providerAsset?.chainId"> · {{ providerAsset.chainId === '84532' ? 'Base Sepolia' : 'Base' }} ({{ providerAsset.chainId }})</span></strong>
-    <p>{{ $t('Transak test mode. Use test funds only; orders do not change your Base mainnet balance.') }}</p>
-  </div>
   <MwLoader v-if="!options && !error" />
   <div v-if="options && !available" class="&__notice" role="status">
-    {{ kind === 'sell' && !options.products.includes('SELL') ? $t('Selling is not enabled for this Transak API key.') : $t('This asset or currency is unavailable through Transak.') }}
+    {{ kind === 'sell' && !options.products.includes('SELL') ? $t('Buying or selling crypto is temporarily unavailable.') : $t('This asset or currency is unavailable through Transak.') }}
   </div>
   <MwFormGroup class="&__form">
     <MwFormSelect
@@ -121,7 +117,7 @@ export default {
     <MwFormAmountInput
       v-model="amountValue"
       :label="kind === 'buy' ? $t('You pay') : $t('You sell')"
-      :error="error || false"
+      :error="error"
       :decimals="decimals"
       :symbol="symbol"
       @update:modelValue="error = ''; request = null; checkoutUrl = ''"

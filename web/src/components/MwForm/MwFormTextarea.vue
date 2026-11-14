@@ -19,7 +19,7 @@ export default {
       default: 3,
     },
     error: {
-      type: [Boolean, String],
+      type: [String, Boolean],
       default: false,
     },
   },

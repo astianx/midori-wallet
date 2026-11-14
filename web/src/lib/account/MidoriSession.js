@@ -1,3 +1,4 @@
+import { captureWalletError } from '../sentry.js';
 import { ed25519 } from '@noble/curves/ed25519';
 import { hmac } from '@noble/hashes/hmac';
 import { sha256 } from '@noble/hashes/sha256';
@@ -23,7 +24,7 @@ export default class MidoriSession {
     this.clientStorage = clientStorage;
     this.vault = new LocalVault(localStorage);
     this.origin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
-    this.publicClient = new MidoriClient({ origin: this.origin });
+    this.publicClient = new MidoriClient({ reportError: captureWalletError, origin: this.origin });
     this.client = this.publicClient;
   }
 
@@ -87,7 +88,7 @@ export default class MidoriSession {
 
   async setSession(session) {
     this.session = session;
-    this.client = new MidoriClient({ origin: this.origin, session, signMessage: async message => ed25519.sign(message, this.#deviceSeed) });
+    this.client = new MidoriClient({ reportError: captureWalletError, origin: this.origin, session, signMessage: async message => ed25519.sign(message, this.#deviceSeed) });
     this.blobs = new EncryptedBlobSync(this.client);
     const me = await this.client.request('GET', '/api/v1/me');
     this.tag = this.config.capabilities.tags ? (await this.client.request('GET', '/api/v1/tag')).tag : null;

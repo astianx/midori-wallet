@@ -1,3 +1,4 @@
+import { initializeSentry, captureServerError, flushSentry } from './lib/sentry.js';
 import { createServer } from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -36,19 +37,21 @@ export async function startServer(config = loadConfig()) {
     const deadline = setTimeout(() => { server.closeAllConnections(); process.exitCode = 1; }, 10000).unref();
     await new Promise(resolve => server.close(resolve));
     await db.close();
+    await flushSentry();
     clearTimeout(deadline);
   })();
   console.log(JSON.stringify({ event: 'api_listening', host: config.host, port: config.port, apiVersion: 'v1', network: 'base', chainId: 8453 }));
   if (config.wdkIndexer?.apiKey) {
     try { logger({ event: 'wdk_indexer_checked', ...await inspectWdkIndexer(config.wdkIndexer) }); }
-    catch (error) { logger({ event: 'wdk_indexer_check_failed', code: error.code || 'WDK_INDEXER_UNAVAILABLE', historyProvider: 'rpc' }); }
+    catch (error) { captureServerError(error, { operation: 'wdk.indexer.check', code: error.code }); logger({ event: 'wdk_indexer_check_failed', code: error.code || 'WDK_INDEXER_UNAVAILABLE', historyProvider: 'rpc' }); }
   }
   return { server, db, close };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
+    initializeSentry('server');
     const running = await startServer();
     for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => running.close().catch(() => { process.exitCode = 1; }));
-  } catch { console.error(JSON.stringify({ event: 'startup_failed', message: 'Check API and PostgreSQL configuration' })); process.exitCode = 1; }
+  } catch (error) { captureServerError(error, { operation: 'server.startup' }); await flushSentry(); console.error(JSON.stringify({ event: 'startup_failed', message: 'Check API and PostgreSQL configuration' })); process.exitCode = 1; }
 }

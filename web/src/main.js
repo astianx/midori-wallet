@@ -6,7 +6,7 @@ import 'core-js/es/array/to-sorted';
 
 import './assets/styles/app.scss';
 
-import { addSentryVueIntegration } from './lib/sentry.js';
+import { addSentryVueIntegration, captureWalletError } from './lib/sentry.js';
 
 import App from './App.vue';
 import { createAccount } from './lib/account.js';
@@ -25,7 +25,7 @@ async function main() {
   }
 
   const app = createApp({ App, router });
-  addSentryVueIntegration(app);
+  addSentryVueIntegration(app, router);
   await createAccount({ app, router });
   await setLanguage();
   app.use(i18n);
@@ -34,7 +34,7 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error('Midori Wallet startup failed');
+  captureWalletError(error, 'app.startup');
   document.getElementById('app')?.remove();
   const fallback = document.getElementById('error');
   if (fallback) fallback.style.display = 'block';

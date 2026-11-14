@@ -3,7 +3,7 @@
   "private": true,
   "productName": "Midori Wallet",
   "executableName": "midori-wallet",
-  "version": "1.0.5",
+  "version": "1.0.4",
   "description": "Midori Wallet for USDT and USDC on Base",
   "license": "MIT",
   "type": "module",
@@ -28,6 +28,7 @@
     "electron": "45.2.1"
   },
   "dependencies": {
+    "@sentry/electron": "8.4.0",
     "electron-log": "5.4.3"
   },
   "engines": {

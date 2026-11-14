@@ -16,6 +16,10 @@ env:
   VITE_API_ORIGIN: https://midoriwallet.com
   VITE_WALLETCONNECT_ID: ${{ vars.WALLETCONNECT_PROJECT_ID }}
   VITE_COMMIT: ${{ github.sha }}
+  VITE_SENTRY_DSN: ${{ vars.SENTRY_FRONT_DSN }}
+  VITE_SENTRY_ENVIRONMENT: ${{ vars.SENTRY_ENVIRONMENT || 'production' }}
+  SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+  SENTRY_PROJECT: ${{ vars.SENTRY_FRONT_PROJECT }}
 jobs:
   checks:
     runs-on: ubuntu-24.04
@@ -57,6 +61,8 @@ jobs:
       - run: npm --prefix server run contract:build
       - run: git diff --exit-code -- server/openapi.json
       - run: npm run build:web
+        env:
+          SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
       - uses: actions/upload-artifact@v4
         with:
           name: midori-web-${{ github.sha }}
@@ -88,6 +94,8 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
       - run: npm run build:electron
+        env:
+          SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
       - uses: actions/upload-artifact@v4
         with:
           name: midori-desktop-${{ matrix.os }}-${{ github.sha }}
@@ -122,6 +130,8 @@ jobs:
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
       - run: npm run build:android
+        env:
+          SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
       - uses: actions/upload-artifact@v4
         with:
           name: midori-android-${{ github.sha }}
@@ -167,6 +177,7 @@ jobs:
       - name: Build signed release APK
         run: npm run build:android
         env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           MIDORI_BUILD_PROFILE: release
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/midori-wallet-release.p12
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -207,6 +218,8 @@ jobs:
       - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
       - run: npm run build:ios
+        env:
+          SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
       - name: Preserve simulator bundle permissions
         run: |
           mkdir -p artifacts

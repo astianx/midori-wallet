@@ -1,3 +1,4 @@
+import { captureWalletError } from '../sentry.js';
 import { EventEmitter } from 'events';
 import { ed25519 } from '@noble/curves/ed25519';
 import { hex } from '@scure/base';
@@ -762,7 +763,7 @@ export default class Account extends EventEmitter {
     try {
       await wallet.load();
     } catch (err) {
-      console.error('Midori Wallet operation failed');
+      captureWalletError(err, 'Account.operation');
     }
   }
 

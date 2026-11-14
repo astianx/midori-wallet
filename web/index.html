@@ -10,6 +10,7 @@
       style-src 'self' 'unsafe-inline';
       connect-src
         'self'
+        <%= sentryCsp %>
         https://mainnet.base.org/
         wss://relay.walletconnect.org
         wss://relay.walletconnect.com

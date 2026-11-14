@@ -1,3 +1,4 @@
+import { captureWalletError } from './sentry.js';
 export const onShowOnHide = {
   _isShown: false,
   _show(component) {
@@ -35,7 +36,7 @@ export const walletSeed = {
           await callback(walletSeed);
         }
       } catch (err) {
-        console.error('Midori Wallet operation failed');
+        captureWalletError(err, 'mixins.operation');
       }
     },
   },

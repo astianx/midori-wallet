@@ -1,3 +1,4 @@
+import { initializeSentry, captureServerError, flushSentry, Sentry } from './lib/sentry.js';
 import { pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { loadConfig } from './lib/config.js';
@@ -32,8 +33,9 @@ export async function runWorker(config = loadConfig()) {
     if (initialDelayMs && !once) { try { await delay(initialDelayMs, undefined, { signal: controller.signal }); } catch { return; } }
     do {
       let nextInterval = interval;
-      try { const result = await action(); if (result) console.log(JSON.stringify({ event: name, ...result })); }
+      try { const result = await Sentry.startSpan({ name, op: 'worker.task' }, action); if (result) console.log(JSON.stringify({ event: name, ...result })); }
       catch (error) {
+        captureServerError(error, { operation: name, code: error.code });
         if (['CHAIN_RATE_LIMITED','PAYMENT_PROVIDER_LIMITED'].includes(error.code)) nextInterval = Math.max(interval, (error.details?.retryAfter || 60) * 1000);
         console.error(JSON.stringify({ event: `${name}_failed`, code: error.code || 'SERVICE_UNAVAILABLE', retryAfterSeconds: Math.ceil(nextInterval / 1000) }));
         if (once) process.exitCode = 1;
@@ -53,9 +55,10 @@ export async function runWorker(config = loadConfig()) {
       }),
       loop('ramp_reconciled', config.workerIntervalMs, async () => ramp ? { updated: await ramp.reconcile() } : null),
     ]);
-  } finally { await db.close(); }
+  } finally { await db.close(); await flushSentry(); }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  runWorker().catch(() => { console.error('{"event":"worker_failed"}'); process.exitCode = 1; });
+  initializeSentry('worker');
+  runWorker().catch(async error => { captureServerError(error, { operation: 'worker.startup' }); await flushSentry(); console.error('{"event":"worker_failed"}'); process.exitCode = 1; });
 }

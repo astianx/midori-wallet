@@ -48,7 +48,7 @@ export default defineConfig(({ mode, command }) => {
       }),
       svgLoader({ svgo: false }),
       sfcAutoName(),
-      { name:'midori-build-info', generateBundle() { this.emitFile({ type:'asset', fileName:'build-info.json', source:JSON.stringify({ product:'Midori Wallet', version:env.VITE_VERSION || '0.1.0', target:env.VITE_BUILD_TYPE || 'web', platform:env.VITE_PLATFORM || 'web', basePath:base, node:process.version, commit:process.env.GITHUB_SHA || 'local', published:false },null,2) }); } },
+      { name:'midori-build-info', generateBundle() { this.emitFile({ type:'asset', fileName:'build-info.json', source:JSON.stringify({ product:'Midori Wallet', version:env.VITE_VERSION || '1.0.5', target:env.VITE_BUILD_TYPE || 'web', platform:env.VITE_PLATFORM || 'web', basePath:base, node:process.version, commit:process.env.GITHUB_SHA || 'local', published:false },null,2) }); } },
       ViteEjsPlugin({ env }),
       ViteMinifyPlugin(),
       ...(isHttps ? [basicSsl()] : []),

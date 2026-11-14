@@ -1,7 +1,7 @@
 {
   "name": "@midori/wdk-compat",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.5",
   "type": "module",
   "engines": {
     "node": ">=22.22.2 <23",

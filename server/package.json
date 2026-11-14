@@ -1,7 +1,7 @@
 {
   "name": "@midori/server",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Midori PostgreSQL API v1",
   "license": "MIT",
   "type": "module",

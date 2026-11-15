@@ -27,7 +27,7 @@ export default {
     const temp = this.parseQuery(this.$route);
     if (draft) {
       temp.address = draft.address;
-      if (draft.amount) temp.amount = Amount.fromString(draft.amount, this.$wallet.crypto.decimals);
+      temp.amount = draft.amount === undefined ? undefined : Amount.fromString(draft.amount, this.$wallet.crypto.decimals);
     }
     return { owner, draftPath: path, storage: { temp } };
   },
@@ -36,7 +36,7 @@ export default {
     const active = steps?.$refs.activeStep;
     if (!steps || !this.$account.isCreated || ['confirmed','reverted','expired'].includes(steps.storage.intent?.status)) return;
     const address = typeof active?.address === 'string' ? active.address : steps.storage.alias || steps.storage.address || steps.storage.temp?.address || '';
-    const amount = active?.amountValue ?? steps.storage.amount ?? steps.storage.temp?.amount;
+    const amount = active && 'amountValue' in active ? active.amountValue : steps.storage.amount ?? steps.storage.temp?.amount;
     savePaymentDraft(this.owner, this.draftPath, { address, amount: amount?.toString() });
   },
   steps: {

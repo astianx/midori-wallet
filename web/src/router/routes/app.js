@@ -71,12 +71,12 @@ const app = [
       }, {
         path: 'hardware',
         name: 'settings.hardware',
-          meta: { focusedFlow: true },
+        meta: { focusedFlow: true },
         component: SettingsHardwareView,
       }, {
         path: 'pin',
         name: 'settings.pin',
-          meta: { focusedFlow: true },
+        meta: { focusedFlow: true },
         component: SettingsPinView,
       }, {
         path: 'tor',

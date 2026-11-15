@@ -34,6 +34,6 @@ export default {
   &__destination svg { width: 1.25rem; height: 1.25rem; }
   &__destination--active { color: var(--color-accent); background: var(--color-surface-tint); font-weight: 600; }
   @include breakpoint(lg) { flex-direction: row; &__content { padding: var(--space-lg); } &__bottom { display: none; } }
-  &[data-runtime='phonegap'] { flex-direction: column; .mw-sidebar { display: none; } .app-layout__content { padding: 0; } .main-layout, .smart-layout { border-radius: 0; } .app-layout__bottom { padding-bottom: max(var(--space-xs), env(safe-area-inset-bottom)); } .app-layout__bottom { display: grid; } &[data-keyboard] .app-layout__bottom { display: none; } }
+  &[data-runtime='phonegap'] { flex-direction: column; .mw-sidebar { display: none; } .app-layout__content { padding: 0; } .main-layout, .smart-layout { border-radius: 0; } .app-layout__bottom { display: grid; padding-bottom: max(var(--space-xs), env(safe-area-inset-bottom)); } &[data-keyboard] .app-layout__bottom { display: none; } }
 }
 </style>

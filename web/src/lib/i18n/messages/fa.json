@@ -602,5 +602,8 @@
   "Other services": "Other services",
   "Day": "روز",
   "Month": "ماه",
-  "Year": "سال"
+  "Year": "سال",
+  "Next step": "گام بعدی",
+  "Check the status before starting another operation.": "پیش از شروع عملیات دیگر، وضعیت را بررسی کنید.",
+  "Last updated {time}": "آخرین به‌روزرسانی {time}"
 }

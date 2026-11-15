@@ -4,22 +4,28 @@ import MwButton from './MwButton.vue';
 import MwModal from './MwModal.vue';
 export default {
   components: { MwAppIcon, MwButton, MwModal },
+  emits: ['summary'],
   props: { compact: { type: Boolean, default: false }, symbol: { type: String, default: '' } },
-  data() { return { sources: this.$account.wallets().map(wallet => ({ id: wallet.crypto._id, symbol: wallet.crypto.symbol, cursor: undefined, hasMore: true, paginated: false, records: [], error: false })), orders: [], loading: false, ordersError: false, selected: null, disposed: false, timer: null }; },
+  data() { return { sources: this.$account.wallets().map(wallet => ({ id: wallet.crypto._id, symbol: wallet.crypto.symbol, cursor: undefined, hasMore: true, paginated: false, records: [], error: false })), orders: [], loading: false, loaded: false, updatedAt: null, ordersError: false, selected: null, disposed: false, timer: null }; },
   computed: {
-    records() {
+    allRecords() {
       const payments = this.sources.flatMap(source => source.records);
       const records = [...payments, ...this.orders].filter(item => !this.symbol || item.symbol === this.symbol).sort((a, b) => b.timestamp - a.timestamp || a.id.localeCompare(b.id));
-      return this.compact ? records.slice(0, 5) : records;
+      return records;
     },
+    records() { return this.compact ? this.allRecords.slice(0, 5) : this.allRecords; },
+    pending() { return this.allRecords.find(item => ['pending', 'preparing', 'quoted', 'authorized', 'submitted', 'ambiguous', 'included', 'reorganized', 'created', 'awaiting_payment', 'processing'].includes(item.state)); },
+    summary() { return { loading: this.loading || !this.loaded, partial: this.partial, pending: !!this.pending }; },
     hasMore() { return this.sources.some(source => source.hasMore); },
     filteredEmpty() { return Boolean(this.symbol) && (this.orders.length > 0 || this.sources.some(source => source.records.length)); },
     partial() { return this.ordersError || this.sources.some(source => source.error); },
   },
+  watch: { summary: { immediate: true, handler(value) { this.$emit('summary', value); } } },
   mounted() { this.load(true, true); this.timer = setInterval(() => { if (!document.hidden && !this.$account.isLocked) this.load(true); }, 15000); },
   beforeUnmount() { this.disposed = true; clearInterval(this.timer); },
   methods: {
-    status(value) { return this.$t(({ ambiguous: 'We are checking this payment. Do not send it again.', confirmed: 'Confirmed', completed: 'Completed', reverted: 'Payment reverted', expired: 'Expired', failed: 'Failed', refunded: 'Refunded', awaiting_payment: 'Awaiting payment', processing: 'Processing', created: 'Started', reorganized: 'Reorganized', included: 'Included, awaiting confirmations' })[value] || 'Confirming payment'); },
+    openPending() { if (this.pending) this.selected = this.pending; },
+    status(value) { return this.$t(({ ambiguous: 'We are checking this payment. Do not send it again.', pending: 'Pending', preparing: 'Processing', authorized: 'Pending', submitted: 'Pending', quoted: 'Review payment', confirmed: 'Confirmed', completed: 'Completed', reverted: 'Payment reverted', expired: 'Expired', failed: 'Failed', refunded: 'Refunded', awaiting_payment: 'Awaiting payment', processing: 'Processing', created: 'Started', reorganized: 'Reorganized', included: 'Included, awaiting confirmations' })[value] || 'Confirming payment'); },
     async load(reset = false, restart = false) {
       if (this.loading || this.disposed || this.$account.isLocked) return;
       this.loading = true;
@@ -40,13 +46,18 @@ export default {
           if (!this.disposed) { this.orders = data.orders.map(order => ({ ...order, source: 'ramp', id: `ramp:${order.id}`, reference: order.id, symbol: order.cryptoCurrency, timestamp: new Date(order.updatedAt), label: `Transak · ${this.$t(order.kind === 'buy' ? 'Buy {symbol}' : 'Sell {symbol}', { symbol: order.cryptoCurrency })}`, amount: order.kind === 'buy' ? `${order.fiatAmount ?? '—'} ${order.fiatCurrency}` : `${order.cryptoAmount ?? '—'} ${order.cryptoCurrency}`, state: order.status })); this.ordersError = false; }
         } catch { if (!this.disposed) this.ordersError = true; }
       }
-      if (!this.disposed) this.loading = false;
+      if (!this.disposed) {
+        if (this.selected) this.selected = this.allRecords.find(item => item.id === this.selected.id) || this.selected;
+        if (!this.partial) this.updatedAt = new Date();
+        this.loaded = true; this.loading = false;
+      }
     },
   },
 };
 </script>
 <template>
   <div class="&" :aria-busy="loading">
+    <div class="&__toolbar"><span role="status">{{ loading ? $t('Loading') : updatedAt ? $t('Last updated {time}', { time: $d(updatedAt, 'shortCurrentYear') }) : '' }}</span><MwButton type="primary-link" small :isLoading="loading" @click="load(true, true)">{{ $t('Refresh') }}</MwButton></div>
     <div v-if="loading && !records.length" class="&__loading" role="status" :aria-label="$t('Loading')"><div /><div /><div /></div>
     <div v-if="partial" class="&__notice" role="status"><span>{{ $t('Some activity could not be loaded.') }}</span><MwButton type="primary-link" small :isLoading="loading" @click="load(true, true)">{{ $t('Refresh') }}</MwButton></div>
     <div v-if="!loading && !records.length && !partial" class="&__empty"><span class="&__empty-icon"><MwAppIcon name="activity" /></span><h3>{{ $t(filteredEmpty ? 'No matching activity' : 'No activity yet') }}</h3><p>{{ $t(filteredEmpty ? 'Choose another stablecoin or show all activity.' : 'Your transfers and orders appear here.') }}</p><RouterLink v-if="!filteredEmpty" :to="{ name: 'receive' }">{{ $t('Receive') }}<MwAppIcon name="arrow" /></RouterLink></div>
@@ -57,7 +68,10 @@ export default {
 </template>
 <style lang="scss">
 .#{ $filename } {
+/* Hallmark · component-scope · design-system: design.md · pre-emit critique: P4 H5 E5 S5 R5 V4 */
   min-width: 0; padding: var(--space-xs); border: 1px solid var(--color-rule); border-radius: var(--radius-panel); background: var(--color-surface); color: var(--color-ink);
+  &__toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); padding-inline: var(--space-sm); }
+  &__toolbar > span { color: var(--color-muted); font-size: 0.75rem; overflow-wrap: anywhere; }
   &__list { margin: 0; padding: 0; list-style: none; }
   &__row { display: flex; width: 100%; min-width: 0; align-items: center; gap: var(--space-sm); text-align: start; padding: var(--space-md) var(--space-xs); border-bottom: 1px solid var(--color-rule); }
   li:last-child &__row { border-bottom: 0; }

@@ -602,5 +602,8 @@
   "Other services": "Otros servicios",
   "Day": "Día",
   "Month": "Mes",
-  "Year": "Año"
+  "Year": "Año",
+  "Next step": "Siguiente paso",
+  "Check the status before starting another operation.": "Consulta el estado antes de iniciar otra operación.",
+  "Last updated {time}": "Última actualización: {time}"
 }

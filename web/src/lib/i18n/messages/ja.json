@@ -602,5 +602,8 @@
   "Other services": "Other services",
   "Day": "日",
   "Month": "月",
-  "Year": "年"
+  "Year": "年",
+  "Next step": "次のステップ",
+  "Check the status before starting another operation.": "別の操作を始める前にステータスを確認してください。",
+  "Last updated {time}": "更新日時 {time}"
 }

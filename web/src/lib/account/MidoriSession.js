@@ -1,3 +1,4 @@
+import { normalizeTagAlias, formatMidoriTag, isTagRecipient } from '../tags.js';
 import { captureWalletError } from '../sentry.js';
 import { ed25519 } from '@noble/curves/ed25519';
 import { hmac } from '@noble/hashes/hmac';
@@ -221,10 +222,10 @@ export default class MidoriSession {
 
   async resolveRecipient(value) {
     const text = value.trim();
-    if (text.startsWith('@')) {
-      const result = await this.client.request('POST', '/api/v1/tags/resolve', { alias: text, chainId: 8453 });
+    if (isTagRecipient(text)) {
+      const result = await this.client.request('POST', '/api/v1/tags/resolve', { alias: normalizeTagAlias(text), chainId: 8453 });
       if (result.chainId !== 8453 || Date.parse(result.expiresAt) <= Date.now()) throw Object.assign(new Error(), { code: 'TAG_RECONFIRM_REQUIRED' });
-      return { kind: 'midori_tag', address: result.address, alias: `@${result.alias}`, resolutionId: result.id, revision: result.revision, expiresAt: result.expiresAt };
+      return { kind: 'midori_tag', address: result.address, alias: formatMidoriTag(result.alias), resolutionId: result.id, revision: result.revision, expiresAt: result.expiresAt };
     }
     if (!/^0x[0-9a-fA-F]{40}$/.test(text) || /^0x0{40}$/i.test(text) || text.toLowerCase() === this.descriptor.address.toLowerCase()) throw Object.assign(new Error(), { code: 'INVALID_RECIPIENT' });
     return { kind: 'address', address: text };
@@ -312,7 +313,7 @@ export default class MidoriSession {
   async updateTag(value) {
     if (!this.session || !this.account?.id || this.connection !== 'online') throw Object.assign(new Error('Midori is offline; the tag was not saved.'), { code: 'NETWORK_UNCONFIRMED' });
     const generation = this.#generation;
-    const alias = value.trim().replace(/^@/, '').toLowerCase();
+    const alias = normalizeTagAlias(value);
     if (this.tag?.alias === alias) return alias;
     const options = await this.client.request('POST', '/api/v1/tag/options', { alias, accountId: this.account.id });
     if (generation !== this.#generation || options.alias !== alias || options.chainId !== 8453 || options.address !== this.descriptor.address) throw new Error('Tag confirmation changed');

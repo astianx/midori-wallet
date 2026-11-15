@@ -1,4 +1,5 @@
 <script>
+import { formatMidoriTag, normalizeTagAlias } from '../../../lib/tags.js';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
 import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
@@ -24,7 +25,7 @@ export default {
   data() {
     return {
       isLoading: false,
-      username: this.$user.username,
+      username: formatMidoriTag(this.$account.tag?.alias || this.$user.username),
       email: this.$user.email,
       errors: {},
     };
@@ -42,11 +43,13 @@ export default {
       this.isLoading = true;
       this.errors = {};
       try {
-        if (this.username) this.username = await this.$account.updateUsername(this.username);
-        else this.username = this.$account.user.username || '';
+        let username = normalizeTagAlias(this.username);
+        if (this.username) username = await this.$account.updateUsername(this.username);
+        else username = this.$account.user.username || '';
+        this.username = formatMidoriTag(username);
         this.$account.emit('update', 'user');
         this.$account.details.set('userInfo', {
-          username: this.username,
+          username,
           email: this.email,
         });
         await this.$account.details.save();
@@ -75,7 +78,7 @@ export default {
         v-model="username"
         :error="errors.username"
         :label="$t('Your Midori tag')"
-        placeholder="@usuario"
+        placeholder="$usuario"
         :clear="true"
         @update:modelValue="errors.username = undefined"
       />

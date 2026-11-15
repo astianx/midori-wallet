@@ -1,4 +1,5 @@
 <script>
+import { formatMidoriTag } from '../../lib/tags.js';
 import MwAvatar from '../../components/MwAvatar.vue';
 import MwButton from '../../components/MwButton.vue';
 import MwListItem from '../../components/MwListItem.vue';
@@ -91,6 +92,7 @@ export default {
     },
   },
   methods: {
+    formatMidoriTag,
     support() {
       this.$safeOpen('https://github.com/astianx/midori-wallet/issues');
     },
@@ -117,7 +119,7 @@ export default {
         v-if="$user.username"
         class="&__header-username"
       >
-        {{ $account.tag ? `@${$user.username}` : $user.username }}
+        {{ $account.tag ? formatMidoriTag($account.tag.alias) : $user.username }}
       </div>
       <div v-if="!$user.username" class="&__header-username">{{ $t('Your wallet') }}</div>
       <MwButton

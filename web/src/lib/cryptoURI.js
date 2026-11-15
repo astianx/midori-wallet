@@ -1,7 +1,9 @@
+import { isTagRecipient, formatMidoriTag } from './tags.js';
 import { errors } from './account/domain.js';
 import { paymentLink } from '../../../electron/lib/security.js';
 const contracts = new Set(['0xfde4c96c8593536e31f229ea8f37b2ada2699bb2','0x833589fcd6edb6e08f4c7c32d4f71b54bda02913']);
 export function parseCryptoURI(value) {
+  if (isTagRecipient(value)) return { address: formatMidoriTag(value) };
   const link = paymentLink(value);
   if (!link) throw new errors.AddressError('Invalid Base payment URI');
   if (/^0x[0-9a-fA-F]{40}$/.test(link)) return { address: link };

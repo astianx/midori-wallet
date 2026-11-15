@@ -65,7 +65,8 @@ endpoint('post', '/api/v1/authenticators/options', 'Authenticator registration o
 endpoint('post', '/api/v1/authenticators/verify', 'Authenticator registration verification', ref('WebAuthnProof'), object({ registered: { const: true } }), { ...auth, status: 201 });
 endpoint('get', '/api/v1/authenticators', 'List authenticators', null, object({ authenticators: array(ref('Authenticator')) }), auth);
 endpoint('delete', '/api/v1/authenticators/{id}', 'Revoke authenticator', null, object({ revoked: { const: true } }), auth);
-const alias = { type: 'string', pattern: '^[a-z0-9][a-z0-9-]{0,62}$' };
+const alias = { type: 'string', pattern: '^[a-z0-9][a-z0-9-]{0,62}$', description: 'Canonical alias without a prefix; display as $alias.' };
+const aliasInput = { type: 'string', maxLength: 65, description: 'Alias with optional $ prefix; legacy @ and unprefixed aliases remain accepted. Trimmed and normalized to lowercase.' };
 schemas.Tag = object({ alias, revision, chainId: { const: 8453 }, address });
 schemas.TagResult = object({ tag: { anyOf: [ref('Tag'), { type: 'null' }] } });
 schemas.TagOptions = object({ id: uuid, message: string, expiresAt: { type: 'string', format: 'date-time' }, alias, chainId: { const: 8453 }, address });
@@ -73,9 +74,9 @@ schemas.TagResolution = object({ id: uuid, alias, chainId: { const: 8453 }, addr
 schemas.HistoryEntry = object({ id: { type: 'string', pattern: '^(e[0-9]+|p[0-9a-f-]{36})$' }, transactionHash: { type: ['string','null'] }, logIndex: { type: 'integer' }, chainId: { const: 8453 }, contract: address, symbol: { enum: ['USDT','USDC'] }, decimals: { const: 6 }, amountAtomic: atomic, from: address, to: address, incoming: { type: 'boolean' }, outgoing: { type: 'boolean' }, status: { enum: ['pending','included','confirmed','reverted','reorganized','expired'] }, confirmations: atomic, minConfirmations: { type: 'integer' }, timestamp: { type: 'string', format: 'date-time' }, origin: { enum: ['midori','unverified'] }, midoriFeeAtomic: { const: '0' }, intentId: { type: ['string','null'] }, feeMode: { type: ['string','null'] }, feeToken: { type: ['string','null'] }, actualFeeAtomic: { type: ['string','null'] }, maxFeeAtomic: { type: ['string','null'] }, userOperationHash: { type: ['string','null'] }, recipientTag: { type: ['string','null'] }, accountingState: { enum: ['pending','settled','review'] } });
 schemas.History = object({ transactions: array(ref('HistoryEntry')), hasMore: { type: 'boolean' }, cursor: { type: ['string','null'] }, indexing: object({ enabled: { type: 'boolean' }, status: { enum: ['waiting','syncing','caught_up','stale'] }, lastIndexedBlock: { type: ['string','null'] }, updatedAt: { type: ['string','null'], format: 'date-time' } }) });
 endpoint('get', '/api/v1/tag', 'Own registered Midori tag', null, ref('TagResult'), auth);
-endpoint('post', '/api/v1/tag/options', 'Challenge to bind a tag to the owned account', object({ alias: string, accountId: uuid }), ref('TagOptions'), auth);
+endpoint('post', '/api/v1/tag/options', 'Challenge to bind a tag to the owned account', object({ alias: aliasInput, accountId: uuid }), ref('TagOptions'), auth);
 endpoint('post', '/api/v1/tag/verify', 'Register tag with account owner proof', object({ id: uuid, signature: { type: 'string', pattern: '^0x[0-9a-fA-F]{130}$' } }), ref('TagResult'), auth);
-endpoint('post', '/api/v1/tags/resolve', 'Resolve tag to an expiring Base snapshot', object({ alias: string, chainId: { const: 8453 } }), ref('TagResolution'), auth);
+endpoint('post', '/api/v1/tags/resolve', 'Resolve tag to an expiring Base snapshot', object({ alias: aliasInput, chainId: { const: 8453 } }), ref('TagResolution'), auth);
 endpoint('get', '/api/v1/accounts/{id}/history', 'Paginated own token history', null, ref('History'), auth);
 spec.paths['/api/v1/accounts/{id}/history'].get.parameters.push(...[
   ['contract', address], ['cursor', { type: 'string', maxLength: 1000 }], ['limit', { type: 'integer', minimum: 1, maximum: 99 }]

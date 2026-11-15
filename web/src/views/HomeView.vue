@@ -1,4 +1,5 @@
 <script>
+import { formatMidoriTag } from '../lib/tags.js';
 import MwBalanceCard from '../components/MwBalanceCard.vue';
 import MwCryptoLogo from '../components/MwCryptoLogo.vue';
 import MwAppIcon from '../components/MwAppIcon.vue';
@@ -21,7 +22,7 @@ export default {
       if (this.activity.partial) return this.$t('Your transfers and orders appear here.');
       if (!this.balanceFresh) return this.$t(this.$cryptos.some(item => item.balance) ? 'Balances could not be updated. Last known amounts are shown.' : 'Error! Please try again later.');
       if (this.emptyBalance || !this.$account.capabilities.tags || !this.$account.tag) return this.$t('USDT and USDC on Base share your account address.');
-      return this.$t('In Midori Wallet, you can also receive with {tag}.', { tag: `@${this.$user.username}` });
+      return this.$t('In Midori Wallet, you can also receive with {tag}.', { tag: formatMidoriTag(this.$account.tag?.alias || this.$user.username) });
     },
   },
   methods: {

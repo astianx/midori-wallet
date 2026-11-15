@@ -1,4 +1,5 @@
 <script>
+import { formatMidoriTag } from '../../../lib/tags.js';
 import MwFlowProgress from '../../../components/MwFlowProgress.vue';
 import MwStep from '../../../components/MwStep.vue';
 import MwButton from '../../../components/MwButton.vue';
@@ -29,9 +30,10 @@ export default {
   onShow() { this.now = Date.now(); this.$options.timer = setInterval(() => { this.now = Date.now(); }, 1000); },
   onHide() { clearInterval(this.$options.timer); },
   methods: {
+    formatMidoriTag,
     formatAmount(value) { return new Amount(value, 6).toString(); },
     async edit() {
-      try { const previous = this.intent; if (this.intent?.status === 'quoted') await this.$wallet.cancelPayment(this.intent.id); this.updateStorage({ intent: undefined, feeMode: previous.feeMode, temp: { address: previous.recipientTag ? `@${previous.recipientTag}` : previous.to, amount: new Amount(previous.amountAtomic, 6) } }); this.replace('index'); }
+      try { const previous = this.intent; if (this.intent?.status === 'quoted') await this.$wallet.cancelPayment(this.intent.id); this.updateStorage({ intent: undefined, feeMode: previous.feeMode, temp: { address: previous.recipientTag ? formatMidoriTag(previous.recipientTag) : previous.to, amount: new Amount(previous.amountAtomic, 6) } }); this.replace('index'); }
       catch (error) { this.error = paymentError(error, this.$t, { symbol: this.$wallet.crypto.symbol }); }
     },
     confirm() {
@@ -57,7 +59,7 @@ export default {
     <MwFlowProgress :current="2" />
     <MwFormGroup v-if="intent">
       <MwFormTextareaReadonly :label="$t('Recipient receives')" :value="`${formatAmount(intent.amountAtomic)} ${$wallet.crypto.symbol}`" />
-      <MwFormTextareaReadonly :label="$t('To')" :value="intent.recipientTag ? `@${intent.recipientTag}` : intent.to" />
+      <MwFormTextareaReadonly :label="$t('To')" :value="intent.recipientTag ? formatMidoriTag(intent.recipientTag) : intent.to" />
       <details v-if="intent.recipientTag"><summary>{{ $t('View wallet address') }}</summary><MwFormTextareaReadonly :value="intent.to" :label="$t('Wallet address')" /></details>
       <MwFormTextareaReadonly :label="$t('Midori fee')" value="0" />
       <template v-if="intent.feeMode === 'token'">

@@ -16,7 +16,7 @@ export default {
   methods: {
     scan({ data }) {
       try {
-        const parsed = data.trim().startsWith('@') ? { address: data.trim() } : parseCryptoURI(data);
+        const parsed = parseCryptoURI(data);
         const temp = {
           address: parsed.address,
         };

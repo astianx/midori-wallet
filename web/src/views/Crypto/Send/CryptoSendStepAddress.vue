@@ -1,4 +1,5 @@
 <script>
+import { formatMidoriTag } from '../../../lib/tags.js';
 import MwFlowProgress from '../../../components/MwFlowProgress.vue';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
@@ -26,7 +27,7 @@ export default {
         if (intent.contract.toLowerCase() !== this.$wallet.crypto.address.toLowerCase()) { const wallet = this.$account.wallets().find(item => item.crypto.address.toLowerCase() === intent.contract.toLowerCase());
           if (wallet) this.$router.replace({ name: 'crypto.send', params: { cryptoId: wallet.crypto._id } });
           return; }
-        this.updateStorage({ intent, address: intent.to, alias: intent.recipientTag ? `@${intent.recipientTag}` : '', amount: new Amount(intent.amountAtomic, 6) });
+        this.updateStorage({ intent, address: intent.to, alias: intent.recipientTag ? formatMidoriTag(intent.recipientTag) : '', amount: new Amount(intent.amountAtomic, 6) });
         this.replace(intent.status === 'quoted' ? 'confirm' : 'status');
       }
     } catch { /* The recipient can still be entered while reconnecting. */ }
@@ -50,7 +51,7 @@ export default {
   <MainLayout class="&" :title="$t('Send {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
     <MwFlowProgress :current="0" />
     <MwFormGroup class="&__container">
-      <MwFormInput v-model="address" :label="$t('Wallet address or Midori tag')" placeholder="@usuario / 0x…" :error="error" :clear="true" @update:modelValue="error = ''" />
+      <MwFormInput v-model="address" :label="$t('Wallet address or Midori tag')" placeholder="$usuario / 0x…" :error="error" :clear="true" @update:modelValue="error = ''" />
       <MwButtonGroup class="&__actions" type="circle">
         <MwButton v-if="isPasteAvailable" type="circle" @click="paste"><template #circle><PasteIcon /></template>{{ $t('Paste') }}</MwButton>
         <MwButton v-if="isQrScanAvailable" type="circle" @click="next('qr')"><template #circle><QrIcon /></template>{{ $t('Scan QR') }}</MwButton>

@@ -1,4 +1,5 @@
 <script>
+import { formatMidoriTag } from '../../../lib/tags.js';
 import QRCode from 'qrcode-svg';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
@@ -13,7 +14,7 @@ export default {
   extends: MwStep,
   data() { return { receiveMode: 'external', isCopied: false, copyError: false }; },
   computed: {
-    tag() { return this.$user.username && this.$account.tag ? `@${this.$user.username}` : ''; },
+    tag() { return this.$account.tag ? formatMidoriTag(this.$account.tag.alias) : ''; },
     receiveValue() { return this.receiveMode === 'midori' ? this.tag : this.$wallet.address; },
     qr() { return this.receiveValue ? new QRCode({ content: this.receiveValue, join: true, padding: 0, container: 'svg-viewbox' }).svg() : ''; },
   },

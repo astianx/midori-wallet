@@ -1,16 +1,17 @@
 <script>
-import { useId } from 'vue';
+import { fieldProps, useFormField } from './field.js';
 import MwFormElement from './MwFormElement.vue';
 
 import CloseIcon from '../../assets/svg/close.svg';
 
 export default {
-  setup() { return { errorId: `field-error-${useId()}` }; },
+  setup(props) { return useFormField(props); },
   components: {
     MwFormElement,
     CloseIcon,
   },
   props: {
+    ...fieldProps,
     readonly: { type: Boolean, default: false },
     modelValue: {
       type: String,
@@ -52,8 +53,14 @@ export default {
 <template>
   <MwFormElement
     class="&"
-    :errorId="errorId"
+    :class="{ '&--clearable': clear }"
     v-bind="$props"
+    :controlId="controlId"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <div
       v-if="$slots.before"
@@ -62,8 +69,7 @@ export default {
       <slot name="before" />
     </div>
     <input
-      :aria-invalid="!!error"
-      :aria-describedby="error ? errorId : undefined"
+      v-bind="fieldAttrs"
       :value="modelValue"
       :readonly="readonly"
       type="text"
@@ -84,19 +90,17 @@ export default {
     >
       <slot name="after" />
     </div>
-    <div
+    <button
+      type="button"
       v-if="clear && modelValue && !readonly"
       class="&__icon-after"
-      role="button"
-      tabindex="0"
-      @keydown.enter.prevent="$emit('update:modelValue', '')"
-      @keydown.space.prevent="$emit('update:modelValue', '')"
       :title="$t('Clear')"
       :aria-label="$t('Clear')"
-      @click="$emit('update:modelValue', '')"
+      :disabled="disabled"
+      @click.prevent="$emit('update:modelValue', '')"
     >
-      <CloseIcon />
-    </div>
+      <CloseIcon aria-hidden="true" />
+    </button>
     <template #info>
       <slot name="info" />
     </template>
@@ -138,4 +142,7 @@ export default {
       flex-shrink: 0;
     }
   }
+.mw-form-input--clearable .mw-form-input__input { padding-inline-end: 2.75rem; }
+button.mw-form-input__icon-after { position: absolute; inset-inline-end: var(--space-2xs); top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.75rem; height: 2.75rem; }
+button.mw-form-input__icon-after svg { width: 1.25rem; height: 1.25rem; }
 </style>

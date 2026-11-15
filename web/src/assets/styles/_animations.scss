@@ -15,11 +15,11 @@
   }
 
   &-enter-active [data-transition] {
-    transition: all 0.1s ease-in 0.1s;
+    transition: opacity 0.1s ease-in 0.1s, transform 0.1s ease-in 0.1s;
   }
 
   &-leave-active [data-transition] {
-    transition: all 0.1s ease-out;
+    transition: opacity 0.1s ease-out, transform 0.1s ease-out;
   }
 
   &-leave-to [data-transition] {
@@ -43,7 +43,7 @@
 
 .modal {
   &-enter-active {
-    transition: all 0.2s ease-in;
+    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
   }
 
   &-enter-from,
@@ -53,7 +53,7 @@
   }
 
   &-leave-active {
-    transition: all 0.1s ease-out;
+    transition: opacity 0.1s ease-out, transform 0.1s ease-out;
   }
 }
 
@@ -137,4 +137,9 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-left-enter-active [data-transition], .slide-left-leave-active [data-transition], .slide-right-enter-active [data-transition], .slide-right-leave-active [data-transition], .modal-enter-active, .modal-leave-active { transition: opacity 0.1s linear; transform: none; }
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
 }

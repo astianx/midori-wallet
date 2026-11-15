@@ -12,13 +12,15 @@ export default {
 <template>
   <div
     class="&"
+    role="status"
+    :aria-label="$t('Loading')"
     :class="{
       [`&--${type}`]: type,
     }"
   >
-    <div class="&__dot" />
-    <div class="&__dot" />
-    <div class="&__dot" />
+    <div class="&__dot" aria-hidden="true" />
+    <div class="&__dot" aria-hidden="true" />
+    <div class="&__dot" aria-hidden="true" />
   </div>
 </template>
 

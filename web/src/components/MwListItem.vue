@@ -1,7 +1,10 @@
 <script>
+import { computed, provide, useId } from 'vue';
 import ChevronRightIcon from '../assets/svg/chevronRight.svg';
 
 export default {
+  setup(props) { const titleId = `list-title-${useId()}`; provide('mw-list-item-title', computed(() => props.title ? titleId : undefined)); return { titleId }; },
+  computed: { interactive() { return Boolean(this.$.vnode.props?.onClick) && !this.$slots.after; } },
   components: {
     ChevronRightIcon,
   },
@@ -35,17 +38,12 @@ export default {
   <li
     class="&"
     :class="{
-      '&--clickable': !$slots.after,
+      '&--clickable': interactive,
       '&--disabled': disabled,
       [`&--${type}`]: type,
     }"
-    :role="$slots.after ? undefined : 'button'"
-    :tabindex="$slots.after || disabled ? undefined : 0"
-    :aria-disabled="disabled || undefined"
-    @keydown.enter.self.prevent="!disabled && !$slots.after && $emit('click')"
-    @keydown.space.self.prevent="!disabled && !$slots.after && $emit('click')"
-    @click="!disabled && $emit('click')"
   >
+    <component :is="interactive ? 'button' : 'div'" class="&__control" :type="interactive ? 'button' : undefined" :disabled="interactive ? disabled : undefined" :inert="!interactive && disabled ? true : undefined" :aria-disabled="disabled || undefined" @click="interactive && !disabled && $emit('click')">
     <div
       v-if="$slots.before"
       class="&__before"
@@ -57,6 +55,7 @@ export default {
       <slot />
       <div
         v-if="title"
+        :id="titleId"
         class="&__title"
       >
         {{ title }}
@@ -80,16 +79,19 @@ export default {
       <ChevronRightIcon
         v-else
         class="rtl-mirror"
+        aria-hidden="true"
       />
     </div>
+    </component>
   </li>
 </template>
 
 <style lang="scss">
   .#{ $filename } {
     $self: &;
-    display: flex;
     min-height: 3.5rem;
+    &__control {
+      display: flex; width: 100%; min-height: 3.5rem; text-align: start;
     flex-direction: row;
     align-items: center;
     padding-right: var(--spacing-xl);
@@ -99,6 +101,8 @@ export default {
     @include breakpoint(lg) {
       padding-right: 0;
       padding-left: 0;
+    }
+
     }
 
     &__content {

@@ -1,5 +1,5 @@
 <script>
-import { useId } from 'vue';
+import { fieldProps, useFormField } from './field.js';
 import MwAmountInput from '../MwAmountInput.vue';
 import MwFormElement from './MwFormElement.vue';
 import { cryptoToFiat, fiatToCrypto } from '../../lib/helpers.js';
@@ -12,13 +12,14 @@ import {
 import TrailingIcon from '../../assets/svg/trailing.svg';
 
 export default {
-  setup() { return { errorId: `field-error-${useId()}` }; },
+  setup(props) { return useFormField(props); },
   components: {
     MwAmountInput,
     MwFormElement,
     TrailingIcon,
   },
   props: {
+    ...fieldProps,
     modelValue: {
       type: Amount,
       default: undefined,
@@ -152,15 +153,19 @@ export default {
 <template>
   <MwFormElement
     class="&"
-    :errorId="errorId"
     :label="label"
     :error="error"
     :small="small"
+    :controlId="controlId"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <MwAmountInput
+      v-bind="fieldAttrs"
       v-model="inputValue"
-      :aria-invalid="!!error"
-      :aria-describedby="error ? errorId : undefined"
       class="&__amount"
       :decimals="option.decimals"
     />
@@ -172,6 +177,10 @@ export default {
         {{ option.name }}
       </div>
       <select
+        :id="`${controlId}-unit`"
+        :disabled="disabled"
+        :aria-label="symbol"
+        :aria-describedby="error ? errorId : undefined"
         v-model="optionValue"
         class="&__select"
       >

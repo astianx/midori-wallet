@@ -1,6 +1,11 @@
 <script>
+import { inject, unref } from 'vue';
 export default {
+  setup() { return { rowTitle: inject('mw-list-item-title', undefined) }; },
+  computed: { labelledBy() { return unref(this.rowTitle); } },
   props: {
+    disabled: { type: Boolean, default: false },
+    label: { type: String, default: '' },
     checked: {
       type: Boolean,
       default: false,
@@ -15,7 +20,7 @@ export default {
     click() {
       // https://github.com/vuejs/core/issues/12070
       setTimeout(() => {
-        if (!this.isLoading) {
+        if (!this.isLoading && !this.disabled) {
           window.taptic?.tap();
           this.$emit('click');
         }
@@ -32,6 +37,11 @@ export default {
     <input
       ref="input"
       :checked="checked"
+      :disabled="disabled || isLoading"
+      :aria-checked="checked"
+      :aria-busy="isLoading"
+      :aria-labelledby="labelledBy"
+      :aria-label="!labelledBy ? ($attrs['aria-label'] || label || $t('Settings')) : undefined"
       type="checkbox"
       role="switch"
       class="&__slider"
@@ -62,7 +72,7 @@ export default {
       margin: 0;
       appearance: none;
       background-color: var(--color-neutral);
-      transition: all 0.1s ease-out;
+      transition: background-color 0.1s ease-out;
 
       &::before {
         position: absolute;
@@ -73,7 +83,7 @@ export default {
         border-radius: 50%;
         background-color: var(--color-white);
         content: "";
-        transition: all 0.1s ease-out;
+        transition: transform 0.1s ease-out;
 
         [dir="rtl"] & {
           transform: translateX(var(--spacing-sm));

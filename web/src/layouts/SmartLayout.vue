@@ -254,6 +254,7 @@ export default {
       padding: var(--space-lg) var(--space-md) max(var(--space-lg), env(safe-area-inset-bottom));
       gap: var(--space-lg);
       > * { flex-shrink: 0; min-width: 0; }
+      .mw-form-element__box--extra { flex-shrink: 0; }
       @media (min-width: 40rem) { padding-inline: var(--space-xl); gap: var(--space-xl); }
 
       &--narrow {

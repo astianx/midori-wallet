@@ -182,7 +182,7 @@ const app = [
       redirect(to) {
         try {
           const parsed = parseCryptoURI(to.params.data);
-          const crypto = schemes.find((item) => item.scheme === parsed.scheme);
+          const crypto = parsed.scheme ? schemes.find((item) => item.scheme === parsed.scheme) : schemes[0];
           if (crypto) {
             return {
               name: 'crypto.send',
@@ -192,7 +192,7 @@ const app = [
                 destinationTag: BaseExchange.EXTRA_ID.includes(crypto._id) ? parsed.destinationTag : undefined,
               },
               params: {
-                cryptoId: parsed.token ? `${parsed.token}@base` : crypto._id,
+                cryptoId: parsed.token ? `${parsed.token}@base` : to.params.cryptoId || crypto._id,
               },
             };
           }

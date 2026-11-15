@@ -43,8 +43,9 @@ router.up = async () => {
 
 router.rememberDestination = () => rememberDestination(router.currentRoute.value);
 router.resumeDestination = () => router.replace(consumeDestination() || { name: 'home' });
-router.navigateExternal = path => {
+router.navigateExternal = async path => {
   clearNavigationDrafts();
+  await router.isReady();
   return router.push({ path, force: true });
 };
 

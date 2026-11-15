@@ -14,8 +14,16 @@ export default {
     MwUpdater,
     CryptoRampCheckout,
   },
-  data() { return { checkout: null }; },
+  data() { return { checkout: null, checkoutGuard: null }; },
+  watch: { '$route.name'(name) { if (name === 'unlock') this.discardCheckout(); } },
   mounted() {
+    this.checkoutGuard = (to, from) => {
+      if (!this.checkout) return false;
+      if (!to.meta.requiresAuth || to.name === 'unlock') { this.discardCheckout(); return false; }
+      if (to.fullPath !== from.fullPath) { this.closeCheckout(); return true; }
+      return false;
+    };
+    this.$router.closeRampCheckout = this.checkoutGuard;
     eventBus.on('openRampCheckout', this.openCheckout);
     eventBus.on('discardRampCheckout', this.discardCheckout);
     if (this.env.VITE_BUILD_TYPE === 'phonegap') {
@@ -23,6 +31,7 @@ export default {
     }
   },
   beforeUnmount() {
+    if (this.$router.closeRampCheckout === this.checkoutGuard) delete this.$router.closeRampCheckout;
     eventBus.off('openRampCheckout', this.openCheckout);
     eventBus.off('discardRampCheckout', this.discardCheckout);
   },
@@ -34,12 +43,9 @@ export default {
       const order = this.checkout;
       this.discardCheckout();
       eventBus.emit('rampCheckoutUpdate', order);
+      eventBus.emit('rampCheckoutClosed', order);
     },
-    checkoutError() {
-      const order = this.checkout;
-      this.discardCheckout();
-      eventBus.emit('rampCheckoutError', order);
-    },
+    checkoutError(reason) { eventBus.emit('rampCheckoutError', { ...this.checkout, checkoutError: reason }); },
   },
 };
 </script>

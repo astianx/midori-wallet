@@ -60,6 +60,7 @@ router.beforeEach((to, from) => {
     rememberDestination(to);
     return { name: 'unlock', replace: true };
   }
+  if (router.closeRampCheckout?.(to, from)) return false;
   if (to.meta.crypto) {
     const wallet = $account.wallet(to.params.cryptoId);
     if (wallet) {
@@ -87,7 +88,8 @@ router.beforeEach((to, from) => {
   }
 });
 
-router.afterEach((to) => {
+router.afterEach((to, from, failure) => {
+  if (failure) return;
   const { $account, $app } = router;
   if (to.meta.crypto && $account.wallet(to.params.cryptoId)) {
     return;

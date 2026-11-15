@@ -4,6 +4,7 @@ import MwAppIcon from '../components/MwAppIcon.vue';
 import MwCryptoLogo from '../components/MwCryptoLogo.vue';
 import MwButton from '../components/MwButton.vue';
 import MwLoader from '../components/MwLoader.vue';
+import { rampAssetSupported, rampNetwork } from '../lib/account/ramp-presentation.js';
 import { rampError } from '../lib/account/ramp-errors.js';
 
 export default {
@@ -19,13 +20,14 @@ export default {
         : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Send and receive USDC and USDT with your own wallet.'), icon: 'send', enabled: !!this.$account.capabilities.payments && this.$cryptos.length > 0 }, { id: 'sell', label: this.$t('Local currency'), description: `Transak · ${this.$t('Convert to local currency')}`, icon: 'refresh', enabled: !!this.$account.capabilities.ramp }];
     },
     selected() { return this.methods.find(method => method.id === this.$route.query.method); },
+    assetNetwork() { return this.isRamp ? rampNetwork(this.options?.environment) : 'Base'; },
     isRamp() { return ['buy', 'sell'].includes(this.selected?.id); },
     assets() {
       if (!this.selected?.enabled) return [];
       if (!this.isRamp) return this.$cryptos;
       const kind = this.selected.id;
       if (!this.options?.products.includes(kind.toUpperCase()) || !this.options.fiatCurrencies.some(item => item[kind])) return [];
-      return this.$cryptos.filter(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && asset[kind]));
+      return this.$cryptos.filter(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && rampAssetSupported(this.options, asset, kind)));
     },
   },
   mounted() { if (this.isRamp && this.selected.enabled) this.loadOptions(); },
@@ -54,7 +56,7 @@ export default {
 <template>
   <MainLayout class="&" :title="title" wide allowReadFailure :onBack="back">
     <div class="&__composition">
-      <header class="&__intro"><span class="&__intro-icon"><MwAppIcon :name="selected?.icon || (adding ? 'plus' : 'send')" /></span><h1>{{ selected?.label || title }}</h1><p>{{ selected ? $t('Only Base is supported') : $t('Choose a method') }}</p><span v-if="isRamp" class="&__provider">Transak</span></header>
+      <header class="&__intro"><span class="&__intro-icon"><MwAppIcon :name="selected?.icon || (adding ? 'plus' : 'send')" /></span><h1>{{ selected?.label || title }}</h1><p>{{ selected ? (isRamp ? assetNetwork : $t('Only Base is supported')) : $t('Choose a method') }}</p><span v-if="isRamp" class="&__provider">Transak</span></header>
       <section class="&__choices" :aria-label="selected ? $t('Stablecoins') : $t('Choose a method')">
         <template v-if="!selected">
           <div v-for="method in methods" :key="method.id" class="&__method"><button type="button" class="&__row" :disabled="!method.enabled" :aria-describedby="`${direction}-${method.id}-description`" @click="choose(method)"><span class="&__icon"><MwAppIcon :name="method.icon" /></span><span class="&__label"><strong>{{ method.label }}</strong><small :id="`${direction}-${method.id}-description`">{{ method.description }}</small></span><MwAppIcon v-if="method.enabled" name="arrow" /></button><p v-if="!method.enabled" class="&__notice" role="status">{{ limitation(method) }}</p></div>
@@ -66,7 +68,7 @@ export default {
           <template v-else>
             <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Transak test mode. Use test funds only; orders do not change your Base mainnet balance.') }}</p>
             <p v-if="!assets.length" class="&__notice" role="status">{{ $t(isRamp ? 'This asset or currency is unavailable through Transak.' : 'Balance unavailable') }}</p>
-            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · Base</small></span><MwAppIcon name="arrow" /></RouterLink>
+            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · {{ assetNetwork }}</small></span><MwAppIcon name="arrow" /></RouterLink>
           </template>
         </template>
       </section>

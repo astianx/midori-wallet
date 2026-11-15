@@ -57,7 +57,7 @@ export default {
 };
 </script>
 <template>
-  <Teleport to="body"><dialog ref="dialog" class="&__container" :aria-labelledby="titleId" :aria-describedby="description ? `${titleId}-description` : undefined" tabindex="-1" @keydown="containFocus" @cancel.prevent="requestClose" @click="outside" @close="show && requestClose()"><header class="&__header"><h2 :id="titleId" class="&__title">{{ title }}</h2><button type="button" class="&__close" :aria-label="$t('Close')" @click="requestClose"><CloseIcon aria-hidden="true" /></button></header><p v-if="description" :id="`${titleId}-description`">{{ description }}</p><div ref="body" class="&__body"><slot v-if="show" /></div><footer v-if="$slots.footer && show" ref="footer" class="&__footer"><slot name="footer" /></footer></dialog></Teleport>
+  <Teleport to="body"><dialog ref="dialog" class="&__container" :aria-labelledby="titleId" :aria-describedby="description ? `${titleId}-description` : undefined" tabindex="-1" @keydown="containFocus" @cancel.prevent="requestClose" @click="outside" @close="show && !$refs.dialog.open && requestClose()"><header class="&__header"><h2 :id="titleId" class="&__title">{{ title }}</h2><button type="button" class="&__close" :aria-label="$t('Close')" @click="requestClose"><CloseIcon aria-hidden="true" /></button></header><p v-if="description" :id="`${titleId}-description`">{{ description }}</p><div ref="body" class="&__body"><slot v-if="show" /></div><footer v-if="$slots.footer && show" ref="footer" class="&__footer"><slot name="footer" /></footer></dialog></Teleport>
 </template>
 <style lang="scss">
 /* Hallmark · component-scope · design-system: design.md · pre-emit critique: P5 H5 E4 S4 R5 V4 */

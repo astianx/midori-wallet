@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "关闭此页面不会取消或确认订单。",
   "Your wallet balance updates separately.": "钱包余额会分别更新。",
   "Check your original payment method.": "请检查原付款方式。",
-  "The selected asset or currency is unavailable.": "所选资产或货币不可用。"
+  "The selected asset or currency is unavailable.": "所选资产或货币不可用。",
+  "Type": "类型",
+  "Checking": "正在核实",
+  "Not completed": "未完成",
+  "Filters apply to loaded activity. Load more to search older transfers.": "筛选仅适用于已加载的记录。加载更多以查找较早的转账。",
+  "Purchases and sales show the latest 50 orders.": "买卖仅显示最近50笔订单。",
+  "History is still updating. More activity may appear.": "历史记录仍在更新，可能出现更多记录。",
+  "Could not update this receipt. Showing the last available details.": "无法更新此收据，现显示最近可用的信息。",
+  "Could not load this receipt. Check the link and try again.": "无法加载此收据，请检查链接并重试。",
+  "Review before sharing": "分享前请检查",
+  "Only the text below will be shared.": "仅分享下方文字。",
+  "Could not share. Copy or select the text instead.": "无法分享，请复制或选择文字。",
+  "Could not copy. Select the text and copy it manually.": "无法复制，请选择文字并手动复制。",
+  "Reference": "参考编号"
 }

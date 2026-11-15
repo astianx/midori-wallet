@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Zavření této obrazovky objednávku neruší ani nepotvrzuje.",
   "Your wallet balance updates separately.": "Zůstatek peněženky se aktualizuje samostatně.",
   "Check your original payment method.": "Zkontrolujte původní platební metodu.",
-  "The selected asset or currency is unavailable.": "Vybrané aktivum nebo měna nejsou dostupné."
+  "The selected asset or currency is unavailable.": "Vybrané aktivum nebo měna nejsou dostupné.",
+  "Type": "Typ",
+  "Checking": "Ověřujeme",
+  "Not completed": "Nedokončeno",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filtry platí pro načtené pohyby. Pro starší převody načtěte další.",
+  "Purchases and sales show the latest 50 orders.": "Zobrazuje se posledních 50 objednávek nákupu a prodeje.",
+  "History is still updating. More activity may appear.": "Historie se stále aktualizuje. Mohou se objevit další pohyby.",
+  "Could not update this receipt. Showing the last available details.": "Potvrzení se nepodařilo aktualizovat. Zobrazují se poslední dostupné údaje.",
+  "Could not load this receipt. Check the link and try again.": "Potvrzení se nepodařilo načíst. Zkontrolujte odkaz a zkuste to znovu.",
+  "Review before sharing": "Před sdílením zkontrolujte",
+  "Only the text below will be shared.": "Bude sdílen pouze následující text.",
+  "Could not share. Copy or select the text instead.": "Sdílení se nezdařilo. Text zkopírujte nebo vyberte.",
+  "Could not copy. Select the text and copy it manually.": "Kopírování se nezdařilo. Vyberte text a zkopírujte jej ručně.",
+  "Reference": "Reference"
 }

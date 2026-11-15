@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Chiudere questa schermata non annulla né conferma questo ordine.",
   "Your wallet balance updates separately.": "Il saldo del wallet si aggiorna separatamente.",
   "Check your original payment method.": "Controlla il metodo di pagamento originale.",
-  "The selected asset or currency is unavailable.": "L’asset o la valuta selezionati non sono disponibili."
+  "The selected asset or currency is unavailable.": "L’asset o la valuta selezionati non sono disponibili.",
+  "Type": "Tipo",
+  "Checking": "In verifica",
+  "Not completed": "Non completato",
+  "Filters apply to loaded activity. Load more to search older transfers.": "I filtri si applicano ai movimenti caricati. Caricane altri per cercare trasferimenti precedenti.",
+  "Purchases and sales show the latest 50 orders.": "Sono mostrati gli ultimi 50 ordini di acquisto e vendita.",
+  "History is still updating. More activity may appear.": "La cronologia è in aggiornamento. Potrebbero apparire altri movimenti.",
+  "Could not update this receipt. Showing the last available details.": "Impossibile aggiornare la ricevuta. Sono mostrati gli ultimi dati disponibili.",
+  "Could not load this receipt. Check the link and try again.": "Impossibile caricare la ricevuta. Controlla il link e riprova.",
+  "Review before sharing": "Controlla prima di condividere",
+  "Only the text below will be shared.": "Verrà condiviso solo il testo qui sotto.",
+  "Could not share. Copy or select the text instead.": "Condivisione non riuscita. Copia o seleziona il testo.",
+  "Could not copy. Select the text and copy it manually.": "Copia non riuscita. Seleziona il testo e copialo manualmente.",
+  "Reference": "Riferimento"
 }

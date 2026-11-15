@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Dit scherm sluiten annuleert of bevestigt deze order niet.",
   "Your wallet balance updates separately.": "Je walletsaldo wordt apart bijgewerkt.",
   "Check your original payment method.": "Controleer je oorspronkelijke betaalmethode.",
-  "The selected asset or currency is unavailable.": "De gekozen munt of valuta is niet beschikbaar."
+  "The selected asset or currency is unavailable.": "De gekozen munt of valuta is niet beschikbaar.",
+  "Type": "Type",
+  "Checking": "Wordt gecontroleerd",
+  "Not completed": "Niet voltooid",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filters gelden voor geladen activiteit. Laad meer om oudere overschrijvingen te zoeken.",
+  "Purchases and sales show the latest 50 orders.": "De laatste 50 koop- en verkooporders worden getoond.",
+  "History is still updating. More activity may appear.": "De geschiedenis wordt nog bijgewerkt. Er kan meer activiteit verschijnen.",
+  "Could not update this receipt. Showing the last available details.": "Dit bewijs kon niet worden bijgewerkt. De laatst beschikbare gegevens worden getoond.",
+  "Could not load this receipt. Check the link and try again.": "Dit bewijs kon niet worden geladen. Controleer de link en probeer opnieuw.",
+  "Review before sharing": "Controleer voor het delen",
+  "Only the text below will be shared.": "Alleen de onderstaande tekst wordt gedeeld.",
+  "Could not share. Copy or select the text instead.": "Delen mislukt. Kopieer of selecteer de tekst.",
+  "Could not copy. Select the text and copy it manually.": "Kopiëren mislukt. Selecteer de tekst en kopieer deze handmatig.",
+  "Reference": "Referentie"
 }

@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Å lukke denne skjermen kansellerer eller bekrefter ikke denne ordren.",
   "Your wallet balance updates separately.": "Wallet-saldoen oppdateres separat.",
   "Check your original payment method.": "Sjekk den opprinnelige betalingsmåten.",
-  "The selected asset or currency is unavailable.": "Den valgte eiendelen eller valutaen er utilgjengelig."
+  "The selected asset or currency is unavailable.": "Den valgte eiendelen eller valutaen er utilgjengelig.",
+  "Type": "Type",
+  "Checking": "Kontrolleres",
+  "Not completed": "Ikke fullført",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filtrene gjelder lastet aktivitet. Last mer for å finne eldre overføringer.",
+  "Purchases and sales show the latest 50 orders.": "De siste 50 kjøps- og salgsordrene vises.",
+  "History is still updating. More activity may appear.": "Historikken oppdateres fortsatt. Mer aktivitet kan vises.",
+  "Could not update this receipt. Showing the last available details.": "Kvitteringen kunne ikke oppdateres. De siste tilgjengelige opplysningene vises.",
+  "Could not load this receipt. Check the link and try again.": "Kvitteringen kunne ikke lastes. Kontroller lenken og prøv igjen.",
+  "Review before sharing": "Se over før deling",
+  "Only the text below will be shared.": "Bare teksten nedenfor deles.",
+  "Could not share. Copy or select the text instead.": "Kunne ikke dele. Kopier eller marker teksten.",
+  "Could not copy. Select the text and copy it manually.": "Kunne ikke kopiere. Marker teksten og kopier den manuelt.",
+  "Reference": "Referanse"
 }

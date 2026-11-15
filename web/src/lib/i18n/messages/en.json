@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Closing this screen does not cancel or confirm this order.",
   "Your wallet balance updates separately.": "Your wallet balance updates separately.",
   "Check your original payment method.": "Check your original payment method.",
-  "The selected asset or currency is unavailable.": "The selected asset or currency is unavailable."
+  "The selected asset or currency is unavailable.": "The selected asset or currency is unavailable.",
+  "Type": "Type",
+  "Checking": "Checking",
+  "Not completed": "Not completed",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filters apply to loaded activity. Load more to search older transfers.",
+  "Purchases and sales show the latest 50 orders.": "Purchases and sales show the latest 50 orders.",
+  "History is still updating. More activity may appear.": "History is still updating. More activity may appear.",
+  "Could not update this receipt. Showing the last available details.": "Could not update this receipt. Showing the last available details.",
+  "Could not load this receipt. Check the link and try again.": "Could not load this receipt. Check the link and try again.",
+  "Review before sharing": "Review before sharing",
+  "Only the text below will be shared.": "Only the text below will be shared.",
+  "Could not share. Copy or select the text instead.": "Could not share. Copy or select the text instead.",
+  "Could not copy. Select the text and copy it manually.": "Could not copy. Select the text and copy it manually.",
+  "Reference": "Reference"
 }

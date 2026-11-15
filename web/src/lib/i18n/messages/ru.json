@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Закрытие этого экрана не отменяет и не подтверждает заявку.",
   "Your wallet balance updates separately.": "Баланс кошелька обновляется отдельно.",
   "Check your original payment method.": "Проверьте исходный способ оплаты.",
-  "The selected asset or currency is unavailable.": "Выбранный актив или валюта недоступны."
+  "The selected asset or currency is unavailable.": "Выбранный актив или валюта недоступны.",
+  "Type": "Тип",
+  "Checking": "Проверяем",
+  "Not completed": "Не завершено",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Фильтры применяются к загруженным операциям. Загрузите ещё для поиска старых переводов.",
+  "Purchases and sales show the latest 50 orders.": "Показаны последние 50 заявок на покупку и продажу.",
+  "History is still updating. More activity may appear.": "История ещё обновляется. Могут появиться другие операции.",
+  "Could not update this receipt. Showing the last available details.": "Не удалось обновить квитанцию. Показаны последние доступные данные.",
+  "Could not load this receipt. Check the link and try again.": "Не удалось загрузить квитанцию. Проверьте ссылку и повторите попытку.",
+  "Review before sharing": "Проверьте перед отправкой",
+  "Only the text below will be shared.": "Будет отправлен только текст ниже.",
+  "Could not share. Copy or select the text instead.": "Не удалось поделиться. Скопируйте или выделите текст.",
+  "Could not copy. Select the text and copy it manually.": "Не удалось скопировать. Выделите текст и скопируйте вручную.",
+  "Reference": "Номер операции"
 }

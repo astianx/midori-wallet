@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "סגירת המסך אינה מבטלת או מאשרת את ההזמנה.",
   "Your wallet balance updates separately.": "יתרת הארנק מתעדכנת בנפרד.",
   "Check your original payment method.": "בדקו את אמצעי התשלום המקורי.",
-  "The selected asset or currency is unavailable.": "הנכס או המטבע שנבחרו אינם זמינים."
+  "The selected asset or currency is unavailable.": "הנכס או המטבע שנבחרו אינם זמינים.",
+  "Type": "סוג",
+  "Checking": "בבדיקה",
+  "Not completed": "לא הושלם",
+  "Filters apply to loaded activity. Load more to search older transfers.": "המסננים חלים על הפעילות שנטענה. יש לטעון עוד כדי לחפש העברות קודמות.",
+  "Purchases and sales show the latest 50 orders.": "מוצגות 50 הוראות הקנייה והמכירה האחרונות.",
+  "History is still updating. More activity may appear.": "ההיסטוריה עדיין מתעדכנת. ייתכן שיופיעו פעולות נוספות.",
+  "Could not update this receipt. Showing the last available details.": "לא ניתן לעדכן את הקבלה. מוצגים הפרטים האחרונים הזמינים.",
+  "Could not load this receipt. Check the link and try again.": "לא ניתן לטעון את הקבלה. יש לבדוק את הקישור ולנסות שוב.",
+  "Review before sharing": "בדיקה לפני שיתוף",
+  "Only the text below will be shared.": "רק הטקסט שלמטה ישותף.",
+  "Could not share. Copy or select the text instead.": "השיתוף נכשל. יש להעתיק או לבחור את הטקסט.",
+  "Could not copy. Select the text and copy it manually.": "ההעתקה נכשלה. יש לבחור את הטקסט ולהעתיק ידנית.",
+  "Reference": "אסמכתה"
 }

@@ -40,3 +40,7 @@ export function paymentLink(value) {
     return url.href;
   } catch { return null; }
 }
+
+export function canWriteClipboard(contents, mainContents, requestingUrl, details) {
+  return contents === mainContents && details?.isMainFrame === true && isAppUrl(requestingUrl);
+}

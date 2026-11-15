@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Menutup layar ini tidak membatalkan atau mengonfirmasi pesanan.",
   "Your wallet balance updates separately.": "Saldo wallet diperbarui secara terpisah.",
   "Check your original payment method.": "Periksa metode pembayaran awal.",
-  "The selected asset or currency is unavailable.": "Aset atau mata uang yang dipilih tidak tersedia."
+  "The selected asset or currency is unavailable.": "Aset atau mata uang yang dipilih tidak tersedia.",
+  "Type": "Jenis",
+  "Checking": "Sedang diperiksa",
+  "Not completed": "Belum selesai",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filter berlaku untuk aktivitas yang dimuat. Muat lebih banyak untuk mencari transfer lama.",
+  "Purchases and sales show the latest 50 orders.": "Menampilkan 50 pesanan pembelian dan penjualan terakhir.",
+  "History is still updating. More activity may appear.": "Riwayat masih diperbarui. Aktivitas lain mungkin muncul.",
+  "Could not update this receipt. Showing the last available details.": "Bukti ini tidak dapat diperbarui. Menampilkan detail terakhir yang tersedia.",
+  "Could not load this receipt. Check the link and try again.": "Bukti ini tidak dapat dimuat. Periksa tautan dan coba lagi.",
+  "Review before sharing": "Tinjau sebelum berbagi",
+  "Only the text below will be shared.": "Hanya teks di bawah yang akan dibagikan.",
+  "Could not share. Copy or select the text instead.": "Tidak dapat berbagi. Salin atau pilih teks.",
+  "Could not copy. Select the text and copy it manually.": "Tidak dapat menyalin. Pilih teks dan salin secara manual.",
+  "Reference": "Referensi"
 }

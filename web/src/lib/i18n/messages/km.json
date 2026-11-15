@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "ការបិទអេក្រង់នេះមិនលុបចោល ឬបញ្ជាក់បញ្ជាទេ។",
   "Your wallet balance updates separately.": "សមតុល្យកាបូបត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយឡែក។",
   "Check your original payment method.": "ពិនិត្យវិធីទូទាត់ដើម។",
-  "The selected asset or currency is unavailable.": "ទ្រព្យ ឬរូបិយប័ណ្ណដែលបានជ្រើសមិនអាចប្រើបាន។"
+  "The selected asset or currency is unavailable.": "ទ្រព្យ ឬរូបិយប័ណ្ណដែលបានជ្រើសមិនអាចប្រើបាន។",
+  "Type": "ប្រភេទ",
+  "Checking": "កំពុងពិនិត្យ",
+  "Not completed": "មិនបានបញ្ចប់",
+  "Filters apply to loaded activity. Load more to search older transfers.": "តម្រងអនុវត្តចំពោះសកម្មភាពដែលបានផ្ទុក។ ផ្ទុកបន្ថែមដើម្បីស្វែងរកការផ្ទេរចាស់។",
+  "Purchases and sales show the latest 50 orders.": "បង្ហាញការបញ្ជាទិញ និងលក់ 50 ចុងក្រោយ។",
+  "History is still updating. More activity may appear.": "ប្រវត្តិកំពុងធ្វើបច្ចុប្បន្នភាព។ អាចមានសកម្មភាពបន្ថែម។",
+  "Could not update this receipt. Showing the last available details.": "មិនអាចធ្វើបច្ចុប្បន្នភាពបង្កាន់ដៃនេះ។ បង្ហាញព័ត៌មានចុងក្រោយដែលមាន។",
+  "Could not load this receipt. Check the link and try again.": "មិនអាចផ្ទុកបង្កាន់ដៃនេះ។ ពិនិត្យតំណ ហើយព្យាយាមម្ដងទៀត។",
+  "Review before sharing": "ពិនិត្យមុនចែករំលែក",
+  "Only the text below will be shared.": "មានតែអត្ថបទខាងក្រោមប៉ុណ្ណោះដែលនឹងត្រូវចែករំលែក។",
+  "Could not share. Copy or select the text instead.": "មិនអាចចែករំលែក។ ចម្លង ឬជ្រើសអត្ថបទ។",
+  "Could not copy. Select the text and copy it manually.": "មិនអាចចម្លង។ ជ្រើសអត្ថបទ ហើយចម្លងដោយដៃ។",
+  "Reference": "លេខយោង"
 }

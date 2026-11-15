@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Att stänga den här skärmen avbryter eller bekräftar inte ordern.",
   "Your wallet balance updates separately.": "Plånbokssaldot uppdateras separat.",
   "Check your original payment method.": "Kontrollera den ursprungliga betalningsmetoden.",
-  "The selected asset or currency is unavailable.": "Den valda tillgången eller valutan är inte tillgänglig."
+  "The selected asset or currency is unavailable.": "Den valda tillgången eller valutan är inte tillgänglig.",
+  "Type": "Typ",
+  "Checking": "Kontrolleras",
+  "Not completed": "Inte slutförd",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filtren gäller inläst aktivitet. Läs in mer för att hitta äldre överföringar.",
+  "Purchases and sales show the latest 50 orders.": "De senaste 50 köp- och säljordrarna visas.",
+  "History is still updating. More activity may appear.": "Historiken uppdateras fortfarande. Fler aktiviteter kan visas.",
+  "Could not update this receipt. Showing the last available details.": "Kvittot kunde inte uppdateras. De senaste tillgängliga uppgifterna visas.",
+  "Could not load this receipt. Check the link and try again.": "Kvittot kunde inte läsas in. Kontrollera länken och försök igen.",
+  "Review before sharing": "Granska före delning",
+  "Only the text below will be shared.": "Endast texten nedan delas.",
+  "Could not share. Copy or select the text instead.": "Kunde inte dela. Kopiera eller markera texten.",
+  "Could not copy. Select the text and copy it manually.": "Kunde inte kopiera. Markera texten och kopiera manuellt.",
+  "Reference": "Referens"
 }

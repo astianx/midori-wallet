@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "이 화면을 닫아도 주문이 취소되거나 확정되지 않습니다.",
   "Your wallet balance updates separately.": "지갑 잔액은 별도로 업데이트됩니다.",
   "Check your original payment method.": "원래 결제 수단을 확인하세요.",
-  "The selected asset or currency is unavailable.": "선택한 자산 또는 통화를 사용할 수 없습니다."
+  "The selected asset or currency is unavailable.": "선택한 자산 또는 통화를 사용할 수 없습니다.",
+  "Type": "유형",
+  "Checking": "확인 중",
+  "Not completed": "완료되지 않음",
+  "Filters apply to loaded activity. Load more to search older transfers.": "필터는 불러온 내역에 적용됩니다. 이전 이체를 찾으려면 더 불러오세요.",
+  "Purchases and sales show the latest 50 orders.": "최근 구매 및 판매 주문 50건이 표시됩니다.",
+  "History is still updating. More activity may appear.": "내역을 업데이트하고 있습니다. 다른 내역이 표시될 수 있습니다.",
+  "Could not update this receipt. Showing the last available details.": "이 영수증을 업데이트하지 못했습니다. 마지막으로 확인된 정보를 표시합니다.",
+  "Could not load this receipt. Check the link and try again.": "이 영수증을 불러오지 못했습니다. 링크를 확인하고 다시 시도하세요.",
+  "Review before sharing": "공유 전 확인",
+  "Only the text below will be shared.": "아래 텍스트만 공유됩니다.",
+  "Could not share. Copy or select the text instead.": "공유하지 못했습니다. 텍스트를 복사하거나 선택하세요.",
+  "Could not copy. Select the text and copy it manually.": "복사하지 못했습니다. 텍스트를 선택하고 직접 복사하세요.",
+  "Reference": "참조 번호"
 }

@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Bu ekranı kapatmak emri iptal etmez veya onaylamaz.",
   "Your wallet balance updates separately.": "Cüzdan bakiyesi ayrı güncellenir.",
   "Check your original payment method.": "İlk ödeme yönteminizi kontrol edin.",
-  "The selected asset or currency is unavailable.": "Seçilen varlık veya para birimi kullanılamıyor."
+  "The selected asset or currency is unavailable.": "Seçilen varlık veya para birimi kullanılamıyor.",
+  "Type": "Tür",
+  "Checking": "Kontrol ediliyor",
+  "Not completed": "Tamamlanmadı",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filtreler yüklenen hareketlere uygulanır. Eski transferleri aramak için daha fazla yükleyin.",
+  "Purchases and sales show the latest 50 orders.": "Son 50 alım ve satım emri gösterilir.",
+  "History is still updating. More activity may appear.": "Geçmiş güncelleniyor. Daha fazla hareket görünebilir.",
+  "Could not update this receipt. Showing the last available details.": "Bu makbuz güncellenemedi. Son kullanılabilir bilgiler gösteriliyor.",
+  "Could not load this receipt. Check the link and try again.": "Bu makbuz yüklenemedi. Bağlantıyı kontrol edip tekrar deneyin.",
+  "Review before sharing": "Paylaşmadan önce inceleyin",
+  "Only the text below will be shared.": "Yalnızca aşağıdaki metin paylaşılacak.",
+  "Could not share. Copy or select the text instead.": "Paylaşılamadı. Metni kopyalayın veya seçin.",
+  "Could not copy. Select the text and copy it manually.": "Kopyalanamadı. Metni seçip elle kopyalayın.",
+  "Reference": "Referans"
 }

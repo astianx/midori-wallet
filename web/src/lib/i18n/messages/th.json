@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "การปิดหน้านี้ไม่ได้ยกเลิกหรือยืนยันคำสั่ง",
   "Your wallet balance updates separately.": "ยอดกระเป๋าจะอัปเดตแยกต่างหาก",
   "Check your original payment method.": "ตรวจสอบวิธีชำระเงินเดิม",
-  "The selected asset or currency is unavailable.": "สินทรัพย์หรือสกุลเงินที่เลือกไม่พร้อมใช้งาน"
+  "The selected asset or currency is unavailable.": "สินทรัพย์หรือสกุลเงินที่เลือกไม่พร้อมใช้งาน",
+  "Type": "ประเภท",
+  "Checking": "กำลังตรวจสอบ",
+  "Not completed": "ไม่สำเร็จ",
+  "Filters apply to loaded activity. Load more to search older transfers.": "ตัวกรองใช้กับรายการที่โหลดแล้ว โหลดเพิ่มเพื่อค้นหาการโอนก่อนหน้า",
+  "Purchases and sales show the latest 50 orders.": "แสดงคำสั่งซื้อและขายล่าสุด 50 รายการ",
+  "History is still updating. More activity may appear.": "ประวัติยังคงอัปเดต อาจมีรายการเพิ่มเติม",
+  "Could not update this receipt. Showing the last available details.": "อัปเดตใบเสร็จไม่ได้ กำลังแสดงข้อมูลล่าสุดที่มี",
+  "Could not load this receipt. Check the link and try again.": "โหลดใบเสร็จไม่ได้ ตรวจสอบลิงก์แล้วลองอีกครั้ง",
+  "Review before sharing": "ตรวจสอบก่อนแชร์",
+  "Only the text below will be shared.": "จะแชร์เฉพาะข้อความด้านล่าง",
+  "Could not share. Copy or select the text instead.": "แชร์ไม่ได้ คัดลอกหรือเลือกข้อความ",
+  "Could not copy. Select the text and copy it manually.": "คัดลอกไม่ได้ เลือกข้อความแล้วคัดลอกด้วยตนเอง",
+  "Reference": "เลขอ้างอิง"
 }

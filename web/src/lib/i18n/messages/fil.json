@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Hindi kinakansela o kinukumpirma ng pagsara ng screen na ito ang order.",
   "Your wallet balance updates separately.": "Hiwalay ang pag-update ng balanse ng wallet.",
   "Check your original payment method.": "Suriin ang orihinal na paraan ng pagbabayad.",
-  "The selected asset or currency is unavailable.": "Hindi available ang napiling asset o pera."
+  "The selected asset or currency is unavailable.": "Hindi available ang napiling asset o pera.",
+  "Type": "Uri",
+  "Checking": "Sinusuri",
+  "Not completed": "Hindi nakumpleto",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Sa na-load na aktibidad lang ang mga filter. Mag-load pa para sa mas lumang paglilipat.",
+  "Purchases and sales show the latest 50 orders.": "Ipinapakita ang huling 50 order ng pagbili at pagbebenta.",
+  "History is still updating. More activity may appear.": "Ina-update pa ang kasaysayan. Maaaring may lumitaw pang aktibidad.",
+  "Could not update this receipt. Showing the last available details.": "Hindi ma-update ang resibong ito. Ipinapakita ang huling available na detalye.",
+  "Could not load this receipt. Check the link and try again.": "Hindi ma-load ang resibong ito. Suriin ang link at subukang muli.",
+  "Review before sharing": "Suriin bago ibahagi",
+  "Only the text below will be shared.": "Ang teksto sa ibaba lang ang ibabahagi.",
+  "Could not share. Copy or select the text instead.": "Hindi maibahagi. Kopyahin o piliin ang teksto.",
+  "Could not copy. Select the text and copy it manually.": "Hindi makopya. Piliin ang teksto at manu-manong kopyahin.",
+  "Reference": "Sanggunian"
 }

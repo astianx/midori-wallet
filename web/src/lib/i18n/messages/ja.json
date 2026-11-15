@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "この画面を閉じても注文の取消や確定にはなりません。",
   "Your wallet balance updates separately.": "ウォレット残高は別に更新されます。",
   "Check your original payment method.": "元の支払い方法を確認してください。",
-  "The selected asset or currency is unavailable.": "この資産または通貨は利用できません。"
+  "The selected asset or currency is unavailable.": "この資産または通貨は利用できません。",
+  "Type": "種類",
+  "Checking": "確認中",
+  "Not completed": "未完了",
+  "Filters apply to loaded activity. Load more to search older transfers.": "読み込み済みの履歴に絞り込みを適用します。以前の送金を探すには追加で読み込んでください。",
+  "Purchases and sales show the latest 50 orders.": "購入と売却は直近50件の注文を表示します。",
+  "History is still updating. More activity may appear.": "履歴を更新中です。ほかの取引が表示されることがあります。",
+  "Could not update this receipt. Showing the last available details.": "この明細を更新できませんでした。取得済みの情報を表示しています。",
+  "Could not load this receipt. Check the link and try again.": "この明細を読み込めませんでした。リンクを確認して再試行してください。",
+  "Review before sharing": "共有前に確認",
+  "Only the text below will be shared.": "以下のテキストのみを共有します。",
+  "Could not share. Copy or select the text instead.": "共有できませんでした。テキストをコピーまたは選択してください。",
+  "Could not copy. Select the text and copy it manually.": "コピーできませんでした。テキストを選択して手動でコピーしてください。",
+  "Reference": "参照番号"
 }

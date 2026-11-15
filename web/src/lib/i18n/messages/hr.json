@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "Zatvaranje ovog zaslona ne otkazuje niti potvrđuje nalog.",
   "Your wallet balance updates separately.": "Stanje novčanika ažurira se zasebno.",
   "Check your original payment method.": "Provjerite izvorni način plaćanja.",
-  "The selected asset or currency is unavailable.": "Odabrana imovina ili valuta nisu dostupne."
+  "The selected asset or currency is unavailable.": "Odabrana imovina ili valuta nisu dostupne.",
+  "Type": "Vrsta",
+  "Checking": "Provjera u tijeku",
+  "Not completed": "Nije dovršeno",
+  "Filters apply to loaded activity. Load more to search older transfers.": "Filtri vrijede za učitane aktivnosti. Učitajte više za pretraživanje starijih prijenosa.",
+  "Purchases and sales show the latest 50 orders.": "Prikazuje se posljednjih 50 naloga za kupnju i prodaju.",
+  "History is still updating. More activity may appear.": "Povijest se još ažurira. Mogu se pojaviti nove aktivnosti.",
+  "Could not update this receipt. Showing the last available details.": "Potvrdu nije moguće ažurirati. Prikazuju se posljednji dostupni podaci.",
+  "Could not load this receipt. Check the link and try again.": "Potvrdu nije moguće učitati. Provjerite poveznicu i pokušajte ponovno.",
+  "Review before sharing": "Pregledajte prije dijeljenja",
+  "Only the text below will be shared.": "Dijelit će se samo tekst u nastavku.",
+  "Could not share. Copy or select the text instead.": "Dijeljenje nije uspjelo. Kopirajte ili odaberite tekst.",
+  "Could not copy. Select the text and copy it manually.": "Kopiranje nije uspjelo. Odaberite tekst i kopirajte ga ručno.",
+  "Reference": "Referenca"
 }

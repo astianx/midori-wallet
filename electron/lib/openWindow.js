@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { BrowserWindow, shell } from 'electron';
 import { isDevelopment } from './constants.js';
-import { APP_ORIGIN, isAppUrl, externalUrl, paymentLink } from './security.js';
+import { APP_ORIGIN, isAppUrl, externalUrl, paymentLink, canWriteClipboard } from './security.js';
 
 export default function openWindow(value) {
   const deeplink = paymentLink(value);
@@ -21,8 +21,14 @@ export default function openWindow(value) {
       return { action: 'deny' };
     });
     const session = mainWindow.webContents.session;
-    session.setPermissionRequestHandler((contents, permission, callback, details) => callback(permission === 'media' && contents === mainWindow.webContents && isAppUrl(details.requestingUrl) && details.mediaTypes?.length === 1 && details.mediaTypes[0] === 'video'));
-    session.setPermissionCheckHandler((contents, permission, origin, details) => contents === mainWindow.webContents && permission === 'media' && isAppUrl(origin) && details.mediaType === 'video');
+    session.setPermissionRequestHandler((contents, permission, callback, details) => {
+      if (permission === 'clipboard-sanitized-write') return callback(canWriteClipboard(contents, mainWindow.webContents, details.requestingUrl, details));
+      callback(permission === 'media' && contents === mainWindow.webContents && isAppUrl(details.requestingUrl) && details.mediaTypes?.length === 1 && details.mediaTypes[0] === 'video');
+    });
+    session.setPermissionCheckHandler((contents, permission, origin, details) => {
+      if (permission === 'clipboard-sanitized-write') return isAppUrl(origin) && canWriteClipboard(contents, mainWindow.webContents, details.requestingUrl || origin, details);
+      return contents === mainWindow.webContents && permission === 'media' && isAppUrl(origin) && details.mediaType === 'video';
+    });
     mainWindow.loadURL(`${APP_ORIGIN}/#${path}`);
   } else {
     if (mainWindow.isMinimized()) mainWindow.restore();

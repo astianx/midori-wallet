@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "بستن این صفحه سفارش را لغو یا تأیید نمی‌کند.",
   "Your wallet balance updates separately.": "موجودی کیف پول جداگانه به‌روز می‌شود.",
   "Check your original payment method.": "روش پرداخت اولیه را بررسی کنید.",
-  "The selected asset or currency is unavailable.": "دارایی یا ارز انتخاب‌شده در دسترس نیست."
+  "The selected asset or currency is unavailable.": "دارایی یا ارز انتخاب‌شده در دسترس نیست.",
+  "Type": "نوع",
+  "Checking": "در حال بررسی",
+  "Not completed": "تکمیل نشده",
+  "Filters apply to loaded activity. Load more to search older transfers.": "فیلترها روی فعالیت‌های بارگیری‌شده اعمال می‌شوند. برای انتقال‌های قدیمی‌تر موارد بیشتری بارگیری کنید.",
+  "Purchases and sales show the latest 50 orders.": "۵۰ سفارش آخر خرید و فروش نمایش داده می‌شود.",
+  "History is still updating. More activity may appear.": "سابقه هنوز در حال به‌روزرسانی است. ممکن است فعالیت‌های بیشتری ظاهر شود.",
+  "Could not update this receipt. Showing the last available details.": "رسید به‌روزرسانی نشد. آخرین جزئیات موجود نمایش داده می‌شود.",
+  "Could not load this receipt. Check the link and try again.": "رسید بارگیری نشد. پیوند را بررسی و دوباره تلاش کنید.",
+  "Review before sharing": "پیش از اشتراک‌گذاری بررسی کنید",
+  "Only the text below will be shared.": "فقط متن زیر به اشتراک گذاشته می‌شود.",
+  "Could not share. Copy or select the text instead.": "اشتراک‌گذاری ناموفق بود. متن را کپی یا انتخاب کنید.",
+  "Could not copy. Select the text and copy it manually.": "کپی انجام نشد. متن را انتخاب و دستی کپی کنید.",
+  "Reference": "شناسه"
 }

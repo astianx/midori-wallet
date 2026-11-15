@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "إغلاق هذه الشاشة لا يلغي الطلب ولا يؤكده.",
   "Your wallet balance updates separately.": "يتم تحديث رصيد المحفظة بشكل مستقل.",
   "Check your original payment method.": "راجع طريقة الدفع الأصلية.",
-  "The selected asset or currency is unavailable.": "الأصل أو العملة المحددة غير متاحة."
+  "The selected asset or currency is unavailable.": "الأصل أو العملة المحددة غير متاحة.",
+  "Type": "النوع",
+  "Checking": "جارٍ التحقق",
+  "Not completed": "لم تكتمل",
+  "Filters apply to loaded activity. Load more to search older transfers.": "تنطبق الفلاتر على الحركات المحملة. حمّل المزيد للبحث عن تحويلات أقدم.",
+  "Purchases and sales show the latest 50 orders.": "تظهر آخر 50 عملية شراء وبيع.",
+  "History is still updating. More activity may appear.": "لا يزال السجل يتحدث. قد تظهر حركات أخرى.",
+  "Could not update this receipt. Showing the last available details.": "تعذر تحديث هذا الإيصال. تظهر آخر التفاصيل المتاحة.",
+  "Could not load this receipt. Check the link and try again.": "تعذر تحميل هذا الإيصال. تحقق من الرابط وحاول مجدداً.",
+  "Review before sharing": "راجع قبل المشاركة",
+  "Only the text below will be shared.": "ستتم مشاركة النص أدناه فقط.",
+  "Could not share. Copy or select the text instead.": "تعذرت المشاركة. انسخ النص أو حدده.",
+  "Could not copy. Select the text and copy it manually.": "تعذر النسخ. حدد النص وانسخه يدوياً.",
+  "Reference": "المرجع"
 }

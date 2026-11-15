@@ -15,7 +15,7 @@ export default {
 <template>
   <div class="&" :data-runtime="env.VITE_BUILD_TYPE" :class="{ '&--flow': focusedFlow }" :data-keyboard="keyboardOpen || undefined" :style="{ height: `${viewportHeight}px`, top: `${viewportOffset}px` }">
     <a class="&__skip" href="#wallet-content">{{ $t('Skip to content') }}</a><MwSidebar />
-    <main id="wallet-content" class="&__content" tabindex="-1"><RouterView v-slot="{ Component, route }"><component :is="Component" :key="route.fullPath + (route.meta.viewRevision || 0)" /></RouterView></main>
+    <main id="wallet-content" class="&__content" tabindex="-1"><RouterView v-slot="{ Component, route }"><component :is="Component" :key="route.meta.activityView ? route.name : route.fullPath + (route.meta.viewRevision || 0)" /></RouterView></main>
     <nav v-if="!focusedFlow" class="&__bottom" :aria-label="$t('Wallet')"><RouterLink v-for="item in navigation" :key="item.name" :to="{ name: item.name }" :class="{ '&__destination--active': active === item.name }" class="&__destination" :title="item.label" :aria-current="active === item.name ? 'page' : undefined"><MwAppIcon :name="item.icon" /><span>{{ item.label }}</span></RouterLink></nav>
   </div>
 </template>

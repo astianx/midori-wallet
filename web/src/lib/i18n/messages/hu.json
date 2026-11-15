@@ -639,5 +639,18 @@
   "Closing this screen does not cancel or confirm this order.": "A képernyő bezárása nem törli és nem erősíti meg a megbízást.",
   "Your wallet balance updates separately.": "A tárca egyenlege külön frissül.",
   "Check your original payment method.": "Ellenőrizd az eredeti fizetési módot.",
-  "The selected asset or currency is unavailable.": "A kiválasztott eszköz vagy pénznem nem érhető el."
+  "The selected asset or currency is unavailable.": "A kiválasztott eszköz vagy pénznem nem érhető el.",
+  "Type": "Típus",
+  "Checking": "Ellenőrzés alatt",
+  "Not completed": "Nem teljesült",
+  "Filters apply to loaded activity. Load more to search older transfers.": "A szűrők a betöltött tevékenységre vonatkoznak. Régebbi utalásokhoz töltsön be többet.",
+  "Purchases and sales show the latest 50 orders.": "Az utolsó 50 vételi és eladási megbízás látható.",
+  "History is still updating. More activity may appear.": "Az előzmények még frissülnek. További tételek jelenhetnek meg.",
+  "Could not update this receipt. Showing the last available details.": "A bizonylat nem frissíthető. Az utolsó elérhető adatok láthatók.",
+  "Could not load this receipt. Check the link and try again.": "A bizonylat nem tölthető be. Ellenőrizze a hivatkozást, majd próbálja újra.",
+  "Review before sharing": "Ellenőrzés megosztás előtt",
+  "Only the text below will be shared.": "Csak az alábbi szöveg lesz megosztva.",
+  "Could not share. Copy or select the text instead.": "Sikertelen megosztás. Másolja ki vagy jelölje ki a szöveget.",
+  "Could not copy. Select the text and copy it manually.": "Sikertelen másolás. Jelölje ki a szöveget, és másolja ki kézzel.",
+  "Reference": "Hivatkozás"
 }

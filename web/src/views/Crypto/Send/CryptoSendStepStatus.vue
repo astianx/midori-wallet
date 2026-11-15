@@ -40,7 +40,7 @@ export default {
       if (!this.terminal || this.disconnected) this.timer = setTimeout(() => this.check(),1500);
       else this.$account.refreshBalances();
     },
-    receipt() { if (this.receiptAvailable) this.$router.push({ name: 'crypto.history', params: { cryptoId: this.$wallet.crypto._id }, query: { payment: this.intent.id } }); },
+    receipt() { if (this.receiptAvailable) this.$router.push({ name: 'activity', query: { source: 'payment', wallet: this.$wallet.crypto._id, entry: `p${this.intent.id}` } }); },
     async cancel() {
       if (this.cancelling || this.checking || !['preparing','quoted'].includes(this.intent?.status)) return;
       clearTimeout(this.timer); const generation = ++this.generation; this.cancelling = true;

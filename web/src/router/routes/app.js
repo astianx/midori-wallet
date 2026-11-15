@@ -62,6 +62,7 @@ const app = [
       path: 'activity',
       name: 'activity',
       component: ActivityView,
+      meta: { activityView: true },
     }, {
       path: 'receive',
       name: 'receive',

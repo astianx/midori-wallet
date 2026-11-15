@@ -605,5 +605,10 @@
   "Year": "An",
   "Next step": "Pasul următor",
   "Check the status before starting another operation.": "Verifică starea înainte de a începe o altă operațiune.",
-  "Last updated {time}": "Ultima actualizare {time}"
+  "Last updated {time}": "Ultima actualizare {time}",
+  "From another wallet": "Din alt portofel",
+  "Buy with local currency": "Cumpără cu moneda locală",
+  "To another wallet": "Către alt portofel",
+  "Convert to local currency": "Convertește în moneda locală",
+  "Choose a method": "Alege o metodă"
 }

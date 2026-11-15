@@ -1,8 +1,7 @@
 <script>
 import MwAppIcon from './MwAppIcon.vue';
-import MwAssetAction from './MwAssetAction.vue';
 export default {
-  components: { MwAppIcon, MwAssetAction },
+  components: { MwAppIcon },
   computed: {
     available() { return this.$cryptos.length > 0 && this.$cryptos.every(item => item.balance?.value !== undefined); },
     value() {
@@ -22,13 +21,12 @@ export default {
     <div class="&__top"><span>{{ $t('Balance') }}</span><button type="button" :aria-label="$t($isHiddenBalance ? 'Show balance' : 'Hide balance')" :aria-pressed="$isHiddenBalance" @click="$account.toggleHiddenBalance()"><MwAppIcon :name="$isHiddenBalance ? 'hide' : 'eye'" /></button></div>
     <div class="&__value" dir="ltr">{{ value }}<span v-if="available && !$isHiddenBalance">USD</span></div>
     <div class="&__status"><span :class="{ '&__dot': fresh }" />{{ fresh ? 'USDC + USDT · Base' : $t(available ? 'Last known balance' : 'Balance unavailable') }}</div>
-    <div class="&__actions"><MwAssetAction action="send" :label="$t('Send')" icon="send" primary :disabled="!$account.capabilities.payments" /><MwAssetAction action="receive" :label="$t('Receive')" icon="receive" /><template v-if="$account.capabilities.ramp"><MwAssetAction action="buy" :label="$t('Add money')" icon="plus" /><MwAssetAction action="sell" :label="$t('Withdraw')" icon="send" /></template></div>
-    <p v-if="!$account.capabilities.payments" class="&__limitation">{{ $t('Sending is temporarily unavailable. Your funds remain in your wallet.') }}</p>
-    <p v-if="!$account.capabilities.ramp" class="&__limitation">{{ $t('Buying or selling crypto is temporarily unavailable.') }}</p>
+    <div class="&__actions"><RouterLink :to="{ name: 'add-money' }" class="&__action &__action--primary"><MwAppIcon name="plus" />{{ $t('Add') }}</RouterLink><RouterLink :to="{ name: 'withdraw' }" class="&__action"><MwAppIcon name="send" />{{ $t('Withdraw') }}</RouterLink></div>
     <p class="&__reference">{{ $t('Reference: USD 1 per token. Live prices unavailable.') }}</p>
   </section>
 </template>
 <style lang="scss">
+/* Hallmark · component-scope · design-system: design.md · pre-emit critique: P5 H5 E5 S5 R5 V4 */
 .#{ $filename } {
   min-width: 0; padding: var(--space-lg); border-radius: var(--radius-hero); background: var(--color-surface-tint); color: var(--color-ink);
   &__top { display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; }
@@ -38,11 +36,14 @@ export default {
   &__value > span { font-size: 1rem; font-weight: 450; letter-spacing: 0; color: var(--color-muted); }
   &__status { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--text-label); color: var(--color-muted); }
   &__dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--color-accent); }
-  &__actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-block: var(--space-xl) var(--space-md); }
-  &__limitation { color: var(--color-muted); margin-block: var(--space-xs); font-size: var(--text-label); line-height: 1.5; }
-  &__actions > button { flex: 1 0 auto; min-width: calc((100% - var(--space-sm)) / 2); gap: var(--space-xs); padding-inline: var(--space-xs); font-size: 0.875rem; }
-  &__actions > button > svg { width: 1.25rem; height: 1.25rem; }
-  @media (max-width: 47.99rem) { padding: var(--space-md); &__actions > button { flex-direction: column; min-height: 4rem; } }
+  &__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); margin-block: var(--space-xl) var(--space-md); }
+  &__action { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 3rem; padding: var(--space-sm) var(--space-xs); border-radius: var(--radius-control); gap: var(--space-xs); background: var(--color-surface); color: var(--color-ink); font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
+  &__action svg { width: 1.25rem; height: 1.25rem; flex: none; }
+  &__action:hover { background: var(--color-surface-subtle); color: var(--color-ink); }
+  &__action:active { transform: translateY(1px); }
+  &__action--primary { background: var(--color-accent); color: var(--color-on-accent); }
+  &__action--primary:hover { background: var(--color-accent-hover); color: var(--color-on-accent); }
+  @media (max-width: 47.99rem) { padding: var(--space-md); &__action { flex-direction: column; min-height: 4rem; } }
   &__reference { max-width: 48ch; margin: 0; color: var(--color-muted); font-size: 0.75rem; line-height: 1.5; }
   @include breakpoint(lg) { padding: var(--space-xl); }
 }

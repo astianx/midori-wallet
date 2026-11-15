@@ -605,5 +605,10 @@
   "Year": "Yıl",
   "Next step": "Sonraki adım",
   "Check the status before starting another operation.": "Başka bir işlem başlatmadan önce durumu kontrol edin.",
-  "Last updated {time}": "Son güncelleme {time}"
+  "Last updated {time}": "Son güncelleme {time}",
+  "From another wallet": "Başka bir cüzdandan",
+  "Buy with local currency": "Yerel para birimiyle al",
+  "To another wallet": "Başka bir cüzdana",
+  "Convert to local currency": "Yerel para birimine çevir",
+  "Choose a method": "Bir yöntem seçin"
 }

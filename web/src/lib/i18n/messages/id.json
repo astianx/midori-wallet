@@ -605,5 +605,10 @@
   "Year": "Tahun",
   "Next step": "Langkah berikutnya",
   "Check the status before starting another operation.": "Periksa status sebelum memulai operasi lain.",
-  "Last updated {time}": "Terakhir diperbarui {time}"
+  "Last updated {time}": "Terakhir diperbarui {time}",
+  "From another wallet": "Dari dompet lain",
+  "Buy with local currency": "Beli dengan mata uang lokal",
+  "To another wallet": "Ke dompet lain",
+  "Convert to local currency": "Konversi ke mata uang lokal",
+  "Choose a method": "Pilih metode"
 }

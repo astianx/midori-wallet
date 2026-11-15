@@ -605,5 +605,10 @@
   "Year": "שנה",
   "Next step": "השלב הבא",
   "Check the status before starting another operation.": "בדקו את הסטטוס לפני התחלת פעולה נוספת.",
-  "Last updated {time}": "עודכן לאחרונה {time}"
+  "Last updated {time}": "עודכן לאחרונה {time}",
+  "From another wallet": "מארנק אחר",
+  "Buy with local currency": "קנייה במטבע מקומי",
+  "To another wallet": "לארנק אחר",
+  "Convert to local currency": "המרה למטבע מקומי",
+  "Choose a method": "בחרו אמצעי"
 }

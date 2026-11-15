@@ -605,5 +605,10 @@
   "Year": "År",
   "Next step": "Nästa steg",
   "Check the status before starting another operation.": "Kontrollera statusen innan du startar en ny transaktion.",
-  "Last updated {time}": "Senast uppdaterad {time}"
+  "Last updated {time}": "Senast uppdaterad {time}",
+  "From another wallet": "Från en annan plånbok",
+  "Buy with local currency": "Köp med lokal valuta",
+  "To another wallet": "Till en annan plånbok",
+  "Convert to local currency": "Växla till lokal valuta",
+  "Choose a method": "Välj en metod"
 }

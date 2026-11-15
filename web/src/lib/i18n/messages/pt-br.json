@@ -605,5 +605,10 @@
   "Year": "Ano",
   "Next step": "Próximo passo",
   "Check the status before starting another operation.": "Confira o status antes de iniciar outra operação.",
-  "Last updated {time}": "Última atualização: {time}"
+  "Last updated {time}": "Última atualização: {time}",
+  "From another wallet": "De outra carteira",
+  "Buy with local currency": "Comprar com moeda local",
+  "To another wallet": "Para outra carteira",
+  "Convert to local currency": "Converter para moeda local",
+  "Choose a method": "Escolha um meio"
 }

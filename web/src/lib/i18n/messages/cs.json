@@ -605,5 +605,10 @@
   "Year": "Rok",
   "Next step": "Další krok",
   "Check the status before starting another operation.": "Před zahájením další operace zkontrolujte stav.",
-  "Last updated {time}": "Poslední aktualizace {time}"
+  "Last updated {time}": "Poslední aktualizace {time}",
+  "From another wallet": "Z jiné peněženky",
+  "Buy with local currency": "Koupit za místní měnu",
+  "To another wallet": "Do jiné peněženky",
+  "Convert to local currency": "Převést na místní měnu",
+  "Choose a method": "Vyberte způsob"
 }

@@ -605,5 +605,10 @@
   "Year": "Рік",
   "Next step": "Наступний крок",
   "Check the status before starting another operation.": "Перевірте стан, перш ніж почати іншу операцію.",
-  "Last updated {time}": "Останнє оновлення: {time}"
+  "Last updated {time}": "Останнє оновлення: {time}",
+  "From another wallet": "З іншого гаманця",
+  "Buy with local currency": "Купити за місцеву валюту",
+  "To another wallet": "На інший гаманець",
+  "Convert to local currency": "Обміняти на місцеву валюту",
+  "Choose a method": "Виберіть спосіб"
 }

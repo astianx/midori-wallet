@@ -605,5 +605,10 @@
   "Year": "ปี",
   "Next step": "ขั้นตอนถัดไป",
   "Check the status before starting another operation.": "ตรวจสอบสถานะก่อนเริ่มรายการอื่น",
-  "Last updated {time}": "อัปเดตล่าสุด {time}"
+  "Last updated {time}": "อัปเดตล่าสุด {time}",
+  "From another wallet": "จากกระเป๋าเงินอื่น",
+  "Buy with local currency": "ซื้อด้วยสกุลเงินท้องถิ่น",
+  "To another wallet": "ไปยังกระเป๋าเงินอื่น",
+  "Convert to local currency": "แปลงเป็นสกุลเงินท้องถิ่น",
+  "Choose a method": "เลือกวิธี"
 }

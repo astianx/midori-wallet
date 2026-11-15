@@ -605,5 +605,10 @@
   "Year": "Jaar",
   "Next step": "Volgende stap",
   "Check the status before starting another operation.": "Controleer de status voordat je een nieuwe transactie start.",
-  "Last updated {time}": "Laatst bijgewerkt {time}"
+  "Last updated {time}": "Laatst bijgewerkt {time}",
+  "From another wallet": "Van een andere wallet",
+  "Buy with local currency": "Kopen met lokale valuta",
+  "To another wallet": "Naar een andere wallet",
+  "Convert to local currency": "Omzetten naar lokale valuta",
+  "Choose a method": "Kies een methode"
 }

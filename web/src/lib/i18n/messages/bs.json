@@ -605,5 +605,10 @@
   "Year": "Godina",
   "Next step": "Sljedeći korak",
   "Check the status before starting another operation.": "Provjerite status prije pokretanja druge operacije.",
-  "Last updated {time}": "Posljednje ažuriranje {time}"
+  "Last updated {time}": "Posljednje ažuriranje {time}",
+  "From another wallet": "Iz drugog novčanika",
+  "Buy with local currency": "Kupite lokalnom valutom",
+  "To another wallet": "U drugi novčanik",
+  "Convert to local currency": "Pretvorite u lokalnu valutu",
+  "Choose a method": "Odaberite način"
 }

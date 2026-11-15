@@ -605,5 +605,10 @@
   "Year": "Taon",
   "Next step": "Susunod na hakbang",
   "Check the status before starting another operation.": "Suriin ang status bago magsimula ng ibang operasyon.",
-  "Last updated {time}": "Huling na-update {time}"
+  "Last updated {time}": "Huling na-update {time}",
+  "From another wallet": "Mula sa ibang wallet",
+  "Buy with local currency": "Bumili gamit ang lokal na pera",
+  "To another wallet": "Sa ibang wallet",
+  "Convert to local currency": "I-convert sa lokal na pera",
+  "Choose a method": "Pumili ng paraan"
 }

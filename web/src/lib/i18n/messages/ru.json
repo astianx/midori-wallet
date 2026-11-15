@@ -605,5 +605,10 @@
   "Year": "Год",
   "Next step": "Следующий шаг",
   "Check the status before starting another operation.": "Проверьте статус, прежде чем начать другую операцию.",
-  "Last updated {time}": "Последнее обновление: {time}"
+  "Last updated {time}": "Последнее обновление: {time}",
+  "From another wallet": "Из другого кошелька",
+  "Buy with local currency": "Купить за местную валюту",
+  "To another wallet": "На другой кошелёк",
+  "Convert to local currency": "Обменять на местную валюту",
+  "Choose a method": "Выберите способ"
 }

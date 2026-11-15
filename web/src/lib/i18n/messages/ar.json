@@ -605,5 +605,10 @@
   "Year": "السنة",
   "Next step": "الخطوة التالية",
   "Check the status before starting another operation.": "تحقق من الحالة قبل بدء عملية أخرى.",
-  "Last updated {time}": "آخر تحديث {time}"
+  "Last updated {time}": "آخر تحديث {time}",
+  "From another wallet": "من محفظة أخرى",
+  "Buy with local currency": "شراء بالعملة المحلية",
+  "To another wallet": "إلى محفظة أخرى",
+  "Convert to local currency": "تحويل إلى العملة المحلية",
+  "Choose a method": "اختر وسيلة"
 }

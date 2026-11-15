@@ -605,5 +605,10 @@
   "Year": "Év",
   "Next step": "Következő lépés",
   "Check the status before starting another operation.": "Ellenőrizd az állapotot, mielőtt újabb műveletet indítasz.",
-  "Last updated {time}": "Utolsó frissítés: {time}"
+  "Last updated {time}": "Utolsó frissítés: {time}",
+  "From another wallet": "Másik tárcából",
+  "Buy with local currency": "Vásárlás helyi pénznemben",
+  "To another wallet": "Másik tárcába",
+  "Convert to local currency": "Átváltás helyi pénznemre",
+  "Choose a method": "Válassz módot"
 }

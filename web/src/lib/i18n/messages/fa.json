@@ -605,5 +605,10 @@
   "Year": "سال",
   "Next step": "گام بعدی",
   "Check the status before starting another operation.": "پیش از شروع عملیات دیگر، وضعیت را بررسی کنید.",
-  "Last updated {time}": "آخرین به‌روزرسانی {time}"
+  "Last updated {time}": "آخرین به‌روزرسانی {time}",
+  "From another wallet": "از کیف پول دیگر",
+  "Buy with local currency": "خرید با ارز محلی",
+  "To another wallet": "به کیف پول دیگر",
+  "Convert to local currency": "تبدیل به ارز محلی",
+  "Choose a method": "یک روش انتخاب کنید"
 }

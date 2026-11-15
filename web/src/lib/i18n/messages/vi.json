@@ -605,5 +605,10 @@
   "Year": "Năm",
   "Next step": "Bước tiếp theo",
   "Check the status before starting another operation.": "Kiểm tra trạng thái trước khi bắt đầu giao dịch khác.",
-  "Last updated {time}": "Cập nhật lần cuối {time}"
+  "Last updated {time}": "Cập nhật lần cuối {time}",
+  "From another wallet": "Từ ví khác",
+  "Buy with local currency": "Mua bằng nội tệ",
+  "To another wallet": "Đến ví khác",
+  "Convert to local currency": "Đổi sang nội tệ",
+  "Choose a method": "Chọn phương thức"
 }

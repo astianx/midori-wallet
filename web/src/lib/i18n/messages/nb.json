@@ -605,5 +605,10 @@
   "Year": "År",
   "Next step": "Neste steg",
   "Check the status before starting another operation.": "Sjekk statusen før du starter en ny operasjon.",
-  "Last updated {time}": "Sist oppdatert {time}"
+  "Last updated {time}": "Sist oppdatert {time}",
+  "From another wallet": "Fra en annen lommebok",
+  "Buy with local currency": "Kjøp med lokal valuta",
+  "To another wallet": "Til en annen lommebok",
+  "Convert to local currency": "Veksle til lokal valuta",
+  "Choose a method": "Velg en metode"
 }

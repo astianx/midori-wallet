@@ -605,5 +605,10 @@
   "Year": "年",
   "Next step": "下一步",
   "Check the status before starting another operation.": "开始其他操作前，请先检查状态。",
-  "Last updated {time}": "最后更新 {time}"
+  "Last updated {time}": "最后更新 {time}",
+  "From another wallet": "从其他钱包",
+  "Buy with local currency": "用当地货币购买",
+  "To another wallet": "到其他钱包",
+  "Convert to local currency": "兑换为当地货币",
+  "Choose a method": "选择方式"
 }

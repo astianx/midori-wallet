@@ -11,6 +11,7 @@ export default {
     MwModal,
   },
   props: {
+    errorId: { type: String, default: undefined },
     label: {
       type: String,
       default: undefined,
@@ -110,6 +111,8 @@ export default {
     </div>
     <div
       v-if="typeof error === 'string' && error"
+      :id="errorId"
+      role="alert"
       class="&__error"
     >
       {{ error }}

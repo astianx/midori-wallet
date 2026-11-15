@@ -1,0 +1,115 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app
+ * pre-emit critique: P4 H4 E4 S5 R5 V4 · tone: approachable fintech · anchor hue: Midori green
+ */
+@font-face {
+  font-family: 'Midori Geist';
+  src: url('./web/src/assets/fonts/Geist.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root,
+:root[data-theme='light'] {
+  --font-display: 'Midori Geist', var(--font-locale, sans-serif), sans-serif;
+  --font-body: 'Midori Geist', var(--font-locale, sans-serif), sans-serif;
+  --font-numeric: var(--font-body);
+  --font-weight-bold: 600;
+  --color-paper: oklch(97.5% 0.006 160);
+  --color-surface: oklch(100% 0 0);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-surface-subtle: oklch(96% 0.008 160);
+  --color-surface-tint: oklch(94.5% 0.028 160);
+  --color-ink: oklch(25% 0.025 165);
+  --color-muted: oklch(48% 0.015 165);
+  --color-rule: oklch(90.5% 0.01 160);
+  --color-accent: oklch(45% 0.095 165);
+  --color-accent-hover: oklch(40% 0.09 165);
+  --color-accent-active: oklch(35% 0.08 165);
+  --color-accent-ink: var(--color-on-accent);
+  --color-on-accent: oklch(99% 0.004 160);
+  --color-focus: oklch(48% 0.15 245);
+  --color-warning: oklch(46% 0.09 65);
+  --color-warning-surface: oklch(96% 0.032 85);
+  --color-error: oklch(48% 0.18 30);
+  --color-error-surface: oklch(97% 0.016 30);
+  --color-usdc: oklch(48% 0.14 254);
+  --color-usdt: oklch(43% 0.085 169);
+  --color-coin-ink: oklch(100% 0 0);
+  --color-brand-panel: oklch(23% 0.035 165);
+  --color-brand-panel-ink: oklch(98% 0.01 155);
+  --color-brand-panel-muted: oklch(78% 0.035 160);
+  --color-overlay: oklch(19% 0.02 165 / 42%);
+  --shadow-panel: 0 10px 36px oklch(25% 0.03 160 / 5%);
+  --shadow-floating: 0 12px 48px oklch(20% 0.02 160 / 15%);
+  --color-background: var(--color-surface);
+  --color-background-secondary: var(--color-surface-subtle);
+  --color-text: var(--color-ink);
+  --color-secondary: var(--color-muted);
+  --color-secondary-light: var(--color-surface-subtle);
+  --color-secondary-light-d-5: var(--color-rule);
+  --color-secondary-light-d-7: var(--color-rule);
+  --color-secondary-light-d-10: var(--color-rule);
+  --color-primary: var(--color-accent);
+  --color-primary-brand: var(--color-accent);
+  --color-primary-brand-d-5: var(--color-accent-hover);
+  --color-primary-brand-d-10: var(--color-accent-hover);
+  --color-primary-brand-d-15: var(--color-accent-active);
+  --color-primary-button-text: var(--color-on-accent);
+  --color-primary-d-10: var(--color-accent-hover);
+  --color-primary-d-15: var(--color-accent-hover);
+  --color-primary-d-25: var(--color-accent-active);
+  --color-primary-light: var(--color-surface-tint);
+  --color-primary-light-d-5: var(--color-rule);
+  --color-primary-light-d-7: var(--color-rule);
+  --color-danger: var(--color-error);
+  --color-danger-light: var(--color-error-surface);
+  --color-divider: var(--color-rule);
+  --color-modal-background: var(--color-surface-raised);
+  --color-modal-overlay: var(--color-overlay);
+  --color-background-brand: var(--color-brand-panel);
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --radius-control: 0.75rem;
+  --radius-panel: 1.25rem;
+  --radius-hero: 1.5rem;
+  --text-label: 0.8125rem;
+  --text-body: 1rem;
+  --text-title: clamp(1.375rem, 1.1rem + 0.8vw, 1.875rem);
+  --text-balance: clamp(2.125rem, 1.75rem + 1.8vw, 3.25rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-short: 150ms;
+  --dur-panel: 220ms;
+}
+
+:root[data-theme='dark'] {
+  --color-paper: oklch(17% 0.008 165);
+  --color-surface: oklch(21% 0.01 165);
+  --color-surface-raised: oklch(25% 0.012 165);
+  --color-surface-subtle: oklch(25% 0.012 165);
+  --color-surface-tint: oklch(29% 0.035 165);
+  --color-ink: oklch(95% 0.009 160);
+  --color-muted: oklch(74% 0.016 160);
+  --color-rule: oklch(34% 0.015 160);
+  --color-accent: oklch(76% 0.105 165);
+  --color-accent-hover: oklch(81% 0.09 165);
+  --color-accent-active: oklch(70% 0.1 165);
+  --color-accent-ink: var(--color-on-accent);
+  --color-on-accent: oklch(21% 0.035 165);
+  --color-focus: oklch(78% 0.11 240);
+  --color-warning: oklch(84% 0.11 80);
+  --color-warning-surface: oklch(29% 0.028 70);
+  --color-error: oklch(78% 0.13 30);
+  --color-error-surface: oklch(28% 0.035 30);
+  --color-overlay: oklch(10% 0.008 165 / 68%);
+  --shadow-panel: 0 10px 36px oklch(8% 0.01 160 / 12%);
+  --shadow-floating: 0 12px 48px oklch(5% 0.01 160 / 38%);
+}

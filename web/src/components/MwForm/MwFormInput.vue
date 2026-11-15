@@ -1,9 +1,11 @@
 <script>
+import { useId } from 'vue';
 import MwFormElement from './MwFormElement.vue';
 
 import CloseIcon from '../../assets/svg/close.svg';
 
 export default {
+  setup() { return { errorId: `field-error-${useId()}` }; },
   components: {
     MwFormElement,
     CloseIcon,
@@ -50,6 +52,7 @@ export default {
 <template>
   <MwFormElement
     class="&"
+    :errorId="errorId"
     v-bind="$props"
   >
     <div
@@ -59,6 +62,8 @@ export default {
       <slot name="before" />
     </div>
     <input
+      :aria-invalid="!!error"
+      :aria-describedby="error ? errorId : undefined"
       :value="modelValue"
       :readonly="readonly"
       type="text"
@@ -83,6 +88,9 @@ export default {
       v-if="clear && modelValue && !readonly"
       class="&__icon-after"
       role="button"
+      tabindex="0"
+      @keydown.enter.prevent="$emit('update:modelValue', '')"
+      @keydown.space.prevent="$emit('update:modelValue', '')"
       :title="$t('Clear')"
       :aria-label="$t('Clear')"
       @click="$emit('update:modelValue', '')"

@@ -1,4 +1,5 @@
 <script>
+import MwFlowProgress from '../../../components/MwFlowProgress.vue';
 import { Amount } from '../../../lib/account/domain.js';
 import { paymentError } from '../../../lib/account/payment-errors.js';
 import MwButton from '../../../components/MwButton.vue';
@@ -8,7 +9,7 @@ import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
 import MwStep from '../../../components/MwStep.vue';
 import MainLayout from '../../../layouts/MainLayout.vue';
 export default {
-  components: { MainLayout, MwButton, MwButtonGroup, MwFormAmountInput, MwFormGroup }, extends: MwStep,
+  components: { MwFlowProgress, MainLayout, MwButton, MwButtonGroup, MwFormAmountInput, MwFormGroup }, extends: MwStep,
   data() { return { amountValue: this.storage.amount || this.storage.temp?.amount, maximum: false, feeMode: this.storage.feeMode || 'token', isLoading: false, error: '', request: null }; },
   methods: {
     async setMaxAmount() {
@@ -43,7 +44,8 @@ export default {
 };
 </script>
 <template>
-  <MainLayout :title="$t('Send {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
+  <MainLayout class="&" :title="$t('Send {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
+    <MwFlowProgress :current="1" />
     <MwFormGroup class="&__content">
       <p>{{ $t('To') }}: {{ storage.alias || storage.address }}</p>
       <MwFormAmountInput v-model="amountValue" :label="$t('Amount')" :error="error" :decimals="6" :symbol="$wallet.crypto.symbol" @update:modelValue="maximum = false; error = ''; request = null" />

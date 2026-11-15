@@ -1,4 +1,5 @@
 <script>
+import MwFlowProgress from '../../../components/MwFlowProgress.vue';
 import MwStep from '../../../components/MwStep.vue';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
@@ -9,7 +10,7 @@ import { Amount } from '../../../lib/account/domain.js';
 import { paymentError } from '../../../lib/account/payment-errors.js';
 import { onShowOnHide } from '../../../lib/mixins.js';
 export default {
-  components: { MainLayout, MwButton, MwButtonGroup, MwFormGroup, MwFormTextareaReadonly }, extends: MwStep, mixins: [onShowOnHide],
+  components: { MwFlowProgress, MainLayout, MwButton, MwButtonGroup, MwFormGroup, MwFormTextareaReadonly }, extends: MwStep, mixins: [onShowOnHide],
   data() { return { now: Date.now(), error: '', isLoading: false }; },
   computed: {
     intent() { return this.storage.intent; },
@@ -52,7 +53,8 @@ export default {
 };
 </script>
 <template>
-  <MainLayout :title="$t('Review payment')" :onBack="edit" allowReadFailure>
+  <MainLayout class="&" :title="$t('Review payment')" :onBack="edit" allowReadFailure>
+    <MwFlowProgress :current="2" />
     <MwFormGroup v-if="intent">
       <MwFormTextareaReadonly :label="$t('Recipient receives')" :value="`${formatAmount(intent.amountAtomic)} ${$wallet.crypto.symbol}`" />
       <MwFormTextareaReadonly :label="$t('To')" :value="intent.recipientTag ? `@${intent.recipientTag}` : intent.to" />

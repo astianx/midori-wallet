@@ -29,9 +29,14 @@ export default {
 </script>
 
 <template>
-  <div class="&">
+  <div class="&" :class="{ '&--stable': ['USDC', 'USDT'].includes(crypto.symbol) }">
+    <svg v-if="['USDC', 'USDT'].includes(crypto.symbol)" class="&__stable" :class="`&__stable--${crypto.symbol.toLowerCase()}`" viewBox="0 0 48 48" role="img" :aria-label="crypto.symbol">
+      <circle cx="24" cy="24" r="24" fill="currentColor" />
+      <g v-if="crypto.symbol === 'USDC'" class="&__coin-mark" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 17c2-3 11-2 11 2m-12 9c0 4 12 5 12-1 0-5-12-2-12-7 0-5 12-5 12 0M24 12v24M13 15a15 15 0 0 0 0 18m22-18a15 15 0 0 1 0 18" /></g>
+      <g v-else class="&__coin-mark" fill="currentColor"><path d="M13 12h22v5h-8v4c7 .3 11 1 11 2.5S33 26 27 26v12h-6V26c-6-.1-11-1-11-2.5s4-2.2 11-2.5v-4h-8Zm8 10c-5 .2-8 .7-8 1.5S17 25 24 25s11-.6 11-1.5-3-1.3-8-1.5v2h-6Z" /></g>
+    </svg>
     <img
-      v-if="crypto.logo && !cryptoLogoError"
+      v-else-if="crypto.logo && !cryptoLogoError"
       loading="lazy"
       class="&__crypto"
       :src="`${baseUrl}logo${$resolvedTheme === 'dark' ? '-dark' : ''}/${crypto.logo}?ver=${version}`"
@@ -46,7 +51,7 @@ export default {
       v-else
       class="&__crypto"
     />
-    <template v-if="crypto.type === 'token'">
+    <template v-if="crypto.type === 'token' && !['USDC', 'USDT'].includes(crypto.symbol)">
       <img
         v-if="platform?.logo && !platformLogoError"
         loading="lazy"
@@ -69,6 +74,10 @@ export default {
     width: 100%;
     height: 100%;
 
+    &__stable { width: 100%; height: 100%; }
+    &__stable--usdc { color: var(--color-usdc); }
+    &__stable--usdt { color: var(--color-usdt); }
+    &__coin-mark { color: var(--color-coin-ink); }
     &__crypto {
       width: 100%;
       height: 100%;

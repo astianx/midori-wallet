@@ -1,6 +1,8 @@
 import AppLayout from '../../layouts/AppLayout.vue';
 
 import HomeView from '../../views/HomeView.vue';
+import ActivityView from '../../views/ActivityView.vue';
+import ReceiveView from '../../views/ReceiveView.vue';
 
 import CryptoViewBuy from '../../views/Crypto/CryptoViewBuy.vue';
 import CryptoViewInfo from '../../views/Crypto/CryptoViewInfo.vue';
@@ -43,6 +45,14 @@ const app = [
       path: '',
       name: 'home',
       component: HomeView,
+    }, {
+      path: 'activity',
+      name: 'activity',
+      component: ActivityView,
+    }, {
+      path: 'receive',
+      name: 'receive',
+      component: ReceiveView,
     }, {
       path: 'settings',
       children: [{

@@ -78,6 +78,10 @@ export default {
           '&__item--selected': isSelected(item.crypto._id),
           '&__item--columns': columns === true,
         }"
+        role="button"
+        :tabindex="isLoading ? -1 : 0"
+        @keydown.enter.prevent="!isLoading && $emit('select', item.crypto._id)"
+        @keydown.space.prevent="!isLoading && $emit('select', item.crypto._id)"
         @click="!isLoading && $emit('select', item.crypto._id)"
       >
         <MwCryptoLogo

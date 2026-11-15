@@ -28,16 +28,16 @@ export default {
       :disabled="disabled"
       @click="$router.push({ name: 'crypto.buy', params: { cryptoId: $wallet.crypto._id }})"
     >
-      {{ $t('Buy') }}
+      {{ $t('Add money') }}
     </MwButton>
     <MwButton
       v-if="$walletState === $STATE_LOADED || $walletState === $STATE_LOADING"
-      type="danger-light"
+      type="secondary"
       small
       :disabled="disabled"
       @click="$router.push({ name: 'crypto.sell', params: { cryptoId: $wallet.crypto._id }})"
     >
-      {{ $t('Sell') }}
+      {{ $t('Withdraw') }}
     </MwButton>
   </MwButtonGroup>
 </template>

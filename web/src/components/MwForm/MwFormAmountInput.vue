@@ -1,4 +1,5 @@
 <script>
+import { useId } from 'vue';
 import MwAmountInput from '../MwAmountInput.vue';
 import MwFormElement from './MwFormElement.vue';
 import { cryptoToFiat, fiatToCrypto } from '../../lib/helpers.js';
@@ -11,6 +12,7 @@ import {
 import TrailingIcon from '../../assets/svg/trailing.svg';
 
 export default {
+  setup() { return { errorId: `field-error-${useId()}` }; },
   components: {
     MwAmountInput,
     MwFormElement,
@@ -150,12 +152,15 @@ export default {
 <template>
   <MwFormElement
     class="&"
+    :errorId="errorId"
     :label="label"
     :error="error"
     :small="small"
   >
     <MwAmountInput
       v-model="inputValue"
+      :aria-invalid="!!error"
+      :aria-describedby="error ? errorId : undefined"
       class="&__amount"
       :decimals="option.decimals"
     />

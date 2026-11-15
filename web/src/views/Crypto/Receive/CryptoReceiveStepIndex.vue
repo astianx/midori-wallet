@@ -35,10 +35,10 @@ export default {
 </script>
 
 <template>
-  <MainLayout :title="$t('Receive {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
+  <MainLayout class="&" :title="$t('Receive {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
     <MwButtonGroup>
-      <MwButton :type="receiveMode === 'midori' ? 'primary' : 'primary-light'" @click="receiveMode = 'midori'; isCopied = false">{{ $t('From Midori Wallet') }}</MwButton>
-      <MwButton :type="receiveMode === 'external' ? 'primary' : 'primary-light'" @click="receiveMode = 'external'; isCopied = false">{{ $t('From another wallet or service') }}</MwButton>
+      <MwButton :aria-pressed="receiveMode === 'midori'" :type="receiveMode === 'midori' ? 'primary' : 'primary-light'" @click="receiveMode = 'midori'; isCopied = false">{{ $t('Midori Wallet') }}</MwButton>
+      <MwButton :aria-pressed="receiveMode === 'external'" :type="receiveMode === 'external' ? 'primary' : 'primary-light'" @click="receiveMode = 'external'; isCopied = false">{{ $t('Other services') }}</MwButton>
     </MwButtonGroup>
     <template v-if="receiveMode === 'external'">
       <p>{{ $t('Send only {symbol} using the Base network.', { symbol: $wallet.crypto.symbol }) }}</p>

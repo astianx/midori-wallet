@@ -1,4 +1,5 @@
 <script>
+import MwFlowProgress from '../../../components/MwFlowProgress.vue';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
 import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
@@ -12,7 +13,7 @@ import { onShowOnHide } from '../../../lib/mixins.js';
 import { paymentError } from '../../../lib/account/payment-errors.js';
 import { Amount } from '../../../lib/account/domain.js';
 export default {
-  components: { MainLayout, MwButton, MwButtonGroup, MwFormGroup, MwFormInput, PasteIcon, QrIcon },
+  components: { MwFlowProgress, MainLayout, MwButton, MwButtonGroup, MwFormGroup, MwFormInput, PasteIcon, QrIcon },
   extends: MwStep, mixins: [onShowOnHide],
   data() { return { address: '', error: '', isLoading: false, isPasteAvailable: !!navigator.clipboard?.readText, isQrScanAvailable: false }; },
   async onShow() {
@@ -46,7 +47,8 @@ export default {
 };
 </script>
 <template>
-  <MainLayout :title="$t('Send {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
+  <MainLayout class="&" :title="$t('Send {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
+    <MwFlowProgress :current="0" />
     <MwFormGroup class="&__container">
       <MwFormInput v-model="address" :label="$t('Wallet address or Midori tag')" placeholder="@usuario / 0x…" :error="error" :clear="true" @update:modelValue="error = ''" />
       <MwButtonGroup class="&__actions" type="circle">

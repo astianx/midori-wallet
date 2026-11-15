@@ -40,7 +40,8 @@ export default {
       '&--small': small,
       '&--loading': isLoading,
     }"
-    :disabled="disabled"
+    :disabled="disabled || isLoading"
+    :aria-busy="isLoading"
     @click="!isLoading && !disabled && $emit('click')"
   >
     <MwLoader

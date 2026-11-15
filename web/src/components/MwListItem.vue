@@ -39,6 +39,11 @@ export default {
       '&--disabled': disabled,
       [`&--${type}`]: type,
     }"
+    :role="$slots.after ? undefined : 'button'"
+    :tabindex="$slots.after || disabled ? undefined : 0"
+    :aria-disabled="disabled || undefined"
+    @keydown.enter.self.prevent="!disabled && !$slots.after && $emit('click')"
+    @keydown.space.self.prevent="!disabled && !$slots.after && $emit('click')"
     @click="!disabled && $emit('click')"
   >
     <div

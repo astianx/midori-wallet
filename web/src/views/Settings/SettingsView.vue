@@ -103,7 +103,7 @@ export default {
 </script>
 
 <template>
-  <MainLayout :title="$t('Settings')">
+  <MainLayout class="&" :title="$t('Account')">
     <div class="&__header">
       <MwAvatar
         class="&__header-avatar"
@@ -117,8 +117,9 @@ export default {
         v-if="$user.username"
         class="&__header-username"
       >
-        {{ $user.username }}
+        {{ $account.tag ? `@${$user.username}` : $user.username }}
       </div>
+      <div v-if="!$user.username" class="&__header-username">{{ $t('Your wallet') }}</div>
       <MwButton
         class="&__header-button"
         type="primary-light"

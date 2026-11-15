@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Báo giá hết hạn lúc {time}",
   "Incorrect PIN. Try again.": "Mã PIN không đúng. Hãy thử lại.",
   "Could not paste. Enter the address or tag manually.": "Không thể dán. Nhập địa chỉ hoặc thẻ theo cách thủ công.",
-  "Camera unavailable. Enter the address or tag manually.": "Máy ảnh không khả dụng. Nhập địa chỉ hoặc thẻ theo cách thủ công."
+  "Camera unavailable. Enter the address or tag manually.": "Máy ảnh không khả dụng. Nhập địa chỉ hoặc thẻ theo cách thủ công.",
+  "Select text": "Chọn văn bản",
+  "Text selected. Copy it manually.": "Đã chọn văn bản. Hãy sao chép thủ công.",
+  "Could not share. Copy or select the details instead.": "Không thể chia sẻ. Sao chép hoặc chọn thông tin.",
+  "Connect to save your tag. Your Base address is still available.": "Kết nối để lưu tag. Địa chỉ Base của bạn vẫn có thể sử dụng.",
+  "Receiving details remain available. Check Activity when connected.": "Thông tin nhận tiền vẫn có sẵn. Kiểm tra Hoạt động khi có kết nối.",
+  "Tags are unavailable. Use your Base address.": "Tag không khả dụng. Hãy dùng địa chỉ Base của bạn.",
+  "This contract identifies the token. Do not send funds to it.": "Hợp đồng này xác định token. Không gửi tiền đến hợp đồng."
 }

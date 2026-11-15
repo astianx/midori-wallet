@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Offerte geldig tot {time}",
   "Incorrect PIN. Try again.": "Onjuiste pincode. Probeer opnieuw.",
   "Could not paste. Enter the address or tag manually.": "Plakken mislukt. Voer het adres of de tag handmatig in.",
-  "Camera unavailable. Enter the address or tag manually.": "Camera niet beschikbaar. Voer het adres of de tag handmatig in."
+  "Camera unavailable. Enter the address or tag manually.": "Camera niet beschikbaar. Voer het adres of de tag handmatig in.",
+  "Select text": "Tekst selecteren",
+  "Text selected. Copy it manually.": "Tekst geselecteerd. Kopieer deze handmatig.",
+  "Could not share. Copy or select the details instead.": "Delen mislukt. Kopieer of selecteer de gegevens.",
+  "Connect to save your tag. Your Base address is still available.": "Maak verbinding om je tag op te slaan. Je Base-adres blijft beschikbaar.",
+  "Receiving details remain available. Check Activity when connected.": "Ontvangstgegevens blijven beschikbaar. Controleer Activiteit zodra je verbonden bent.",
+  "Tags are unavailable. Use your Base address.": "Tags zijn niet beschikbaar. Gebruik je Base-adres.",
+  "This contract identifies the token. Do not send funds to it.": "Dit contract identificeert de token. Stuur hier geen geld naartoe."
 }

@@ -614,5 +614,12 @@
   "Quote expires at {time}": "見積もりの有効期限 {time}",
   "Incorrect PIN. Try again.": "PINが正しくありません。もう一度お試しください。",
   "Could not paste. Enter the address or tag manually.": "貼り付けできません。アドレスまたはタグを手入力してください。",
-  "Camera unavailable. Enter the address or tag manually.": "カメラを使用できません。アドレスまたはタグを手入力してください。"
+  "Camera unavailable. Enter the address or tag manually.": "カメラを使用できません。アドレスまたはタグを手入力してください。",
+  "Select text": "テキストを選択",
+  "Text selected. Copy it manually.": "テキストを選択しました。手動でコピーしてください。",
+  "Could not share. Copy or select the details instead.": "共有できません。情報をコピーまたは選択してください。",
+  "Connect to save your tag. Your Base address is still available.": "タグを保存するには接続してください。Baseアドレスは引き続き使用できます。",
+  "Receiving details remain available. Check Activity when connected.": "受け取り情報は使用できます。接続後にアクティビティを確認してください。",
+  "Tags are unavailable. Use your Base address.": "タグは使用できません。Baseアドレスを使用してください。",
+  "This contract identifies the token. Do not send funds to it.": "このコントラクトはトークンを識別します。ここに資金を送らないでください。"
 }

@@ -614,5 +614,12 @@
   "Quote expires at {time}": "សម្រង់តម្លៃផុតកំណត់នៅ {time}",
   "Incorrect PIN. Try again.": "PIN មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។",
   "Could not paste. Enter the address or tag manually.": "មិនអាចបិទភ្ជាប់បានទេ។ សូមបញ្ចូលអាសយដ្ឋាន ឬ tag ដោយដៃ។",
-  "Camera unavailable. Enter the address or tag manually.": "កាមេរ៉ាមិនអាចប្រើបានទេ។ សូមបញ្ចូលអាសយដ្ឋាន ឬ tag ដោយដៃ។"
+  "Camera unavailable. Enter the address or tag manually.": "កាមេរ៉ាមិនអាចប្រើបានទេ។ សូមបញ្ចូលអាសយដ្ឋាន ឬ tag ដោយដៃ។",
+  "Select text": "ជ្រើសរើសអត្ថបទ",
+  "Text selected. Copy it manually.": "បានជ្រើសរើសអត្ថបទ។ ចម្លងដោយដៃ។",
+  "Could not share. Copy or select the details instead.": "មិនអាចចែករំលែកបានទេ។ ចម្លង ឬជ្រើសរើសព័ត៌មាន។",
+  "Connect to save your tag. Your Base address is still available.": "ភ្ជាប់ដើម្បីរក្សាទុកស្លាក។ អាសយដ្ឋាន Base នៅតែអាចប្រើបាន។",
+  "Receiving details remain available. Check Activity when connected.": "ព័ត៌មានទទួលនៅតែអាចប្រើបាន។ ពិនិត្យសកម្មភាពពេលភ្ជាប់។",
+  "Tags are unavailable. Use your Base address.": "ស្លាកមិនអាចប្រើបាន។ ប្រើអាសយដ្ឋាន Base របស់អ្នក។",
+  "This contract identifies the token. Do not send funds to it.": "កិច្ចសន្យានេះកំណត់អត្តសញ្ញាណថូខិន។ កុំផ្ញើប្រាក់ទៅទីនេះ។"
 }

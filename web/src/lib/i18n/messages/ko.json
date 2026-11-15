@@ -614,5 +614,12 @@
   "Quote expires at {time}": "견적 만료 시간 {time}",
   "Incorrect PIN. Try again.": "PIN 오류입니다. 다시 시도하세요.",
   "Could not paste. Enter the address or tag manually.": "붙여넣을 수 없습니다. 주소 또는 태그를 직접 입력하세요.",
-  "Camera unavailable. Enter the address or tag manually.": "카메라를 사용할 수 없습니다. 주소 또는 태그를 직접 입력하세요."
+  "Camera unavailable. Enter the address or tag manually.": "카메라를 사용할 수 없습니다. 주소 또는 태그를 직접 입력하세요.",
+  "Select text": "문자 선택",
+  "Text selected. Copy it manually.": "문자가 선택되었습니다. 직접 복사하세요.",
+  "Could not share. Copy or select the details instead.": "공유할 수 없습니다. 정보를 복사하거나 선택하세요.",
+  "Connect to save your tag. Your Base address is still available.": "태그를 저장하려면 연결하세요. Base 주소는 계속 사용할 수 있습니다.",
+  "Receiving details remain available. Check Activity when connected.": "받기 정보는 계속 사용할 수 있습니다. 연결 후 활동을 확인하세요.",
+  "Tags are unavailable. Use your Base address.": "태그를 사용할 수 없습니다. Base 주소를 사용하세요.",
+  "This contract identifies the token. Do not send funds to it.": "이 계약은 토큰을 식별합니다. 여기에 자금을 보내지 마세요."
 }

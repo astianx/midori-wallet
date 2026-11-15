@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Котирування діє до {time}",
   "Incorrect PIN. Try again.": "Неправильний PIN. Спробуйте ще раз.",
   "Could not paste. Enter the address or tag manually.": "Не вдалося вставити. Введіть адресу або тег вручну.",
-  "Camera unavailable. Enter the address or tag manually.": "Камера недоступна. Введіть адресу або тег вручну."
+  "Camera unavailable. Enter the address or tag manually.": "Камера недоступна. Введіть адресу або тег вручну.",
+  "Select text": "Виділити текст",
+  "Text selected. Copy it manually.": "Текст виділено. Скопіюйте його вручну.",
+  "Could not share. Copy or select the details instead.": "Не вдалося поділитися. Скопіюйте або виділіть дані.",
+  "Connect to save your tag. Your Base address is still available.": "Підключіться, щоб зберегти тег. Ваша адреса Base залишається доступною.",
+  "Receiving details remain available. Check Activity when connected.": "Дані для отримання доступні. Перевірте Активність після підключення.",
+  "Tags are unavailable. Use your Base address.": "Теги недоступні. Використовуйте свою адресу Base.",
+  "This contract identifies the token. Do not send funds to it.": "Цей контракт ідентифікує токен. Не надсилайте на нього кошти."
 }

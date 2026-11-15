@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Ponuda istječe u {time}",
   "Incorrect PIN. Try again.": "Pogrešan PIN. Pokušajte ponovno.",
   "Could not paste. Enter the address or tag manually.": "Nije moguće zalijepiti. Ručno unesite adresu ili tag.",
-  "Camera unavailable. Enter the address or tag manually.": "Kamera nije dostupna. Ručno unesite adresu ili tag."
+  "Camera unavailable. Enter the address or tag manually.": "Kamera nije dostupna. Ručno unesite adresu ili tag.",
+  "Select text": "Odaberi tekst",
+  "Text selected. Copy it manually.": "Tekst odabran. Kopirajte ga ručno.",
+  "Could not share. Copy or select the details instead.": "Dijeljenje nije uspjelo. Kopirajte ili odaberite podatke.",
+  "Connect to save your tag. Your Base address is still available.": "Povežite se za spremanje taga. Vaša Base adresa ostaje dostupna.",
+  "Receiving details remain available. Check Activity when connected.": "Podaci za primanje ostaju dostupni. Provjerite Aktivnost nakon povezivanja.",
+  "Tags are unavailable. Use your Base address.": "Tagovi nisu dostupni. Upotrijebite svoju Base adresu.",
+  "This contract identifies the token. Do not send funds to it.": "Ovaj ugovor identificira token. Ne šaljite sredstva na njega."
 }

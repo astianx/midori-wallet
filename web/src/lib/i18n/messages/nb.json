@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Tilbudet utløper kl. {time}",
   "Incorrect PIN. Try again.": "Feil PIN. Prøv igjen.",
   "Could not paste. Enter the address or tag manually.": "Kunne ikke lime inn. Skriv inn adressen eller taggen manuelt.",
-  "Camera unavailable. Enter the address or tag manually.": "Kameraet er utilgjengelig. Skriv inn adressen eller taggen manuelt."
+  "Camera unavailable. Enter the address or tag manually.": "Kameraet er utilgjengelig. Skriv inn adressen eller taggen manuelt.",
+  "Select text": "Velg tekst",
+  "Text selected. Copy it manually.": "Tekst valgt. Kopier den manuelt.",
+  "Could not share. Copy or select the details instead.": "Kunne ikke dele. Kopier eller velg opplysningene.",
+  "Connect to save your tag. Your Base address is still available.": "Koble til for å lagre taggen. Base-adressen din er fortsatt tilgjengelig.",
+  "Receiving details remain available. Check Activity when connected.": "Mottaksopplysninger er fortsatt tilgjengelige. Se Aktivitet når du er tilkoblet.",
+  "Tags are unavailable. Use your Base address.": "Tagger er utilgjengelige. Bruk Base-adressen din.",
+  "This contract identifies the token. Do not send funds to it.": "Denne kontrakten identifiserer tokenet. Ikke send midler til den."
 }

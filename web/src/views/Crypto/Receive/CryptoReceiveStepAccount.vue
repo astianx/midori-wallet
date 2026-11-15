@@ -1,93 +1,38 @@
 <script>
+import { formatMidoriTag, isValidTagAlias } from '../../../lib/tags.js';
+import { onShowOnHide } from '../../../lib/mixins.js';
 import MwButton from '../../../components/MwButton.vue';
-import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
 import MwFormInput from '../../../components/MwForm/MwFormInput.vue';
 import MwStep from '../../../components/MwStep.vue';
 import MainLayout from '../../../layouts/MainLayout.vue';
-import { isValidUsername } from '../../../lib/helpers.js';
-
-import { RequestError } from '../../../lib/ui-runtime/vendor/errors.js';
-
 export default {
-  components: {
-    MainLayout,
-    MwButton,
-    MwFormGroup,
-    MwFormInput,
-  },
-  extends: MwStep,
-  data() {
-    return {
-      isLoading: false,
-      username: this.$user.username,
-      errors: {},
-    };
-  },
+  components: { MainLayout, MwButton, MwFormInput }, extends: MwStep, mixins: [onShowOnHide],
+  data() { return { username: formatMidoriTag(this.$account.tag?.alias || this.$user.username), error: '', isLoading: false, online: false, allowed: false, active: false, generation: 0 }; },
+  onShow() { this.active = true; this.generation++; this.sync(); this.$account.on('update', this.sync); window.addEventListener('online', this.sync); window.addEventListener('offline', this.sync); this.$nextTick(() => this.$refs.field.$el.querySelector('input').focus()); },
+  onHide() { this.active = false; this.generation++; this.$account.off('update', this.sync); window.removeEventListener('online', this.sync); window.removeEventListener('offline', this.sync); },
   methods: {
+    sync() { this.online = navigator.onLine !== false && this.$account.connection === 'online'; this.allowed = this.$account.capabilities.tags === true; },
     async save() {
-      if (!isValidUsername(this.username)) {
-        this.errors.username = this.$t('Invalid username');
-        return;
-      }
-      this.isLoading = true;
-      this.errors = {};
-      try {
-        this.username = await this.$account.updateUsername(this.username);
-        this.$account.details.set('userInfo', {
-          username: this.username,
-          email: this.$user.email,
-        });
-        await this.$account.details.save();
-        this.$account.emit('update', 'user');
-        this.back();
-      } catch (err) {
-        if (err instanceof RequestError && err.status === 400) {
-          this.errors.username = this.$t('Username already taken');
-          return;
-        }
-        console.error('Midori Wallet operation failed');
-      } finally {
-        this.isLoading = false;
-      }
+      if (this.isLoading || !this.active) return;
+      this.sync();
+      if (!this.online || !this.allowed) return;
+      if (!isValidTagAlias(this.username)) { this.error = this.$t('Invalid or reserved tag'); return; }
+      const generation = this.generation; this.isLoading = true; this.error = '';
+      try { await this.$account.updateUsername(this.username); this.$account.emit('update','user'); if (this.active && generation === this.generation) this.back({ saved: true }); }
+      catch (error) { if (this.active && generation === this.generation) this.error = this.$t(error.code === 'TAG_TAKEN' || error.status === 409 ? 'Username already taken' : error.code === 'NETWORK_UNCONFIRMED' ? 'Connect to save your tag. Your Base address is still available.' : error.status === 400 ? 'Invalid or reserved tag' : 'Error! Please check your internet connection and try again.'); }
+      finally { if (generation === this.generation) this.isLoading = false; }
     },
   },
 };
 </script>
-
 <template>
-  <MainLayout :title="$t('Account')">
-    <div class="&__info">
-      {{ $t('Before you start using Mecto, you need to enter a name that will help others identify you.') }}
-    </div>
-    <MwFormGroup class="&__container">
-      <MwFormInput
-        v-model="username"
-        :label="$t('Your username')"
-        :error="errors.username"
-        :clear="true"
-        @update:modelValue="errors.username = undefined"
-      />
-    </MwFormGroup>
-    <MwButton
-      type="primary"
-      :isLoading="isLoading"
-      @click="save"
-    >
-      {{ $t('Save') }}
-    </MwButton>
+  <MainLayout class="&" :title="$t('Choose your tag')" allowReadFailure :onBack="() => back()">
+    <p class="&__context">{{ $t('Receive {symbol}', { symbol: $wallet.crypto.symbol }) }} · Base</p><p>{{ $t('Your username is your Midori tag. Share it to receive USDT and USDC on Base.') }}</p>
+    <form @submit.prevent="save"><MwFormInput ref="field" v-model="username" :label="$t('Your Midori tag')" placeholder="$usuario" :error="error" :disabled="isLoading" :clear="true" @update:modelValue="error = ''" /><p v-if="!online" role="status" class="&__notice">{{ $t('Connect to save your tag. Your Base address is still available.') }}</p><p v-else-if="!allowed" role="status" class="&__notice">{{ $t('Tags are unavailable. Use your Base address.') }}</p><MwButton class="&__save" type="primary" :isLoading="isLoading" :disabled="!online || !allowed" @click="save">{{ $t('Save') }}</MwButton></form>
+    <MwButton type="primary-link" @click="back">{{ $t('Receive {symbol}', { symbol: $wallet.crypto.symbol }) }}</MwButton>
   </MainLayout>
 </template>
-
 <style lang="scss">
-  .#{ $filename } {
-    $self: &;
-
-    &__info {
-      @include text-md;
-    }
-
-    &__container {
-      flex-grow: 1;
-    }
-  }
+/* Hallmark · design-system: design.md · pre-emit critique: P5 H4 E4 S5 R5 V4 */
+.#{ $filename } { &__context { margin: 0; color: var(--color-accent); font-weight: 600; } p { font-size: var(--text-label); line-height: 1.5; } form { display: flex; flex-direction: column; gap: var(--space-lg); } &__save { width: 100%; } &__notice { color: var(--color-warning); } }
 </style>

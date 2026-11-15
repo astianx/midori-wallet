@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Wycena wygasa o {time}",
   "Incorrect PIN. Try again.": "Nieprawidłowy PIN. Spróbuj ponownie.",
   "Could not paste. Enter the address or tag manually.": "Nie można wkleić. Wpisz adres lub tag ręcznie.",
-  "Camera unavailable. Enter the address or tag manually.": "Kamera jest niedostępna. Wpisz adres lub tag ręcznie."
+  "Camera unavailable. Enter the address or tag manually.": "Kamera jest niedostępna. Wpisz adres lub tag ręcznie.",
+  "Select text": "Zaznacz tekst",
+  "Text selected. Copy it manually.": "Tekst zaznaczony. Skopiuj go ręcznie.",
+  "Could not share. Copy or select the details instead.": "Nie udało się udostępnić. Skopiuj lub zaznacz dane.",
+  "Connect to save your tag. Your Base address is still available.": "Połącz się, aby zapisać tag. Twój adres Base jest nadal dostępny.",
+  "Receiving details remain available. Check Activity when connected.": "Dane odbioru pozostają dostępne. Po połączeniu sprawdź Aktywność.",
+  "Tags are unavailable. Use your Base address.": "Tagi są niedostępne. Użyj swojego adresu Base.",
+  "This contract identifies the token. Do not send funds to it.": "Ten kontrakt identyfikuje token. Nie wysyłaj na niego środków."
 }

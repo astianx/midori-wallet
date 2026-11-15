@@ -614,5 +614,12 @@
   "Quote expires at {time}": "报价于 {time} 到期",
   "Incorrect PIN. Try again.": "PIN 不正确，请重试。",
   "Could not paste. Enter the address or tag manually.": "无法粘贴，请手动输入地址或标签。",
-  "Camera unavailable. Enter the address or tag manually.": "相机不可用，请手动输入地址或标签。"
+  "Camera unavailable. Enter the address or tag manually.": "相机不可用，请手动输入地址或标签。",
+  "Select text": "选择文本",
+  "Text selected. Copy it manually.": "已选择文本，请手动复制。",
+  "Could not share. Copy or select the details instead.": "无法分享，请复制或选择信息。",
+  "Connect to save your tag. Your Base address is still available.": "请连接网络以保存标签。你的 Base 地址仍然可用。",
+  "Receiving details remain available. Check Activity when connected.": "收款信息仍然可用。联网后请查看活动。",
+  "Tags are unavailable. Use your Base address.": "标签不可用，请使用你的 Base 地址。",
+  "This contract identifies the token. Do not send funds to it.": "此合约用于识别代币。请不要向其发送资金。"
 }

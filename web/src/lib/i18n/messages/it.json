@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Il preventivo scade alle {time}",
   "Incorrect PIN. Try again.": "PIN errato. Riprova.",
   "Could not paste. Enter the address or tag manually.": "Impossibile incollare. Inserisci manualmente indirizzo o tag.",
-  "Camera unavailable. Enter the address or tag manually.": "Fotocamera non disponibile. Inserisci manualmente indirizzo o tag."
+  "Camera unavailable. Enter the address or tag manually.": "Fotocamera non disponibile. Inserisci manualmente indirizzo o tag.",
+  "Select text": "Seleziona testo",
+  "Text selected. Copy it manually.": "Testo selezionato. Copialo manualmente.",
+  "Could not share. Copy or select the details instead.": "Condivisione non riuscita. Copia o seleziona i dati.",
+  "Connect to save your tag. Your Base address is still available.": "Connettiti per salvare il tag. Il tuo indirizzo Base resta disponibile.",
+  "Receiving details remain available. Check Activity when connected.": "I dati di ricezione restano disponibili. Controlla Attività quando sei connesso.",
+  "Tags are unavailable. Use your Base address.": "I tag non sono disponibili. Usa il tuo indirizzo Base.",
+  "This contract identifies the token. Do not send funds to it.": "Questo contratto identifica il token. Non inviare fondi a questo indirizzo."
 }

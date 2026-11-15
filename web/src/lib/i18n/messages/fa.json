@@ -614,5 +614,12 @@
   "Quote expires at {time}": "قیمت تا {time} معتبر است",
   "Incorrect PIN. Try again.": "پین نادرست است. دوباره تلاش کنید.",
   "Could not paste. Enter the address or tag manually.": "جای‌گذاری نشد. آدرس یا تگ را دستی وارد کنید.",
-  "Camera unavailable. Enter the address or tag manually.": "دوربین در دسترس نیست. آدرس یا تگ را دستی وارد کنید."
+  "Camera unavailable. Enter the address or tag manually.": "دوربین در دسترس نیست. آدرس یا تگ را دستی وارد کنید.",
+  "Select text": "انتخاب متن",
+  "Text selected. Copy it manually.": "متن انتخاب شد. آن را دستی کپی کنید.",
+  "Could not share. Copy or select the details instead.": "اشتراک‌گذاری ممکن نیست. اطلاعات را کپی یا انتخاب کنید.",
+  "Connect to save your tag. Your Base address is still available.": "برای ذخیره تگ متصل شوید. آدرس Base شما همچنان در دسترس است.",
+  "Receiving details remain available. Check Activity when connected.": "اطلاعات دریافت در دسترس است. پس از اتصال فعالیت را بررسی کنید.",
+  "Tags are unavailable. Use your Base address.": "تگ‌ها در دسترس نیستند. از آدرس Base خود استفاده کنید.",
+  "This contract identifies the token. Do not send funds to it.": "این قرارداد توکن را مشخص می‌کند. وجهی به آن ارسال نکنید."
 }

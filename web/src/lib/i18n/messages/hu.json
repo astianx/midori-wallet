@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Az ajánlat lejár: {time}",
   "Incorrect PIN. Try again.": "Hibás PIN. Próbáld újra.",
   "Could not paste. Enter the address or tag manually.": "Nem sikerült beilleszteni. Add meg kézzel a címet vagy a taget.",
-  "Camera unavailable. Enter the address or tag manually.": "A kamera nem érhető el. Add meg kézzel a címet vagy a taget."
+  "Camera unavailable. Enter the address or tag manually.": "A kamera nem érhető el. Add meg kézzel a címet vagy a taget.",
+  "Select text": "Szöveg kijelölése",
+  "Text selected. Copy it manually.": "Szöveg kijelölve. Másold ki kézzel.",
+  "Could not share. Copy or select the details instead.": "Nem sikerült megosztani. Másold ki vagy jelöld ki az adatokat.",
+  "Connect to save your tag. Your Base address is still available.": "Csatlakozz a tag mentéséhez. A Base-címed továbbra is elérhető.",
+  "Receiving details remain available. Check Activity when connected.": "A fogadási adatok elérhetők. Csatlakozás után ellenőrizd a Tevékenységet.",
+  "Tags are unavailable. Use your Base address.": "A tagek nem érhetők el. Használd a Base-címedet.",
+  "This contract identifies the token. Do not send funds to it.": "Ez a szerződés azonosítja a tokent. Ne küldj rá pénzt."
 }

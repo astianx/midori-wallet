@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Nabídka vyprší v {time}",
   "Incorrect PIN. Try again.": "Nesprávný PIN. Zkuste to znovu.",
   "Could not paste. Enter the address or tag manually.": "Nelze vložit. Zadejte adresu nebo tag ručně.",
-  "Camera unavailable. Enter the address or tag manually.": "Kamera není dostupná. Zadejte adresu nebo tag ručně."
+  "Camera unavailable. Enter the address or tag manually.": "Kamera není dostupná. Zadejte adresu nebo tag ručně.",
+  "Select text": "Vybrat text",
+  "Text selected. Copy it manually.": "Text vybrán. Zkopírujte jej ručně.",
+  "Could not share. Copy or select the details instead.": "Sdílení se nezdařilo. Zkopírujte nebo vyberte údaje.",
+  "Connect to save your tag. Your Base address is still available.": "Pro uložení tagu se připojte. Vaše adresa Base je stále dostupná.",
+  "Receiving details remain available. Check Activity when connected.": "Údaje pro příjem jsou stále dostupné. Po připojení zkontrolujte Aktivitu.",
+  "Tags are unavailable. Use your Base address.": "Tagy nejsou dostupné. Použijte svou adresu Base.",
+  "This contract identifies the token. Do not send funds to it.": "Tento kontrakt identifikuje token. Neposílejte na něj prostředky."
 }

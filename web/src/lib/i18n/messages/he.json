@@ -614,5 +614,12 @@
   "Quote expires at {time}": "הצעת המחיר תקפה עד {time}",
   "Incorrect PIN. Try again.": "קוד PIN שגוי. נסו שוב.",
   "Could not paste. Enter the address or tag manually.": "לא ניתן להדביק. הזינו כתובת או תג ידנית.",
-  "Camera unavailable. Enter the address or tag manually.": "המצלמה אינה זמינה. הזינו כתובת או תג ידנית."
+  "Camera unavailable. Enter the address or tag manually.": "המצלמה אינה זמינה. הזינו כתובת או תג ידנית.",
+  "Select text": "בחירת טקסט",
+  "Text selected. Copy it manually.": "הטקסט נבחר. יש להעתיק אותו ידנית.",
+  "Could not share. Copy or select the details instead.": "לא ניתן לשתף. יש להעתיק או לבחור את הפרטים.",
+  "Connect to save your tag. Your Base address is still available.": "יש להתחבר כדי לשמור את התג. כתובת Base שלך עדיין זמינה.",
+  "Receiving details remain available. Check Activity when connected.": "פרטי הקבלה עדיין זמינים. יש לבדוק את הפעילות לאחר החיבור.",
+  "Tags are unavailable. Use your Base address.": "תגים אינם זמינים. יש להשתמש בכתובת Base שלך.",
+  "This contract identifies the token. Do not send funds to it.": "חוזה זה מזהה את הטוקן. אין לשלוח אליו כספים."
 }

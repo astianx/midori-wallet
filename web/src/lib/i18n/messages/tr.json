@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Teklifin son geçerlilik saati {time}",
   "Incorrect PIN. Try again.": "Yanlış PIN. Tekrar deneyin.",
   "Could not paste. Enter the address or tag manually.": "Yapıştırılamadı. Adresi veya etiketi elle girin.",
-  "Camera unavailable. Enter the address or tag manually.": "Kamera kullanılamıyor. Adresi veya etiketi elle girin."
+  "Camera unavailable. Enter the address or tag manually.": "Kamera kullanılamıyor. Adresi veya etiketi elle girin.",
+  "Select text": "Metni seç",
+  "Text selected. Copy it manually.": "Metin seçildi. Elle kopyalayın.",
+  "Could not share. Copy or select the details instead.": "Paylaşılamadı. Bilgileri kopyalayın veya seçin.",
+  "Connect to save your tag. Your Base address is still available.": "Etiketinizi kaydetmek için bağlanın. Base adresiniz kullanılabilir durumda.",
+  "Receiving details remain available. Check Activity when connected.": "Alma bilgileri kullanılabilir. Bağlandığınızda Etkinliği kontrol edin.",
+  "Tags are unavailable. Use your Base address.": "Etiketler kullanılamıyor. Base adresinizi kullanın.",
+  "This contract identifies the token. Do not send funds to it.": "Bu sözleşme tokeni tanımlar. Buraya para göndermeyin."
 }

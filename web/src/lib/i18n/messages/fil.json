@@ -614,5 +614,12 @@
   "Quote expires at {time}": "Mag-e-expire ang alok sa {time}",
   "Incorrect PIN. Try again.": "Maling PIN. Subukan muli.",
   "Could not paste. Enter the address or tag manually.": "Hindi mai-paste. Ilagay nang mano-mano ang address o tag.",
-  "Camera unavailable. Enter the address or tag manually.": "Hindi available ang camera. Ilagay nang mano-mano ang address o tag."
+  "Camera unavailable. Enter the address or tag manually.": "Hindi available ang camera. Ilagay nang mano-mano ang address o tag.",
+  "Select text": "Piliin ang teksto",
+  "Text selected. Copy it manually.": "Napili ang teksto. Kopyahin ito nang mano-mano.",
+  "Could not share. Copy or select the details instead.": "Hindi maibahagi. Kopyahin o piliin ang mga detalye.",
+  "Connect to save your tag. Your Base address is still available.": "Kumonekta para i-save ang tag. Magagamit pa rin ang iyong Base address.",
+  "Receiving details remain available. Check Activity when connected.": "Magagamit pa rin ang mga detalye sa pagtanggap. Tingnan ang Aktibidad kapag nakakonekta.",
+  "Tags are unavailable. Use your Base address.": "Hindi magagamit ang mga tag. Gamitin ang iyong Base address.",
+  "This contract identifies the token. Do not send funds to it.": "Tinutukoy ng kontratang ito ang token. Huwag magpadala ng pondo rito."
 }

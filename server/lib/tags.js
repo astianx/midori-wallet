@@ -8,7 +8,7 @@ const reserved = new Set(['admin', 'administrator', 'midori', 'midori-wallet', '
 
 export function normalizeTag(value) {
   requireValue(typeof value === 'string' && value.length <= 65, 'Invalid tag');
-  const alias = value.trim().replace(/^@/, '').toLowerCase();
+  const alias = value.trim().replace(/^[$@]/, '').toLowerCase();
   requireValue(/^[a-z0-9][a-z0-9-]{0,62}$/.test(alias), 'Invalid tag');
   requireValue(!reserved.has(alias), 'This tag is reserved');
   return alias;

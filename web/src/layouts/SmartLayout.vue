@@ -77,7 +77,7 @@ export default {
       this.$refs.container.addEventListener('touchcancel', this.handleTouchCancel, { passive: true });
     }
     if (this.env.VITE_BUILD_TYPE === 'phonegap') {
-      window.backButton = () => this.back();
+      window.backButton = this.back;
     }
     this.$refs.container.scrollTop = this.scrollTop;
   },
@@ -89,7 +89,7 @@ export default {
     this.$refs.container.removeEventListener('touchend', this.handleTouchEnd);
     this.$refs.container.removeEventListener('touchcancel', this.handleTouchCancel);
     if (this.env.VITE_BUILD_TYPE === 'phonegap') {
-      delete window.backButton;
+      if (window.backButton === this.back) delete window.backButton;
     }
     this.scrollTop = this.$refs.container.scrollTop;
   },
@@ -217,19 +217,26 @@ export default {
 </template>
 
 <style lang="scss">
+/* Hallmark · component-scope · design-system: design.md · pre-emit critique: P4 H5 E4 S5 R5 V4 */
   .#{ $filename } {
     display: flex;
     width: 100%;
     height: 100%;
+    min-height: 0;
+    min-width: 0;
     flex-direction: column;
 
     &__container {
       position: relative;
       display: flex;
-      height: 100%;
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
       flex-direction: column;
       align-items: center;
       overflow-y: auto;
+      overscroll-behavior-y: contain;
+      scroll-padding-block: var(--space-md);
       scrollbar-width: thin;
 
       &--pulling {
@@ -240,24 +247,17 @@ export default {
     &__content {
       display: flex;
       width: 100%;
-      flex-basis: 100%;
+      flex: 1 0 auto;
+      min-height: 100%;
+      max-width: 68rem;
       flex-direction: column;
-      padding:
-        var(--spacing-3xl)
-        var(--spacing-xl)
-        max(var(--spacing-3xl), env(safe-area-inset-bottom))
-        var(--spacing-xl);
-      gap: var(--spacing-3xl);
-      @include breakpoint(lg) {
-        // ~ max-height limited by 720px
-        flex-basis: 45rem;
-        padding: var(--spacing-3xl) var(--spacing-xl);
-      }
+      padding: var(--space-lg) var(--space-md) max(var(--space-lg), env(safe-area-inset-bottom));
+      gap: var(--space-lg);
+      > * { flex-shrink: 0; min-width: 0; }
+      @media (min-width: 40rem) { padding-inline: var(--space-xl); gap: var(--space-xl); }
 
       &--narrow {
-        @include breakpoint(lg) {
-          width: 25rem;
-        }
+        max-width: 34rem;
       }
 
       &--transition {
@@ -266,6 +266,7 @@ export default {
     }
 
     &__navbar {
+      flex: none;
       @include breakpoint(lg) {
         border-bottom: 1px solid var(--color-divider);
       }

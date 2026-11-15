@@ -96,6 +96,7 @@ export default {
     <Transition :name="transition">
       <KeepAlive :exclude="exclude">
         <component
+          ref="activeStep"
           :is="steps[currentStep]"
           :storage="storage"
           :args="args"

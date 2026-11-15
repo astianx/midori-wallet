@@ -40,13 +40,13 @@ export default {
   },
   onShow() {
     if (this.env.VITE_BUILD_TYPE === 'phonegap' && this.showBack) {
-      window.backButton = () => this.back();
+      window.backButton = this.back;
     }
     this.$refs.content.scrollTop = this.scrollTop;
   },
   onHide() {
     if (this.env.VITE_BUILD_TYPE === 'phonegap' && this.showBack) {
-      delete window.backButton;
+      if (window.backButton === this.back) delete window.backButton;
     }
     this.scrollTop = this.$refs.content.scrollTop;
   },

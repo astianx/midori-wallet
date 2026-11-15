@@ -50,7 +50,8 @@ export default {
       class="&__content"
       :class="{'&__content--centered': centered}"
     >
-      <div class="&__title">
+      <div class="&__title"
+        :title="title">
         {{ title }}
       </div>
       <div class="&__description">
@@ -81,7 +82,7 @@ export default {
     }
 
     &__content {
-      min-width: 20%;
+      min-width: 0;
       flex-grow: 1;
       text-align: center;
       @include breakpoint(lg) {

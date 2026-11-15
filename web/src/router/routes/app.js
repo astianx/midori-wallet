@@ -55,6 +55,7 @@ const app = [
       component: ReceiveView,
     }, {
       path: 'settings',
+      meta: { navigation: 'settings' },
       children: [{
         path: '',
         name: 'settings',
@@ -70,10 +71,12 @@ const app = [
       }, {
         path: 'hardware',
         name: 'settings.hardware',
+          meta: { focusedFlow: true },
         component: SettingsHardwareView,
       }, {
         path: 'pin',
         name: 'settings.pin',
+          meta: { focusedFlow: true },
         component: SettingsPinView,
       }, {
         path: 'tor',
@@ -109,11 +112,13 @@ const app = [
         {
           path: 'buy',
           name: 'crypto.buy',
+          meta: { focusedFlow: true },
           component: CryptoViewBuy,
         },
         {
           path: 'sell',
           name: 'crypto.sell',
+          meta: { focusedFlow: true },
           component: CryptoViewSell,
         },
         {
@@ -129,6 +134,7 @@ const app = [
         {
           path: 'export',
           name: 'crypto.export',
+          meta: { focusedFlow: true },
           component: CryptoExportView,
         },
         {
@@ -144,6 +150,7 @@ const app = [
         {
           path: 'send',
           name: 'crypto.send',
+          meta: { focusedFlow: true },
           component: CryptoSendView,
         },
         {
@@ -154,11 +161,13 @@ const app = [
         {
           path: 'swap',
           name: 'crypto.swap',
+          meta: { focusedFlow: true },
           component: CryptoExchangeView,
         },
         {
           path: 'import',
           name: 'crypto.import',
+          meta: { focusedFlow: true },
           component: CryptoImportView,
         },
         {
@@ -204,11 +213,7 @@ const app = [
   {
     path: '/wc',
     redirect(to) {
-      if (!to.query.uri) {
-        window.close();
-        return 'notfound';
-      }
-      return { name: 'settings.walletconnect', query: { uri: to.query.uri } };
+      return { name: 'settings.walletconnect', query: to.query };
     },
   },
   {

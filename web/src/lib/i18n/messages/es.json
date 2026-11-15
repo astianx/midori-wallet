@@ -599,5 +599,8 @@
   "No matching activity": "No hay movimientos para este filtro",
   "Choose another stablecoin or show all activity.": "Elige otra stablecoin o muestra todos los movimientos.",
   "Midori Wallet": "Midori Wallet",
-  "Other services": "Otros servicios"
+  "Other services": "Otros servicios",
+  "Day": "Día",
+  "Month": "Mes",
+  "Year": "Año"
 }

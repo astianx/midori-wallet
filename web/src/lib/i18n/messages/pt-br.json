@@ -599,5 +599,8 @@
   "No matching activity": "Nenhuma atividade correspondente",
   "Choose another stablecoin or show all activity.": "Escolha outra stablecoin ou mostre todas as atividades.",
   "Midori Wallet": "Midori Wallet",
-  "Other services": "Outros serviços"
+  "Other services": "Outros serviços",
+  "Day": "Dia",
+  "Month": "Mês",
+  "Year": "Ano"
 }

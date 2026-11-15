@@ -9,7 +9,7 @@ export default function openWindow(value) {
   let mainWindow = BrowserWindow.getAllWindows()[0];
   if (!mainWindow) {
     mainWindow = new BrowserWindow({
-      width: 500, height: 700, minWidth: 360, minHeight: 500,
+      width: 1180, height: 820, minWidth: 360, minHeight: 500,
       webPreferences: { devTools: isDevelopment, sandbox: true, nodeIntegration: false, contextIsolation: true, webSecurity: true, webviewTag: false, preload: fileURLToPath(new URL('preload.cjs', import.meta.url)) },
     });
     mainWindow.webContents.on('will-navigate', (event, url) => { if (!isAppUrl(url)) event.preventDefault(); });

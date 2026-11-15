@@ -26,7 +26,7 @@ export default {
     async share() {
       const text = this.receiveMode === 'midori' ? `${this.$t('Receive with Midori Wallet')}\n${this.tag}` : `${this.$wallet.crypto.symbol} · Base\n${this.receiveValue}`;
       try {
-        if (this.env.VITE_BUILD_TYPE === 'phonegap') await window.plugins.socialsharing.shareWithOptions({ message: text });
+        if (this.env.VITE_BUILD_TYPE === 'phonegap' && typeof window.plugins?.socialsharing?.shareWithOptions === 'function') await window.plugins.socialsharing.shareWithOptions({ message: text });
         else if (navigator.share) await navigator.share({ title: this.$t('Receive'), text });
         else this.$safeOpen(`mailto:?body=${encodeURIComponent(text)}`);
       } catch { /* Sharing can be cancelled. */ }

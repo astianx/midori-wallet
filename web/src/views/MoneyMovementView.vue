@@ -16,8 +16,8 @@ export default {
     title() { return this.$t(this.adding ? 'Add money' : 'Withdraw'); },
     methods() {
       return this.adding
-        ? [{ id: 'receive', label: this.$t('From another wallet'), description: this.$t('USDT and USDC on Base share your account address.'), icon: 'receive', enabled: this.$cryptos.length > 0 }, { id: 'buy', label: this.$t('Local currency'), description: `Transak · ${this.$t('Buy with local currency')}`, icon: 'plus', enabled: this.canUseRamp('buy') }]
-        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Send and receive USDC and USDT with your own wallet.'), icon: 'send', enabled: !!this.$account.capabilities.payments && this.$cryptos.length > 0 }, { id: 'sell', label: this.$t('Local currency'), description: `Transak · ${this.$t('Convert to local currency')}`, icon: 'refresh', enabled: this.canUseRamp('sell') }];
+        ? [{ id: 'receive', label: this.$t('From another wallet'), description: this.$t('USDT and USDC on Base share your account address.'), icon: 'receive', enabled: this.$cryptos.length > 0 }, { id: 'buy', label: this.$t('Local currency'), description: this.$t('Buy with local currency'), icon: 'plus', enabled: this.canUseRamp('buy') }]
+        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Send and receive USDC and USDT with your own wallet.'), icon: 'send', enabled: !!this.$account.capabilities.payments && this.$cryptos.length > 0 }, { id: 'sell', label: this.$t('Local currency'), description: this.$t('Convert to local currency'), icon: 'refresh', enabled: this.canUseRamp('sell') }];
     },
     selected() { return this.methods.find(method => method.id === this.$route.query.method); },
     assetNetwork() { return this.isRamp ? rampNetwork(this.options?.environment) : 'Base'; },
@@ -41,7 +41,7 @@ export default {
     limitation(method) {
       if (method.id === 'send') return this.$t('Sending is temporarily unavailable. Your funds remain in your wallet.');
       if (method.id === 'receive') return this.$t('Balance unavailable');
-      if (!this.$account.capabilities.ramp) return this.$t('Buying or selling crypto is temporarily unavailable.');
+      if (!this.$account.capabilities.ramp) return this.$t('The payment service is unavailable. Try again shortly.');
       if (this.error) return this.error;
       return this.$t(this.loading || !this.options ? 'Loading' : 'Unavailable');
     },
@@ -67,7 +67,7 @@ export default {
 <template>
   <MainLayout class="&" :title="title" wide allowReadFailure :onBack="back">
     <div class="&__composition">
-      <header class="&__intro"><span class="&__intro-icon"><MwAppIcon :name="selected?.icon || (adding ? 'plus' : 'send')" /></span><h1>{{ selected?.label || title }}</h1><p>{{ selected ? (isRamp ? assetNetwork : $t('Only Base is supported')) : $t('Choose a method') }}</p><span v-if="isRamp" class="&__provider">Transak</span></header>
+      <header class="&__intro"><span class="&__intro-icon"><MwAppIcon :name="selected?.icon || (adding ? 'plus' : 'send')" /></span><h1>{{ selected?.label || title }}</h1><p>{{ selected ? (isRamp ? assetNetwork : $t('Only Base is supported')) : $t('Choose a method') }}</p></header>
       <section class="&__choices" :aria-label="selected ? $t('Stablecoins') : $t('Choose a method')">
         <template v-if="!selected">
           <div v-for="method in methods" :key="method.id" class="&__method"><button type="button" class="&__row" :disabled="!method.enabled" :aria-describedby="`${direction}-${method.id}-description`" @click="choose(method)"><span class="&__icon"><MwAppIcon :name="method.icon" /></span><span class="&__label"><strong>{{ method.label }}</strong><small :id="`${direction}-${method.id}-description`">{{ method.description }}</small></span><MwAppIcon v-if="method.enabled" name="arrow" /></button><p v-if="!method.enabled" class="&__notice" role="status">{{ limitation(method) }}</p></div>
@@ -78,8 +78,8 @@ export default {
           <MwLoader v-if="loading" />
           <template v-else-if="error"><p class="&__notice" role="status">{{ error }}</p><MwButton type="secondary" @click="loadOptions">{{ $t('Refresh') }}</MwButton></template>
           <template v-else>
-            <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Transak test mode. Use test funds only; orders do not change your Base mainnet balance.') }}</p>
-            <p v-if="!assets.length" class="&__notice" role="status">{{ $t(isRamp ? 'This asset or currency is unavailable through Transak.' : 'Balance unavailable') }}</p>
+            <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Test mode. Do not use real money.') }}</p>
+            <p v-if="!assets.length" class="&__notice" role="status">{{ $t(isRamp ? 'The selected asset or currency is unavailable.' : 'Balance unavailable') }}</p>
             <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · {{ assetNetwork }}</small></span><MwAppIcon name="arrow" /></RouterLink>
           </template>
         </template>
@@ -95,7 +95,6 @@ export default {
   &__intro-icon svg { width: 1.75rem; height: 1.75rem; }
   &__intro h1 { margin-block: var(--space-md) var(--space-sm); font-size: var(--text-title); font-weight: 600; letter-spacing: -0.04em; line-height: 1.25; }
   &__intro p { margin: 0; color: var(--color-muted); font-size: 0.9375rem; line-height: 1.5; }
-  &__provider { display: block; margin-top: var(--space-sm); color: var(--color-muted); font-size: var(--text-label); }
   &__choices { min-width: 0; }
   &__method { border-bottom: 1px solid var(--color-rule); }
   &__row { display: flex; width: 100%; min-width: 0; align-items: center; min-height: 5.5rem; gap: var(--space-xs); padding: var(--space-md) var(--space-xs); text-align: start; color: var(--color-ink); }

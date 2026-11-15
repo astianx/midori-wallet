@@ -2,8 +2,6 @@
 import CryptoRampPanel from './CryptoRampPanel.vue';
 import MainLayout from '../../layouts/MainLayout.vue';
 
-
-
 export default {
   components: {
     CryptoRampPanel,
@@ -22,7 +20,7 @@ export default {
 <template>
   <MainLayout
     :title="$t('Add money')"
-    :description="`${$wallet.crypto.symbol} · Transak`"
+    :description="$wallet.crypto.symbol"
     :onBack="back"
     wide
     allowReadFailure

@@ -46,9 +46,9 @@ export default {
     <MwLoader v-if="loading" :aria-label="$t('Loading')" />
     <template v-else-if="error"><p role="status">{{ error }}</p><MwButton type="secondary" @click="show">{{ $t('Refresh') }}</MwButton></template>
     <template v-else>
-      <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Transak test mode. Use test funds only; orders do not change your Base mainnet balance.') }}</p>
-      <p v-if="!assets.length" role="status">{{ $t('This asset or currency is unavailable through Transak.') }}</p>
-      <button v-for="item in assets" :key="item.crypto._id" class="&__asset" type="button" @click="choose(item.crypto._id)"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span>{{ item.crypto.symbol }}<small>Base<span v-if="isRamp"> · Transak</span></small></span><MwAppIcon name="arrow" /></button>
+      <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Test mode. Do not use real money.') }}</p>
+      <p v-if="!assets.length" role="status">{{ $t('The selected asset or currency is unavailable.') }}</p>
+      <button v-for="item in assets" :key="item.crypto._id" class="&__asset" type="button" @click="choose(item.crypto._id)"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span>{{ item.crypto.symbol }}<small>Base</small></span><MwAppIcon name="arrow" /></button>
     </template>
   </MwModal>
 </template>

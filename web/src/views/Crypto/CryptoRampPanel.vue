@@ -56,8 +56,8 @@ export default {
     reset() { this.amountValue = undefined; this.error = ''; this.request = null; this.currentOrder = null; },
     edited() { this.error = ''; this.request = null; this.currentOrder = null; },
     onCheckoutUpdate(order) { if (order?.cryptoCurrency === this.$wallet?.crypto.symbol) this.refreshPending(order.id); },
-    onCheckoutError(order) { if (order?.cryptoCurrency === this.$wallet?.crypto.symbol) this.feedback = this.$t('Closing Transak does not cancel or confirm this order.'); },
-    onCheckoutClosed(order) { if (order?.cryptoCurrency === this.$wallet?.crypto.symbol) { this.feedback = this.$t('Closing Transak does not cancel or confirm this order.'); this.$nextTick(() => this.$refs.feedback?.focus({ preventScroll: true })); } },
+    onCheckoutError(order) { if (order?.cryptoCurrency === this.$wallet?.crypto.symbol) this.feedback = this.$t('Closing this screen does not cancel or confirm this order.'); },
+    onCheckoutClosed(order) { if (order?.cryptoCurrency === this.$wallet?.crypto.symbol) { this.feedback = this.$t('Closing this screen does not cancel or confirm this order.'); this.$nextTick(() => this.$refs.feedback?.focus({ preventScroll: true })); } },
     async refresh() {
       if (this.isRefreshing || this.disposed) return;
       this.isRefreshing = true;
@@ -114,10 +114,10 @@ export default {
 </script>
 <template>
   <div class="&">
-    <div class="&__heading"><span>Transak</span><span v-if="options" class="&__environment">{{ options.environment }}<template v-if="options.environment === 'STAGING'"> · {{ $t('Test mode') }}</template></span></div>
+
     <h1 class="&__title">{{ $t(kind === 'buy' ? 'Buy {symbol}' : 'Sell {symbol}', { symbol: $wallet.crypto.symbol }) }}</h1>
-    <p v-if="options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Transak test mode. Use test funds only; orders do not change your Base mainnet balance.') }}</p>
-    <p v-if="!allowed || !online || limited" class="&__notice" role="status">{{ $t(!online ? 'The connection was interrupted. Check this order before trying again.' : !allowed ? 'Buying or selling crypto is temporarily unavailable.' : 'This asset or currency is unavailable through Transak.') }}</p>
+    <p v-if="options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Test mode. Do not use real money.') }}</p>
+    <p v-if="!allowed || !online || limited" class="&__notice" role="status">{{ $t(!online ? 'The connection was interrupted. Check this order before trying again.' : !allowed ? 'The payment service is unavailable. Try again shortly.' : 'The selected asset or currency is unavailable.') }}</p>
     <p v-if="optionsError" class="&__error" role="alert">{{ optionsError }}</p>
     <MwLoader v-if="isLoadingOptions && !options" />
     <MwButton v-if="optionsError" type="secondary" :isLoading="isLoadingOptions" @click="loadOptions">{{ $t('Refresh') }}</MwButton>
@@ -128,11 +128,11 @@ export default {
       </fieldset>
       <aside class="&__summary" :aria-label="$t('Next step')">
         <h2>{{ $t('Next step') }}</h2>
-        <dl><div><dt>{{ $t('Provider') }}</dt><dd>Transak</dd></div><div><dt>{{ $t('Network') }}</dt><dd>{{ network }}</dd></div><div><dt>{{ $t('Amount') }}</dt><dd dir="ltr">{{ amountValue ? `${amountValue.toString()} ${symbol}` : '—' }}</dd></div><div><dt>{{ $t('Fee') }}</dt><dd>{{ $t('See in Transak') }}</dd></div></dl>
-        <p>{{ $t('Review the exchange rate, fees and final amount in Transak before confirming.') }}</p><p>{{ $t('Transak confirms availability, payment methods and identity checks.') }}</p>
+        <dl><div><dt>{{ $t('Network') }}</dt><dd>{{ network }}</dd></div><div><dt>{{ $t('Amount') }}</dt><dd dir="ltr">{{ amountValue ? `${amountValue.toString()} ${symbol}` : '—' }}</dd></div><div><dt>{{ $t('Fee') }} · Transak</dt><dd>{{ $t('Shown before you confirm.') }}</dd></div></dl>
+        <p>{{ $t('Review the exchange rate, fees and final amount before confirming.') }}</p>
       </aside>
       <MwButton v-if="currentOrder && currentOrder.status !== 'created'" class="&__continue" type="secondary" @click="isPending(currentOrder) ? openDetails(currentOrder) : startAgain()">{{ $t(isPending(currentOrder) ? 'Order details' : 'Review again') }}</MwButton>
-      <MwButton v-else class="&__continue" type="primary" :isLoading="isLoading" :disabled="!canContinue" @click="submit">{{ $t(currentOrder ? 'Open a new session' : 'Continue to Transak') }}</MwButton>
+      <MwButton v-else class="&__continue" type="primary" :isLoading="isLoading" :disabled="!canContinue" @click="submit">{{ $t('Continue') }}</MwButton>
     </form>
     <p v-if="feedback" ref="feedback" class="&__feedback" role="status" tabindex="-1">{{ feedback }}</p>
     <div v-if="currentOrder && currentOrder.status !== 'created'" class="&__notice" role="status">{{ $t('Your previous order remains available below.') }}</div>
@@ -148,8 +148,6 @@ export default {
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app · pre-emit critique: P5 H5 E4 S5 R5 V4 */
 .#{ $filename } {
   min-width: 0;
-  &__heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs); color: var(--color-muted); font-size: var(--text-label); }
-  &__environment { font-weight: 550; }
   &__title { margin-block: var(--space-sm) var(--space-xl); font-size: var(--text-title); font-weight: 600; letter-spacing: -0.035em; overflow-wrap: anywhere; }
   &__composition { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "fields" "summary" "action"; gap: var(--space-lg); }
   &__form { min-width: 0; }

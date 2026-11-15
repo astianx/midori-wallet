@@ -9,7 +9,7 @@ export function rampStatus(order, t) {
   return t({ created: 'Started', awaiting_payment: 'Awaiting payment', processing: 'Processing', completed: 'Completed', failed: 'Failed', refunded: 'Refunded', expired: 'Expired' }[order.status] || 'Unavailable');
 }
 export function rampStatusMessage(order, t) {
-  return t(order.status === 'completed' ? 'Transak reports completion. Your wallet balance updates separately.' : order.status === 'refunded' ? 'Transak reports a refund. Check your original payment method.' : 'We have not confirmed completion. Check the latest order status.');
+  return t(order.status === 'completed' ? 'Your wallet balance updates separately.' : order.status === 'refunded' ? 'Check your original payment method.' : 'We have not confirmed completion. Check the latest order status.');
 }
 export const rampNetwork = environment => environment === 'STAGING' ? 'Base Sepolia' : environment === 'PRODUCTION' ? 'Base' : '—';
 export function rampAssetSupported(options, asset, kind) {

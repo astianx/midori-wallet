@@ -296,7 +296,7 @@ export default {
         "Monto y unidad",
         "Cotización final en proveedor"
       ],
-      "primary": "Continuar con Transak",
+      "primary": "Continuar",
       "next": "ramp-provider"
     },
     {

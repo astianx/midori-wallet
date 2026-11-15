@@ -46,13 +46,13 @@ export default {
 <template>
   <Teleport to="body">
     <dialog ref="dialog" class="&" :data-runtime="env.VITE_BUILD_TYPE" :style="{ '--checkout-viewport': `${viewportHeight}px` }" :aria-label="title" :aria-busy="!ready && !failure" @cancel.prevent="$emit('close')">
-      <header class="&__header"><div><h2>{{ title }}</h2><p>Transak · {{ network }} · {{ order.environment }}</p></div><button ref="close" type="button" class="&__close" :aria-label="$t('Return to order')" @click="$emit('close')"><CloseIcon aria-hidden="true" /></button></header>
-      <p v-if="order.environment === 'STAGING'" class="&__test" role="status">{{ $t('Test mode') }} · {{ $t('Transak test mode. Use test funds only; orders do not change your Base mainnet balance.') }}</p>
+      <header class="&__header"><div><h2>{{ title }}</h2><p>{{ network }}</p></div><button ref="close" type="button" class="&__close" :aria-label="$t('Return to order')" @click="$emit('close')"><CloseIcon aria-hidden="true" /></button></header>
+      <p v-if="order.environment === 'STAGING'" class="&__test" role="status">{{ $t('Test mode. Do not use real money.') }}</p>
       <div class="&__stage"><div v-if="!ready" class="&__loading" :role="failure ? 'alert' : 'status'">
         <MwLoader v-if="!failure" /><template v-else><p>{{ $t(failure === 'mismatch' ? 'The checkout details did not match. Return to your order.' : failure === 'connection' ? 'The connection was interrupted. Check this order before trying again.' : failure === 'expired' ? 'This session has expired. Return to your order to continue.' : 'Checkout did not load. Return to your order and check its status.') }}</p><MwButton ref="return" type="primary" @click="$emit('close')">{{ $t('Return to order') }}</MwButton></template>
       </div>
       <iframe v-if="!failure" ref="widget" :src="order.widgetUrl" title="Transak" allow="camera; microphone; payment" class="&__widget" :class="{ '&__widget--loading': !ready }" :aria-hidden="!ready" :tabindex="ready ? 0 : -1" @error="fail('load')" />
-      </div><footer class="&__footer"><p>{{ $t('Closing Transak does not cancel or confirm this order.') }}</p><button v-if="ready" type="button" @click="fail('expired')">{{ $t('Session expired?') }}</button></footer>
+      </div><footer class="&__footer"><p>{{ $t('Closing this screen does not cancel or confirm this order.') }}</p><button v-if="ready" type="button" @click="fail('expired')">{{ $t('Session expired?') }}</button></footer>
     </dialog>
   </Teleport>
 </template>

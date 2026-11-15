@@ -15,7 +15,7 @@ export default {
 </script>
 <template>
   <component :is="interactive ? 'button' : 'div'" :type="interactive ? 'button' : undefined" class="&" :class="{ '&--interactive': interactive }" @click="interactive && $emit('select')">
-    <div class="&__content"><div class="&__title"><span>{{ description }}</span><span class="&__amount" dir="ltr">{{ amount }}</span></div><div class="&__subtitle"><span class="&__status" :class="{ '&__status--positive': order.status === 'completed', '&__status--negative': order.status === 'failed' }">{{ status }}</span><span>{{ date }}</span></div><div class="&__provider">{{ order.provider }} · {{ order.environment }}<template v-if="order.environment === 'STAGING'"> · {{ $t('Test mode') }}</template></div></div><MwAppIcon v-if="interactive" name="arrow" />
+    <div class="&__content"><div class="&__title"><span>{{ description }}</span><span class="&__amount" dir="ltr">{{ amount }}</span></div><div class="&__subtitle"><span class="&__status" :class="{ '&__status--positive': order.status === 'completed', '&__status--negative': order.status === 'failed' }">{{ status }}</span><span>{{ date }}</span></div><div v-if="order.environment === 'STAGING'" class="&__environment">{{ $t('Test mode') }}</div></div><MwAppIcon v-if="interactive" name="arrow" />
   </component>
 </template>
 <style lang="scss">
@@ -28,9 +28,9 @@ export default {
   &__title, &__subtitle { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-xs) var(--space-sm); }
   &__title { font-size: 0.9375rem; font-weight: 550; }
   &__amount { min-width: 0; margin-inline-start: auto; overflow-wrap: anywhere; text-align: end; font-variant-numeric: tabular-nums; }
-  &__subtitle, &__provider { color: var(--color-muted); font-size: var(--text-label); line-height: 1.6; }
+  &__subtitle, &__environment { color: var(--color-muted); font-size: var(--text-label); line-height: 1.6; }
   &__subtitle { margin-top: var(--space-2xs); }
-  &__provider { margin-top: var(--space-xs); }
+  &__environment { margin-top: var(--space-xs); }
   &__status--positive { color: var(--color-accent); }
   &__status--negative { color: var(--color-error); }
   > svg { flex: none; width: 1rem; height: 1rem; }

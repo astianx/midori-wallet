@@ -56,7 +56,7 @@ export default {
     v-if="checkout"
     :key="checkout.widgetUrl"
     :order="checkout"
-    :title="$t(checkout.kind === 'buy' ? 'Continue to buy' : 'Continue to sell')"
+    :title="$t(checkout.kind === 'buy' ? 'Buy {symbol}' : 'Sell {symbol}', { symbol: checkout.cryptoCurrency })"
     @close="closeCheckout"
     @update="updateCheckout"
     @error="checkoutError"

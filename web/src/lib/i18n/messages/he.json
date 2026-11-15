@@ -610,5 +610,9 @@
   "Buy with local currency": "קנייה במטבע מקומי",
   "To another wallet": "לארנק אחר",
   "Convert to local currency": "המרה למטבע מקומי",
-  "Choose a method": "בחרו אמצעי"
+  "Choose a method": "בחרו אמצעי",
+  "Quote expires at {time}": "הצעת המחיר תקפה עד {time}",
+  "Incorrect PIN. Try again.": "קוד PIN שגוי. נסו שוב.",
+  "Could not paste. Enter the address or tag manually.": "לא ניתן להדביק. הזינו כתובת או תג ידנית.",
+  "Camera unavailable. Enter the address or tag manually.": "המצלמה אינה זמינה. הזינו כתובת או תג ידנית."
 }

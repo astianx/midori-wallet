@@ -1,4 +1,5 @@
 <script>
+import { shallowRef } from 'vue';
 export default {
   props: {
     steps: {
@@ -19,6 +20,7 @@ export default {
   data() {
     return {
       currentStep: this.step,
+      activeStep: shallowRef(null),
       exclude: undefined,
       storage: this.initialStorage,
       prevSteps: new Map(),
@@ -27,6 +29,7 @@ export default {
     };
   },
   methods: {
+    setActiveStep(component) { if (component) this.activeStep = component; },
     back(args) {
       const { currentStep } = this;
       this.exclude = this.steps[currentStep].name;
@@ -65,6 +68,7 @@ export default {
     },
     replace(value, args) {
       if (this.currentStep === value) return;
+      if (this.prevSteps.has(value) || [...this.prevSteps.values()].includes(value)) return this.backTo(value, args);
       const [currentStep, exclude] = this.slicePinStep();
       const prevStep = this.prevSteps.get(currentStep);
       if (prevStep) {
@@ -96,7 +100,7 @@ export default {
     <Transition :name="transition">
       <KeepAlive :exclude="exclude">
         <component
-          ref="activeStep"
+          :ref="setActiveStep"
           :is="steps[currentStep]"
           :storage="storage"
           :args="args"

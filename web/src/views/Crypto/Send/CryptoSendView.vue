@@ -2,7 +2,7 @@
 import { savePaymentDraft, takePaymentDraft } from '../../../lib/navigation.js';
 import { Amount } from '../../../lib/account/domain.js';
 
-import MwPinStep from '../../../components/MwPinStep.vue';
+import CryptoSendStepPin from './CryptoSendStepPin.vue';
 import MwSteps from '../../../components/MwSteps.vue';
 
 import CryptoSendStepAddress from './CryptoSendStepAddress.vue';
@@ -33,7 +33,7 @@ export default {
   },
   beforeUnmount() {
     const steps = this.$refs.steps;
-    const active = steps?.$refs.activeStep;
+    const active = steps?.activeStep;
     if (!steps || !this.$account.isCreated || ['confirmed','reverted','expired'].includes(steps.storage.intent?.status)) return;
     const address = typeof active?.address === 'string' ? active.address : steps.storage.alias || steps.storage.address || steps.storage.temp?.address || '';
     const amount = active && 'amountValue' in active ? active.amountValue : steps.storage.amount ?? steps.storage.temp?.amount;
@@ -48,7 +48,7 @@ export default {
     confirm: CryptoSendStepConfirm,
     status: CryptoSendStepStatus,
     mecto: CryptoSendStepMecto,
-    pin: MwPinStep,
+    pin: CryptoSendStepPin,
     qr: CryptoSendStepQr,
     poor: CryptoSendStepPoor,
   },

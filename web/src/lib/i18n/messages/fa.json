@@ -610,5 +610,9 @@
   "Buy with local currency": "خرید با ارز محلی",
   "To another wallet": "به کیف پول دیگر",
   "Convert to local currency": "تبدیل به ارز محلی",
-  "Choose a method": "یک روش انتخاب کنید"
+  "Choose a method": "یک روش انتخاب کنید",
+  "Quote expires at {time}": "قیمت تا {time} معتبر است",
+  "Incorrect PIN. Try again.": "پین نادرست است. دوباره تلاش کنید.",
+  "Could not paste. Enter the address or tag manually.": "جای‌گذاری نشد. آدرس یا تگ را دستی وارد کنید.",
+  "Camera unavailable. Enter the address or tag manually.": "دوربین در دسترس نیست. آدرس یا تگ را دستی وارد کنید."
 }

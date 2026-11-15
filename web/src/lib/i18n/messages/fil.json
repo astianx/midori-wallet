@@ -610,5 +610,9 @@
   "Buy with local currency": "Bumili gamit ang lokal na pera",
   "To another wallet": "Sa ibang wallet",
   "Convert to local currency": "I-convert sa lokal na pera",
-  "Choose a method": "Pumili ng paraan"
+  "Choose a method": "Pumili ng paraan",
+  "Quote expires at {time}": "Mag-e-expire ang alok sa {time}",
+  "Incorrect PIN. Try again.": "Maling PIN. Subukan muli.",
+  "Could not paste. Enter the address or tag manually.": "Hindi mai-paste. Ilagay nang mano-mano ang address o tag.",
+  "Camera unavailable. Enter the address or tag manually.": "Hindi available ang camera. Ilagay nang mano-mano ang address o tag."
 }

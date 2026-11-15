@@ -610,5 +610,9 @@
   "Buy with local currency": "Yerel para birimiyle al",
   "To another wallet": "Başka bir cüzdana",
   "Convert to local currency": "Yerel para birimine çevir",
-  "Choose a method": "Bir yöntem seçin"
+  "Choose a method": "Bir yöntem seçin",
+  "Quote expires at {time}": "Teklifin son geçerlilik saati {time}",
+  "Incorrect PIN. Try again.": "Yanlış PIN. Tekrar deneyin.",
+  "Could not paste. Enter the address or tag manually.": "Yapıştırılamadı. Adresi veya etiketi elle girin.",
+  "Camera unavailable. Enter the address or tag manually.": "Kamera kullanılamıyor. Adresi veya etiketi elle girin."
 }

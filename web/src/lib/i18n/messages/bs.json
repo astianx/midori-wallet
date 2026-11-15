@@ -610,5 +610,9 @@
   "Buy with local currency": "Kupite lokalnom valutom",
   "To another wallet": "U drugi novčanik",
   "Convert to local currency": "Pretvorite u lokalnu valutu",
-  "Choose a method": "Odaberite način"
+  "Choose a method": "Odaberite način",
+  "Quote expires at {time}": "Ponuda ističe u {time}",
+  "Incorrect PIN. Try again.": "Pogrešan PIN. Pokušajte ponovo.",
+  "Could not paste. Enter the address or tag manually.": "Nije moguće zalijepiti. Ručno unesite adresu ili tag.",
+  "Camera unavailable. Enter the address or tag manually.": "Kamera nije dostupna. Ručno unesite adresu ili tag."
 }

@@ -610,5 +610,9 @@
   "Buy with local currency": "Vásárlás helyi pénznemben",
   "To another wallet": "Másik tárcába",
   "Convert to local currency": "Átváltás helyi pénznemre",
-  "Choose a method": "Válassz módot"
+  "Choose a method": "Válassz módot",
+  "Quote expires at {time}": "Az ajánlat lejár: {time}",
+  "Incorrect PIN. Try again.": "Hibás PIN. Próbáld újra.",
+  "Could not paste. Enter the address or tag manually.": "Nem sikerült beilleszteni. Add meg kézzel a címet vagy a taget.",
+  "Camera unavailable. Enter the address or tag manually.": "A kamera nem érhető el. Add meg kézzel a címet vagy a taget."
 }

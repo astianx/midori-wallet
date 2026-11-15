@@ -610,5 +610,9 @@
   "Buy with local currency": "Kopen met lokale valuta",
   "To another wallet": "Naar een andere wallet",
   "Convert to local currency": "Omzetten naar lokale valuta",
-  "Choose a method": "Kies een methode"
+  "Choose a method": "Kies een methode",
+  "Quote expires at {time}": "Offerte geldig tot {time}",
+  "Incorrect PIN. Try again.": "Onjuiste pincode. Probeer opnieuw.",
+  "Could not paste. Enter the address or tag manually.": "Plakken mislukt. Voer het adres of de tag handmatig in.",
+  "Camera unavailable. Enter the address or tag manually.": "Camera niet beschikbaar. Voer het adres of de tag handmatig in."
 }

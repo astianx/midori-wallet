@@ -610,5 +610,9 @@
   "Buy with local currency": "Купити за місцеву валюту",
   "To another wallet": "На інший гаманець",
   "Convert to local currency": "Обміняти на місцеву валюту",
-  "Choose a method": "Виберіть спосіб"
+  "Choose a method": "Виберіть спосіб",
+  "Quote expires at {time}": "Котирування діє до {time}",
+  "Incorrect PIN. Try again.": "Неправильний PIN. Спробуйте ще раз.",
+  "Could not paste. Enter the address or tag manually.": "Не вдалося вставити. Введіть адресу або тег вручну.",
+  "Camera unavailable. Enter the address or tag manually.": "Камера недоступна. Введіть адресу або тег вручну."
 }

@@ -610,5 +610,9 @@
   "Buy with local currency": "現地通貨で購入",
   "To another wallet": "別のウォレットへ",
   "Convert to local currency": "現地通貨に交換",
-  "Choose a method": "方法を選択"
+  "Choose a method": "方法を選択",
+  "Quote expires at {time}": "見積もりの有効期限 {time}",
+  "Incorrect PIN. Try again.": "PINが正しくありません。もう一度お試しください。",
+  "Could not paste. Enter the address or tag manually.": "貼り付けできません。アドレスまたはタグを手入力してください。",
+  "Camera unavailable. Enter the address or tag manually.": "カメラを使用できません。アドレスまたはタグを手入力してください。"
 }

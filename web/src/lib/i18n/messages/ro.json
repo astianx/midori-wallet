@@ -610,5 +610,9 @@
   "Buy with local currency": "Cumpără cu moneda locală",
   "To another wallet": "Către alt portofel",
   "Convert to local currency": "Convertește în moneda locală",
-  "Choose a method": "Alege o metodă"
+  "Choose a method": "Alege o metodă",
+  "Quote expires at {time}": "Cotația expiră la {time}",
+  "Incorrect PIN. Try again.": "PIN incorect. Încearcă din nou.",
+  "Could not paste. Enter the address or tag manually.": "Nu se poate lipi. Introdu adresa sau tagul manual.",
+  "Camera unavailable. Enter the address or tag manually.": "Camera nu este disponibilă. Introdu adresa sau tagul manual."
 }

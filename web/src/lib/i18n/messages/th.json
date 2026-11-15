@@ -610,5 +610,9 @@
   "Buy with local currency": "ซื้อด้วยสกุลเงินท้องถิ่น",
   "To another wallet": "ไปยังกระเป๋าเงินอื่น",
   "Convert to local currency": "แปลงเป็นสกุลเงินท้องถิ่น",
-  "Choose a method": "เลือกวิธี"
+  "Choose a method": "เลือกวิธี",
+  "Quote expires at {time}": "ใบเสนอราคาหมดอายุเวลา {time}",
+  "Incorrect PIN. Try again.": "PIN ไม่ถูกต้อง โปรดลองอีกครั้ง",
+  "Could not paste. Enter the address or tag manually.": "วางไม่ได้ โปรดป้อนที่อยู่หรือแท็กด้วยตนเอง",
+  "Camera unavailable. Enter the address or tag manually.": "ไม่มีกล้อง โปรดป้อนที่อยู่หรือแท็กด้วยตนเอง"
 }

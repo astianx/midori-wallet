@@ -610,5 +610,9 @@
   "Buy with local currency": "ទិញដោយរូបិយប័ណ្ណក្នុងស្រុក",
   "To another wallet": "ទៅកាបូបផ្សេង",
   "Convert to local currency": "ប្តូរទៅរូបិយប័ណ្ណក្នុងស្រុក",
-  "Choose a method": "ជ្រើសរើសវិធី"
+  "Choose a method": "ជ្រើសរើសវិធី",
+  "Quote expires at {time}": "សម្រង់តម្លៃផុតកំណត់នៅ {time}",
+  "Incorrect PIN. Try again.": "PIN មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។",
+  "Could not paste. Enter the address or tag manually.": "មិនអាចបិទភ្ជាប់បានទេ។ សូមបញ្ចូលអាសយដ្ឋាន ឬ tag ដោយដៃ។",
+  "Camera unavailable. Enter the address or tag manually.": "កាមេរ៉ាមិនអាចប្រើបានទេ។ សូមបញ្ចូលអាសយដ្ឋាន ឬ tag ដោយដៃ។"
 }

@@ -610,5 +610,9 @@
   "Buy with local currency": "Mua bằng nội tệ",
   "To another wallet": "Đến ví khác",
   "Convert to local currency": "Đổi sang nội tệ",
-  "Choose a method": "Chọn phương thức"
+  "Choose a method": "Chọn phương thức",
+  "Quote expires at {time}": "Báo giá hết hạn lúc {time}",
+  "Incorrect PIN. Try again.": "Mã PIN không đúng. Hãy thử lại.",
+  "Could not paste. Enter the address or tag manually.": "Không thể dán. Nhập địa chỉ hoặc thẻ theo cách thủ công.",
+  "Camera unavailable. Enter the address or tag manually.": "Máy ảnh không khả dụng. Nhập địa chỉ hoặc thẻ theo cách thủ công."
 }

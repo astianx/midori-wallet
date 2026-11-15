@@ -610,5 +610,9 @@
   "Buy with local currency": "用当地货币购买",
   "To another wallet": "到其他钱包",
   "Convert to local currency": "兑换为当地货币",
-  "Choose a method": "选择方式"
+  "Choose a method": "选择方式",
+  "Quote expires at {time}": "报价于 {time} 到期",
+  "Incorrect PIN. Try again.": "PIN 不正确，请重试。",
+  "Could not paste. Enter the address or tag manually.": "无法粘贴，请手动输入地址或标签。",
+  "Camera unavailable. Enter the address or tag manually.": "相机不可用，请手动输入地址或标签。"
 }

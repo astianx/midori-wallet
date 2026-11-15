@@ -610,5 +610,9 @@
   "Buy with local currency": "Koupit za místní měnu",
   "To another wallet": "Do jiné peněženky",
   "Convert to local currency": "Převést na místní měnu",
-  "Choose a method": "Vyberte způsob"
+  "Choose a method": "Vyberte způsob",
+  "Quote expires at {time}": "Nabídka vyprší v {time}",
+  "Incorrect PIN. Try again.": "Nesprávný PIN. Zkuste to znovu.",
+  "Could not paste. Enter the address or tag manually.": "Nelze vložit. Zadejte adresu nebo tag ručně.",
+  "Camera unavailable. Enter the address or tag manually.": "Kamera není dostupná. Zadejte adresu nebo tag ručně."
 }

@@ -610,5 +610,9 @@
   "Buy with local currency": "Buy with local currency",
   "To another wallet": "To another wallet",
   "Convert to local currency": "Convert to local currency",
-  "Choose a method": "Choose a method"
+  "Choose a method": "Choose a method",
+  "Quote expires at {time}": "Quote expires at {time}",
+  "Incorrect PIN. Try again.": "Incorrect PIN. Try again.",
+  "Could not paste. Enter the address or tag manually.": "Could not paste. Enter the address or tag manually.",
+  "Camera unavailable. Enter the address or tag manually.": "Camera unavailable. Enter the address or tag manually."
 }

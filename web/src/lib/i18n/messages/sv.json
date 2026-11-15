@@ -610,5 +610,9 @@
   "Buy with local currency": "Köp med lokal valuta",
   "To another wallet": "Till en annan plånbok",
   "Convert to local currency": "Växla till lokal valuta",
-  "Choose a method": "Välj en metod"
+  "Choose a method": "Välj en metod",
+  "Quote expires at {time}": "Offerten löper ut {time}",
+  "Incorrect PIN. Try again.": "Fel PIN-kod. Försök igen.",
+  "Could not paste. Enter the address or tag manually.": "Kunde inte klistra in. Ange adressen eller taggen manuellt.",
+  "Camera unavailable. Enter the address or tag manually.": "Kameran är inte tillgänglig. Ange adressen eller taggen manuellt."
 }

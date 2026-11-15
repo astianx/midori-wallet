@@ -610,5 +610,9 @@
   "Buy with local currency": "현지 통화로 구매",
   "To another wallet": "다른 지갑으로",
   "Convert to local currency": "현지 통화로 전환",
-  "Choose a method": "방법 선택"
+  "Choose a method": "방법 선택",
+  "Quote expires at {time}": "견적 만료 시간 {time}",
+  "Incorrect PIN. Try again.": "PIN 오류입니다. 다시 시도하세요.",
+  "Could not paste. Enter the address or tag manually.": "붙여넣을 수 없습니다. 주소 또는 태그를 직접 입력하세요.",
+  "Camera unavailable. Enter the address or tag manually.": "카메라를 사용할 수 없습니다. 주소 또는 태그를 직접 입력하세요."
 }

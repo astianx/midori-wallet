@@ -610,5 +610,9 @@
   "Buy with local currency": "Beli dengan mata uang lokal",
   "To another wallet": "Ke dompet lain",
   "Convert to local currency": "Konversi ke mata uang lokal",
-  "Choose a method": "Pilih metode"
+  "Choose a method": "Pilih metode",
+  "Quote expires at {time}": "Penawaran berakhir pada {time}",
+  "Incorrect PIN. Try again.": "PIN salah. Coba lagi.",
+  "Could not paste. Enter the address or tag manually.": "Tidak dapat menempel. Masukkan alamat atau tag secara manual.",
+  "Camera unavailable. Enter the address or tag manually.": "Kamera tidak tersedia. Masukkan alamat atau tag secara manual."
 }

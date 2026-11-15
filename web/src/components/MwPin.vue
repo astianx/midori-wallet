@@ -35,8 +35,10 @@ export default {
       value: '',
       pinLength: this.mode === 'setup' ? 4 : this.$account.pinLength || 4,
       paymentActive: false,
+      paymentEpoch: 0,
       isLoading: false,
       isWrong: false,
+      pinRejected: false,
       isSuccess: false,
       error: undefined,
       biometryIsEnabled: isEnabled && !['setup', 'payment'].includes(this.mode),
@@ -52,6 +54,8 @@ export default {
   },
   onShow() {
     this.paymentActive = true;
+    this.paymentEpoch++;
+    if (this.mode === 'payment') { this.value = ''; this.isLoading = false; this.isSuccess = false; this.isWrong = false; this.pinRejected = false; this.error = undefined; }
     if (this.biometryIsEnabled) {
       this.biometry();
     }
@@ -59,12 +63,15 @@ export default {
   },
   onHide() {
     this.paymentActive = false;
+    this.paymentEpoch++;
+    if (this.mode === 'payment') this.value = '';
     window.removeEventListener('keydown', this.keydown);
   },
   methods: {
     enter(number) {
       if (this.isLoading) return;
       if (this.value.length === this.pinLength) return;
+      this.pinRejected = false;
       this.value += number;
       this.error = undefined;
       window.taptic?.tap();
@@ -95,6 +102,9 @@ export default {
     },
 
     async confirm(pin) {
+      if (this.isLoading || this.isSuccess || this.mode === 'payment' && !this.paymentActive) return;
+      const epoch = this.paymentEpoch;
+      this.pinRejected = false;
       this.isLoading = true;
       try {
         switch (this.mode) {
@@ -104,7 +114,11 @@ export default {
             await this.$account.unlockAndOpen(pin);
             return await this._onSuccess(undefined, pin);
           }
-          case 'payment': return await this._onSuccess(undefined, pin, () => this.paymentActive);
+          case 'payment': {
+            await this.onSuccess(undefined, pin, () => this.paymentActive && epoch === this.paymentEpoch && !this.$account.isLocked);
+            if (epoch === this.paymentEpoch) this.isSuccess = true;
+            return;
+          }
           case 'export': {
             const data = await this.$account.exportPrivateKeys(pin);
             return await this._onSuccess(data);
@@ -128,9 +142,9 @@ export default {
           }
         }
       } catch (err) {
-        this._errorHandler(err);
+        if (this.mode !== 'payment' || epoch === this.paymentEpoch) this._errorHandler(err);
       } finally {
-        if (!this.isSuccess) this.isLoading = false;
+        if (!this.isSuccess && (this.mode !== 'payment' || epoch === this.paymentEpoch)) this.isLoading = false;
       }
     },
 
@@ -181,6 +195,7 @@ export default {
           return this.$router.replace({ name: 'auth' });
         case 401:
           this.isWrong = true;
+          this.pinRejected = true;
           this.value = '';
           setTimeout(() => {
             this.isWrong = false;
@@ -198,6 +213,7 @@ export default {
 </script>
 
 <template>
+  <p v-if="pinRejected" class="&__feedback" role="alert">{{ $t('Incorrect PIN. Try again.') }}</p>
   <div
     class="&__dots"
     :class="{
@@ -315,6 +331,7 @@ export default {
   .#{ $filename } {
     $self: &;
 
+    &__feedback { margin: 0; color: var(--color-error); font-size: var(--text-label); text-align: center; }
     &__dots {
       display: flex;
       flex-grow: 1;

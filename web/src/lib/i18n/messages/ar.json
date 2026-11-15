@@ -610,5 +610,9 @@
   "Buy with local currency": "شراء بالعملة المحلية",
   "To another wallet": "إلى محفظة أخرى",
   "Convert to local currency": "تحويل إلى العملة المحلية",
-  "Choose a method": "اختر وسيلة"
+  "Choose a method": "اختر وسيلة",
+  "Quote expires at {time}": "ينتهي عرض السعر في {time}",
+  "Incorrect PIN. Try again.": "رمز PIN غير صحيح. حاول مجددًا.",
+  "Could not paste. Enter the address or tag manually.": "تعذر اللصق. أدخل العنوان أو الوسم يدويًا.",
+  "Camera unavailable. Enter the address or tag manually.": "الكاميرا غير متاحة. أدخل العنوان أو الوسم يدويًا."
 }

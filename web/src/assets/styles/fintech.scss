@@ -31,7 +31,6 @@ body {
 .main-layout__navbar, .smart-layout__navbar { border-bottom: 1px solid var(--color-rule); }
 .mw-form-element__label { color: var(--color-muted); font-size: var(--text-label); font-weight: 550; margin-bottom: var(--space-xs); }
 .mw-form-element__box, .mw-form-element__boxes > div { min-height: 3.25rem; border-radius: var(--radius-control); border-color: var(--color-rule); background: var(--color-surface-subtle); color: var(--color-ink); }
-.mw-form-element--writable .mw-form-element__box:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .mw-form-textarea-readonly__textarea { font-size: var(--text-body); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .mw-form-element__error { padding-top: var(--space-2xs); }
 .mw-list-items { border-radius: var(--radius-panel); }

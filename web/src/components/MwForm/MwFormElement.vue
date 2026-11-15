@@ -52,7 +52,7 @@ export default {
   </div>
 </template>
 <style lang="scss">
-/* Hallmark · component-scope · design-system: design.md · pre-emit critique: P4 H5 E4 S4 R5 V4 */
+/* Hallmark · component-scope · design-system: design.md · pre-emit critique: P4 H5 E5 S5 R5 V4 */
 .#{ $filename } {
   display: flex; flex-direction: column; gap: var(--space-2xs); min-width: 0;
   &__container { display: flex; align-items: flex-end; gap: var(--space-sm); min-width: 0; }
@@ -60,7 +60,7 @@ export default {
   &__label { display: block; font-size: var(--text-label); color: var(--color-muted); font-weight: 550; margin-bottom: var(--space-xs); }
   &__wrapper { display: flex; align-items: stretch; gap: var(--space-xs); min-width: 0; }
   &__box, &__boxes > div { position: relative; display: flex; align-items: center; flex: 1 1 100%; min-width: 0; min-height: 3rem; padding: var(--space-sm); border: 1px solid var(--color-rule); border-radius: var(--radius-control); background: var(--color-surface-subtle); color: var(--color-ink); gap: var(--space-xs); transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out); }
-  &__box--extra { flex: 0 1 auto; min-width: 4rem; }
+  &__box--extra { flex: 0 0 auto; min-width: 4rem; }
   &__boxes { display: flex; width: 100%; gap: var(--space-xs); }
   &__message { min-height: 1.5em; margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--color-muted); overflow-wrap: anywhere; }
   &__state { display: flex; flex: none; align-items: center; width: 1.25rem; color: var(--color-accent); }
@@ -68,7 +68,20 @@ export default {
   &__state .mw-loader { gap: var(--space-2xs); }
   &__state .mw-loader__dot { width: 0.25rem; height: 0.25rem; }
   &__info { flex: none; width: 3rem; min-height: 3rem; padding: var(--space-sm); margin-bottom: 0; }
-  &--writable &__box:focus-within, &--writable &__boxes > div:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+  &__box, &__boxes > div {
+    :is(input:not([type='checkbox']):not([type='radio']), textarea, select, [role='textbox'], .mw-form-dropdown__input) {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      &:focus-visible { outline: none; }
+    }
+    &:has(:is(input:not([type='checkbox']):not([type='radio']), textarea, select, [role='textbox'], .mw-form-dropdown__input):focus) {
+      border-color: var(--color-focus);
+      outline: 2px solid var(--color-focus);
+      outline-offset: -1px;
+    }
+  }
   &--has-error &__box, &--has-error &__boxes > div { border-color: var(--color-error); background: var(--color-error-surface); }
   &--has-error &__state, &__error { color: var(--color-error); }
   &--success &__box { border-color: var(--color-accent); }

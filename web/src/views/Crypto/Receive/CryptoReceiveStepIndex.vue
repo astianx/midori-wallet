@@ -65,8 +65,7 @@ export default {
       <section v-if="receiveValue" class="&__identity" :aria-label="valueLabel"><div class="&__qr-heading"><strong>{{ valueLabel }}</strong><small>{{ midori ? $t('Midori Wallet') : `${$wallet.crypto.symbol} · Base` }}</small></div><div class="&__qr" role="img" :aria-label="`${valueLabel}: ${receiveValue}`"><!-- eslint-disable-next-line vue/no-v-html --><div v-html="qr" /></div><MwFormTextareaReadonly ref="value" :value="receiveValue" :label="valueLabel" />
         <div class="&__actions"><MwButton type="primary" :disabled="!canUseValue" :isLoading="isCopying" @click="copy()"><MwAppIcon v-if="isCopied" name="check" /><CopyIcon v-else />{{ $t(isCopied ? 'Copied!' : 'Copy') }}</MwButton><MwButton type="secondary" :disabled="!canUseValue" :isLoading="isSharing" @click="share">{{ $t('Share') }}</MwButton></div><MwButton class="&__select" type="primary-link" small @click="select()">{{ $t('Select text') }}</MwButton>
       </section>
-      <aside class="&__more"><details v-if="!midori" class="&__token"><summary>{{ $t('Token info') }}</summary><p>{{ $wallet.crypto.representation }}</p><strong>{{ $t('Token contract on Base') }}</strong><code dir="ltr">{{ $wallet.crypto.address }}</code><p>{{ $t('This contract identifies the token. Do not send funds to it.') }}</p></details>
-        <RouterLink class="&__activity" :to="{ name: 'activity' }">{{ $t('Activity') }}<MwAppIcon name="arrow" /></RouterLink></aside>
+      <aside class="&__more">        <RouterLink class="&__activity" :to="{ name: 'activity' }">{{ $t('Activity') }}<MwAppIcon name="arrow" /></RouterLink></aside>
     </div>
     <p v-if="args?.saved && tag" role="status" class="&__feedback">{{ $t('Your Midori tag') }}: {{ tag }}</p><p v-if="copyError" role="alert" class="&__error">{{ $t('Could not copy. Select the address and copy it manually.') }}</p><p class="&__feedback" role="status" aria-live="polite">{{ isCopied ? $t('Copied!') : selected ? $t('Text selected. Copy it manually.') : '' }}</p>
     <MwModal :show="showShare" :title="$t('Share')" @close="showShare = false"><p v-if="shareError" role="alert" class="&__error">{{ $t('Could not share. Copy or select the details instead.') }}</p><textarea ref="shareValue" readonly class="&__share-text" :aria-label="$t('Receive')" :value="shareText" /><p v-if="copyError" role="alert">{{ $t('Could not copy. Select the address and copy it manually.') }}</p><p role="status" aria-live="polite">{{ isCopied ? $t('Copied!') : selected ? $t('Text selected. Copy it manually.') : '' }}</p><template #footer><div class="&__actions"><MwButton type="primary" :isLoading="isCopying" @click="copy(shareText)">{{ $t('Copy') }}</MwButton><MwButton type="secondary" @click="select(true)">{{ $t('Select text') }}</MwButton></div></template></MwModal>
@@ -97,10 +96,7 @@ export default {
   &__actions > button { flex: 1 0 auto; }
   &__actions svg { width: 1.25rem; height: 1.25rem; }
   &__select { align-self: center; }
-  &__token { border-top: 1px solid var(--color-rule); margin-top: var(--space-lg); font-size: var(--text-label); }
-  &__token summary, &__activity { min-height: 2.75rem; display: flex; align-items: center; color: var(--color-accent); cursor: pointer; }
-  &__token code { display: block; margin-top: var(--space-xs); overflow-wrap: anywhere; font-family: var(--font-mono); }
-  &__token p { color: var(--color-muted); line-height: 1.5; }
+  &__activity { min-height: 2.75rem; display: flex; align-items: center; color: var(--color-accent); cursor: pointer; }
   &__activity { gap: var(--space-sm); margin-top: var(--space-md); font-size: var(--text-label); }
   &__activity svg { width: 1.125rem; height: 1.125rem; }
   &__feedback { margin: 0; min-height: 1.25rem; color: var(--color-accent); font-size: var(--text-label); }

@@ -16,8 +16,8 @@ export default {
     title() { return this.$t(this.adding ? 'Add money' : 'Withdraw'); },
     methods() {
       return this.adding
-        ? [{ id: 'receive', label: this.$t('From another wallet'), description: this.$t('USDT and USDC on Base share your account address.'), icon: 'receive', enabled: this.$cryptos.length > 0 }, { id: 'buy', label: this.$t('Local currency'), description: `Transak · ${this.$t('Buy with local currency')}`, icon: 'plus', enabled: !!this.$account.capabilities.ramp }]
-        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Send and receive USDC and USDT with your own wallet.'), icon: 'send', enabled: !!this.$account.capabilities.payments && this.$cryptos.length > 0 }, { id: 'sell', label: this.$t('Local currency'), description: `Transak · ${this.$t('Convert to local currency')}`, icon: 'refresh', enabled: !!this.$account.capabilities.ramp }];
+        ? [{ id: 'receive', label: this.$t('From another wallet'), description: this.$t('USDT and USDC on Base share your account address.'), icon: 'receive', enabled: this.$cryptos.length > 0 }, { id: 'buy', label: this.$t('Local currency'), description: `Transak · ${this.$t('Buy with local currency')}`, icon: 'plus', enabled: this.canUseRamp('buy') }]
+        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Send and receive USDC and USDT with your own wallet.'), icon: 'send', enabled: !!this.$account.capabilities.payments && this.$cryptos.length > 0 }, { id: 'sell', label: this.$t('Local currency'), description: `Transak · ${this.$t('Convert to local currency')}`, icon: 'refresh', enabled: this.canUseRamp('sell') }];
     },
     selected() { return this.methods.find(method => method.id === this.$route.query.method); },
     assetNetwork() { return this.isRamp ? rampNetwork(this.options?.environment) : 'Base'; },
@@ -30,10 +30,21 @@ export default {
       return this.$cryptos.filter(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && rampAssetSupported(this.options, asset, kind)));
     },
   },
-  mounted() { if (this.isRamp && this.selected.enabled) this.loadOptions(); },
+  mounted() { if (this.$account.capabilities.ramp) this.loadOptions(); },
   beforeUnmount() { this.disposed = true; },
   methods: {
-    limitation(method) { return this.$t(method.id === 'send' ? 'Sending is temporarily unavailable. Your funds remain in your wallet.' : method.id === 'receive' ? 'Balance unavailable' : 'Buying or selling crypto is temporarily unavailable.'); },
+    canUseRamp(kind) {
+      return !!this.$account.capabilities.ramp && !!this.options?.products.includes(kind.toUpperCase())
+        && this.options.fiatCurrencies.some(item => item[kind])
+        && this.$cryptos.some(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && rampAssetSupported(this.options, asset, kind)));
+    },
+    limitation(method) {
+      if (method.id === 'send') return this.$t('Sending is temporarily unavailable. Your funds remain in your wallet.');
+      if (method.id === 'receive') return this.$t('Balance unavailable');
+      if (!this.$account.capabilities.ramp) return this.$t('Buying or selling crypto is temporarily unavailable.');
+      if (this.error) return this.error;
+      return this.$t(this.loading || !this.options ? 'Loading' : 'Unavailable');
+    },
     choose(method) { if (method.enabled) this.$router.push({ name: this.$route.name, query: { ...this.$route.query, method: method.id } }); },
     back() {
       if (!this.selected) { this.$router.up(); return; }
@@ -42,7 +53,7 @@ export default {
       else this.$router.replace({ name: this.$route.name, query: { ...this.$route.query, method: undefined } });
     },
     async loadOptions() {
-      if (this.loading || !this.isRamp || !this.selected.enabled || !this.$cryptos.length) return;
+      if (this.loading || !this.$account.capabilities.ramp || !this.$cryptos.length) return;
       this.loading = true; this.error = ''; this.options = null;
       try {
         const options = await this.$account.wallet(this.$cryptos[0].crypto._id).rampOptions();
@@ -60,8 +71,9 @@ export default {
       <section class="&__choices" :aria-label="selected ? $t('Stablecoins') : $t('Choose a method')">
         <template v-if="!selected">
           <div v-for="method in methods" :key="method.id" class="&__method"><button type="button" class="&__row" :disabled="!method.enabled" :aria-describedby="`${direction}-${method.id}-description`" @click="choose(method)"><span class="&__icon"><MwAppIcon :name="method.icon" /></span><span class="&__label"><strong>{{ method.label }}</strong><small :id="`${direction}-${method.id}-description`">{{ method.description }}</small></span><MwAppIcon v-if="method.enabled" name="arrow" /></button><p v-if="!method.enabled" class="&__notice" role="status">{{ limitation(method) }}</p></div>
+          <MwButton v-if="error" type="secondary" @click="loadOptions">{{ $t('Refresh') }}</MwButton>
         </template>
-        <p v-else-if="!selected.enabled" class="&__notice" role="status">{{ limitation(selected) }}</p>
+        <template v-else-if="!selected.enabled"><p class="&__notice" role="status">{{ limitation(selected) }}</p><MwButton v-if="error" type="secondary" @click="loadOptions">{{ $t('Refresh') }}</MwButton></template>
         <template v-else>
           <MwLoader v-if="loading" />
           <template v-else-if="error"><p class="&__notice" role="status">{{ error }}</p><MwButton type="secondary" @click="loadOptions">{{ $t('Refresh') }}</MwButton></template>

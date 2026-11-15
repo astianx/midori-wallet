@@ -3214,7 +3214,7 @@
     "/api/v1/tag/options": {
       "post": {
         "operationId": "Challengetobindatagtotheownedaccount",
-        "summary": "Challenge to bind a tag to the owned account",
+        "summary": "Validate availability and request one permanent tag binding; TAG_IMMUTABLE or TAG_TAKEN on conflict",
         "security": [
           {
             "Session": [],
@@ -3346,7 +3346,7 @@
     "/api/v1/tag/verify": {
       "post": {
         "operationId": "Registertagwithaccountownerproof",
-        "summary": "Register tag with account owner proof",
+        "summary": "Register a permanent unique tag once with account owner proof; concurrent conflicts rejected",
         "security": [
           {
             "Session": [],

@@ -3,6 +3,7 @@ import { formatMidoriTag, normalizeTagAlias } from '../../../lib/tags.js';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
 import MwFormGroup from '../../../components/MwForm/MwFormGroup.vue';
+import MwFormTextareaReadonly from '../../../components/MwForm/MwFormTextareaReadonly.vue';
 import MwFormInput from '../../../components/MwForm/MwFormInput.vue';
 import MwStep from '../../../components/MwStep.vue';
 import MainLayout from '../../../layouts/MainLayout.vue';
@@ -20,19 +21,26 @@ export default {
     MwButtonGroup,
     MwFormGroup,
     MwFormInput,
+    MwFormTextareaReadonly,
   },
   extends: MwStep,
   data() {
     return {
       isLoading: false,
+      registeredTag: formatMidoriTag(this.$account.tag?.alias),
+      tagLocked: !!this.$account.tag,
       username: formatMidoriTag(this.$account.tag?.alias || this.$user.username),
       email: this.$user.email,
       errors: {},
     };
   },
+  computed: {
+    canCreateTag() { return !this.tagLocked && this.$account.tag !== undefined && this.$account.capabilities.tags === true && this.$account.connection === 'online'; },
+  },
   methods: {
     async save() {
-      if (this.username && !isValidUsername(this.username)) {
+      if (this.isLoading) return;
+      if (this.canCreateTag && this.username && !isValidUsername(this.username)) {
         this.errors.username = this.$t('Invalid username');
         return;
       }
@@ -43,9 +51,11 @@ export default {
       this.isLoading = true;
       this.errors = {};
       try {
-        let username = normalizeTagAlias(this.username);
-        if (this.username) username = await this.$account.updateUsername(this.username);
-        else username = this.$account.user.username || '';
+        let username = normalizeTagAlias(this.registeredTag || this.$account.user.username || '');
+        if (this.canCreateTag && this.username) {
+          username = await this.$account.updateUsername(this.username);
+          this.registeredTag = formatMidoriTag(username); this.tagLocked = true;
+        }
         this.username = formatMidoriTag(username);
         this.$account.emit('update', 'user');
         this.$account.details.set('userInfo', {
@@ -56,6 +66,11 @@ export default {
         this.$account.emit('update', 'user');
         this.$router.up();
       } catch (err) {
+        if (err.code === 'TAG_IMMUTABLE') {
+          this.tagLocked = true; this.registeredTag = formatMidoriTag(this.$account.tag?.alias);
+          this.errors.username = this.$t('This tag is already registered and cannot be changed.');
+          this.$account.emit('update', 'user'); return;
+        }
         if (err.code === 'TAG_TAKEN' || (err instanceof RequestError && err.status === 409)) {
           this.errors.username = this.$t('Username already taken');
           return;
@@ -74,7 +89,8 @@ export default {
     :title="$t('Account')"
   >
     <MwFormGroup class="&__content">
-      <MwFormInput
+      <MwFormTextareaReadonly v-if="!canCreateTag" :value="registeredTag || '—'" :label="$t('Your Midori tag')" :copy="!!registeredTag" />
+      <MwFormInput v-else
         v-model="username"
         :error="errors.username"
         :label="$t('Your Midori tag')"
@@ -82,6 +98,8 @@ export default {
         :clear="true"
         @update:modelValue="errors.username = undefined"
       />
+      <p class="&__note">{{ $t('Choose carefully. Your tag can only be registered once and cannot be changed.') }}</p>
+      <p v-if="errors.username && !canCreateTag" role="alert">{{ errors.username }}</p>
       <div class="&__note">{{ $t('Your username is your Midori tag. Share it to receive USDT and USDC on Base.') }}</div>
       <MwFormInput
         v-model="email"

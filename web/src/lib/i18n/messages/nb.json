@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Koble til for å lagre taggen. Base-adressen din er fortsatt tilgjengelig.",
   "Receiving details remain available. Check Activity when connected.": "Mottaksopplysninger er fortsatt tilgjengelige. Se Aktivitet når du er tilkoblet.",
   "Tags are unavailable. Use your Base address.": "Tagger er utilgjengelige. Bruk Base-adressen din.",
-  "This contract identifies the token. Do not send funds to it.": "Denne kontrakten identifiserer tokenet. Ikke send midler til den."
+  "This contract identifies the token. Do not send funds to it.": "Denne kontrakten identifiserer tokenet. Ikke send midler til den.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Velg med omhu. Taggen kan bare registreres én gang og kan ikke endres.",
+  "This tag is already registered and cannot be changed.": "Denne taggen er allerede registrert og kan ikke endres."
 }

@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "יש להתחבר כדי לשמור את התג. כתובת Base שלך עדיין זמינה.",
   "Receiving details remain available. Check Activity when connected.": "פרטי הקבלה עדיין זמינים. יש לבדוק את הפעילות לאחר החיבור.",
   "Tags are unavailable. Use your Base address.": "תגים אינם זמינים. יש להשתמש בכתובת Base שלך.",
-  "This contract identifies the token. Do not send funds to it.": "חוזה זה מזהה את הטוקן. אין לשלוח אליו כספים."
+  "This contract identifies the token. Do not send funds to it.": "חוזה זה מזהה את הטוקן. אין לשלוח אליו כספים.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "יש לבחור בקפידה. ניתן לרשום תג רק פעם אחת ולא ניתן לשנות אותו.",
+  "This tag is already registered and cannot be changed.": "תג זה כבר רשום ולא ניתן לשנות אותו."
 }

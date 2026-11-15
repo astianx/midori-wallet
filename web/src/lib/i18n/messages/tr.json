@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Etiketinizi kaydetmek için bağlanın. Base adresiniz kullanılabilir durumda.",
   "Receiving details remain available. Check Activity when connected.": "Alma bilgileri kullanılabilir. Bağlandığınızda Etkinliği kontrol edin.",
   "Tags are unavailable. Use your Base address.": "Etiketler kullanılamıyor. Base adresinizi kullanın.",
-  "This contract identifies the token. Do not send funds to it.": "Bu sözleşme tokeni tanımlar. Buraya para göndermeyin."
+  "This contract identifies the token. Do not send funds to it.": "Bu sözleşme tokeni tanımlar. Buraya para göndermeyin.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Dikkatli seçin. Etiket yalnızca bir kez kaydedilebilir ve değiştirilemez.",
+  "This tag is already registered and cannot be changed.": "Bu etiket zaten kayıtlı ve değiştirilemez."
 }

@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "اتصل لحفظ الوسم. يظل عنوان Base متاحًا.",
   "Receiving details remain available. Check Activity when connected.": "تظل تفاصيل الاستلام متاحة. تحقق من النشاط عند الاتصال.",
   "Tags are unavailable. Use your Base address.": "الوسوم غير متاحة. استخدم عنوان Base الخاص بك.",
-  "This contract identifies the token. Do not send funds to it.": "يحدد هذا العقد الرمز. لا ترسل أموالًا إليه."
+  "This contract identifies the token. Do not send funds to it.": "يحدد هذا العقد الرمز. لا ترسل أموالًا إليه.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "اختر بعناية. لا يمكنك تسجيل الوسم إلا مرة واحدة ولا يمكن تغييره.",
+  "This tag is already registered and cannot be changed.": "هذا الوسم مسجل بالفعل ولا يمكن تغييره."
 }

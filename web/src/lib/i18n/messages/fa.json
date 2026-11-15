@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "برای ذخیره تگ متصل شوید. آدرس Base شما همچنان در دسترس است.",
   "Receiving details remain available. Check Activity when connected.": "اطلاعات دریافت در دسترس است. پس از اتصال فعالیت را بررسی کنید.",
   "Tags are unavailable. Use your Base address.": "تگ‌ها در دسترس نیستند. از آدرس Base خود استفاده کنید.",
-  "This contract identifies the token. Do not send funds to it.": "این قرارداد توکن را مشخص می‌کند. وجهی به آن ارسال نکنید."
+  "This contract identifies the token. Do not send funds to it.": "این قرارداد توکن را مشخص می‌کند. وجهی به آن ارسال نکنید.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "با دقت انتخاب کنید. تگ فقط یک بار ثبت می‌شود و قابل تغییر نیست.",
+  "This tag is already registered and cannot be changed.": "این تگ قبلاً ثبت شده و قابل تغییر نیست."
 }

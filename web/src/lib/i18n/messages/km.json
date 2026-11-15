@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "ភ្ជាប់ដើម្បីរក្សាទុកស្លាក។ អាសយដ្ឋាន Base នៅតែអាចប្រើបាន។",
   "Receiving details remain available. Check Activity when connected.": "ព័ត៌មានទទួលនៅតែអាចប្រើបាន។ ពិនិត្យសកម្មភាពពេលភ្ជាប់។",
   "Tags are unavailable. Use your Base address.": "ស្លាកមិនអាចប្រើបាន។ ប្រើអាសយដ្ឋាន Base របស់អ្នក។",
-  "This contract identifies the token. Do not send funds to it.": "កិច្ចសន្យានេះកំណត់អត្តសញ្ញាណថូខិន។ កុំផ្ញើប្រាក់ទៅទីនេះ។"
+  "This contract identifies the token. Do not send funds to it.": "កិច្ចសន្យានេះកំណត់អត្តសញ្ញាណថូខិន។ កុំផ្ញើប្រាក់ទៅទីនេះ។",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "ជ្រើសរើសដោយប្រុងប្រយ័ត្ន។ ស្លាកអាចចុះឈ្មោះបានតែម្តង និងមិនអាចផ្លាស់ប្តូរបានទេ។",
+  "This tag is already registered and cannot be changed.": "ស្លាកនេះបានចុះឈ្មោះរួចហើយ និងមិនអាចផ្លាស់ប្តូរបានទេ។"
 }

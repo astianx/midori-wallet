@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Підключіться, щоб зберегти тег. Ваша адреса Base залишається доступною.",
   "Receiving details remain available. Check Activity when connected.": "Дані для отримання доступні. Перевірте Активність після підключення.",
   "Tags are unavailable. Use your Base address.": "Теги недоступні. Використовуйте свою адресу Base.",
-  "This contract identifies the token. Do not send funds to it.": "Цей контракт ідентифікує токен. Не надсилайте на нього кошти."
+  "This contract identifies the token. Do not send funds to it.": "Цей контракт ідентифікує токен. Не надсилайте на нього кошти.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Обирайте уважно. Тег можна зареєструвати лише один раз і не можна змінити.",
+  "This tag is already registered and cannot be changed.": "Цей тег уже зареєстрований і його не можна змінити."
 }

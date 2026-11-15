@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Povežite se da sačuvate tag. Vaša Base adresa je i dalje dostupna.",
   "Receiving details remain available. Check Activity when connected.": "Podaci za primanje ostaju dostupni. Provjerite Aktivnost nakon povezivanja.",
   "Tags are unavailable. Use your Base address.": "Tagovi nisu dostupni. Koristite svoju Base adresu.",
-  "This contract identifies the token. Do not send funds to it.": "Ovaj ugovor identificira token. Ne šaljite sredstva na njega."
+  "This contract identifies the token. Do not send funds to it.": "Ovaj ugovor identificira token. Ne šaljite sredstva na njega.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Pažljivo odaberite. Tag možete registrovati samo jednom i ne može se mijenjati.",
+  "This tag is already registered and cannot be changed.": "Ovaj tag je već registrovan i ne može se mijenjati."
 }

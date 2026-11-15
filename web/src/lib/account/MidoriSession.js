@@ -315,7 +315,15 @@ export default class MidoriSession {
     const generation = this.#generation;
     const alias = normalizeTagAlias(value);
     if (this.tag?.alias === alias) return alias;
-    const options = await this.client.request('POST', '/api/v1/tag/options', { alias, accountId: this.account.id });
+    if (this.tag) throw Object.assign(new Error('The registered tag cannot be changed'), { code: 'TAG_IMMUTABLE', status: 409 });
+    let options;
+    try { options = await this.client.request('POST', '/api/v1/tag/options', { alias, accountId: this.account.id }); }
+    catch (error) {
+      if (error.code === 'TAG_IMMUTABLE') {
+        try { const current = await this.client.request('GET', '/api/v1/tag'); if (generation === this.#generation) this.tag = current.tag; } catch { /* The server still enforces the permanent binding if refresh fails. */ }
+      }
+      throw error;
+    }
     if (generation !== this.#generation || options.alias !== alias || options.chainId !== 8453 || options.address !== this.descriptor.address) throw new Error('Tag confirmation changed');
     const fields = options.message.split('\n');
     if (fields.length !== 10 || fields[0] !== 'Midori tag v1' || fields[1] !== this.config.authentication.origin || fields[2] !== options.id || fields[4] !== this.session.walletId || fields[5] !== this.account.id || fields[6] !== '8453' || fields[7] !== this.descriptor.address || fields[8] !== `@${alias}` || fields[9] !== options.expiresAt || Date.parse(options.expiresAt) <= Date.now()) throw new Error('Invalid tag confirmation');
@@ -327,6 +335,11 @@ export default class MidoriSession {
       if (generation !== this.#generation) throw new Error('Account is locked');
       this.tag = result.tag;
       return this.tag.alias;
+    } catch (error) {
+      if (error.code === 'TAG_IMMUTABLE') {
+        try { const current = await this.client.request('GET', '/api/v1/tag'); if (generation === this.#generation) this.tag = current.tag; } catch { /* Preserve the server rejection while offline. */ }
+      }
+      throw error;
     } finally { this.#adapter.lock(); }
   }
 

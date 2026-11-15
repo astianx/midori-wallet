@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Conectează-te pentru a salva tagul. Adresa ta Base rămâne disponibilă.",
   "Receiving details remain available. Check Activity when connected.": "Datele de primire rămân disponibile. Verifică Activitate după conectare.",
   "Tags are unavailable. Use your Base address.": "Tagurile nu sunt disponibile. Folosește adresa ta Base.",
-  "This contract identifies the token. Do not send funds to it.": "Acest contract identifică tokenul. Nu trimite fonduri către el."
+  "This contract identifies the token. Do not send funds to it.": "Acest contract identifică tokenul. Nu trimite fonduri către el.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Alege cu grijă. Tagul poate fi înregistrat o singură dată și nu poate fi modificat.",
+  "This tag is already registered and cannot be changed.": "Acest tag este deja înregistrat și nu poate fi modificat."
 }

@@ -142,6 +142,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, reportEr
     if (error.code === '23505') { status = 409; code = 'DUPLICATE_RESOURCE'; message = 'Identity, device or account already registered'; }
     if (['40P01', '40001'].includes(error.code)) { status = 409; code = 'RETRY_REQUIRED'; message = 'Concurrent change; retry the request with a new nonce'; }
     if (['23514', '23503', '22P02', '22003'].includes(error.code)) { status = 400; code = 'INVALID_REQUEST'; message = 'Data violates a persistence constraint'; }
+    if (error.code === '23514' && ['wallet_tag_immutable', 'tag_reservation_immutable'].includes(error.constraint)) { status = 409; code = 'TAG_IMMUTABLE'; message = 'The registered tag cannot be changed or reassigned'; }
     if (error.type === 'entity.parse.failed' || error.type === 'entity.too.large') { status = error.status; code = 'INVALID_BODY'; message = 'Invalid or oversized JSON body'; }
     if (/^(08|53|57P)/.test(error.code || '') || ['55000', '3D000', '28P01', '28000', 'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNRESET'].includes(error.code) || /connection timeout|timeout exceeded|pool.*end/i.test(error.message)) { status = 503; code = 'DATABASE_UNAVAILABLE'; message = 'Persistence is temporarily unavailable'; }
     if (status >= 500) {

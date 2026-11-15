@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Połącz się, aby zapisać tag. Twój adres Base jest nadal dostępny.",
   "Receiving details remain available. Check Activity when connected.": "Dane odbioru pozostają dostępne. Po połączeniu sprawdź Aktywność.",
   "Tags are unavailable. Use your Base address.": "Tagi są niedostępne. Użyj swojego adresu Base.",
-  "This contract identifies the token. Do not send funds to it.": "Ten kontrakt identyfikuje token. Nie wysyłaj na niego środków."
+  "This contract identifies the token. Do not send funds to it.": "Ten kontrakt identyfikuje token. Nie wysyłaj na niego środków.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Wybierz ostrożnie. Tag można zarejestrować tylko raz i nie można go zmienić.",
+  "This tag is already registered and cannot be changed.": "Ten tag jest już zarejestrowany i nie można go zmienić."
 }

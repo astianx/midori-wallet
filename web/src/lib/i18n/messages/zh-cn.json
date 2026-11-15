@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "请连接网络以保存标签。你的 Base 地址仍然可用。",
   "Receiving details remain available. Check Activity when connected.": "收款信息仍然可用。联网后请查看活动。",
   "Tags are unavailable. Use your Base address.": "标签不可用，请使用你的 Base 地址。",
-  "This contract identifies the token. Do not send funds to it.": "此合约用于识别代币。请不要向其发送资金。"
+  "This contract identifies the token. Do not send funds to it.": "此合约用于识别代币。请不要向其发送资金。",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "请确认后选择。标签只能保存一次，之后无法更改。",
+  "This tag is already registered and cannot be changed.": "此标签已保存，无法更改。"
 }

@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Csatlakozz a tag mentéséhez. A Base-címed továbbra is elérhető.",
   "Receiving details remain available. Check Activity when connected.": "A fogadási adatok elérhetők. Csatlakozás után ellenőrizd a Tevékenységet.",
   "Tags are unavailable. Use your Base address.": "A tagek nem érhetők el. Használd a Base-címedet.",
-  "This contract identifies the token. Do not send funds to it.": "Ez a szerződés azonosítja a tokent. Ne küldj rá pénzt."
+  "This contract identifies the token. Do not send funds to it.": "Ez a szerződés azonosítja a tokent. Ne küldj rá pénzt.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Válassz körültekintően. A tag csak egyszer regisztrálható és nem módosítható.",
+  "This tag is already registered and cannot be changed.": "Ez a tag már regisztrálva van és nem módosítható."
 }

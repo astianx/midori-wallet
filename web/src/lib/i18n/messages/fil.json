@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Kumonekta para i-save ang tag. Magagamit pa rin ang iyong Base address.",
   "Receiving details remain available. Check Activity when connected.": "Magagamit pa rin ang mga detalye sa pagtanggap. Tingnan ang Aktibidad kapag nakakonekta.",
   "Tags are unavailable. Use your Base address.": "Hindi magagamit ang mga tag. Gamitin ang iyong Base address.",
-  "This contract identifies the token. Do not send funds to it.": "Tinutukoy ng kontratang ito ang token. Huwag magpadala ng pondo rito."
+  "This contract identifies the token. Do not send funds to it.": "Tinutukoy ng kontratang ito ang token. Huwag magpadala ng pondo rito.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Pumili nang mabuti. Isang beses lang puwedeng irehistro ang tag at hindi na ito mababago.",
+  "This tag is already registered and cannot be changed.": "Nakarehistro na ang tag na ito at hindi na mababago."
 }

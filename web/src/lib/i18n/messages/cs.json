@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Pro uložení tagu se připojte. Vaše adresa Base je stále dostupná.",
   "Receiving details remain available. Check Activity when connected.": "Údaje pro příjem jsou stále dostupné. Po připojení zkontrolujte Aktivitu.",
   "Tags are unavailable. Use your Base address.": "Tagy nejsou dostupné. Použijte svou adresu Base.",
-  "This contract identifies the token. Do not send funds to it.": "Tento kontrakt identifikuje token. Neposílejte na něj prostředky."
+  "This contract identifies the token. Do not send funds to it.": "Tento kontrakt identifikuje token. Neposílejte na něj prostředky.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Vybírejte pečlivě. Tag lze zaregistrovat pouze jednou a nelze jej změnit.",
+  "This tag is already registered and cannot be changed.": "Tento tag je již zaregistrován a nelze jej změnit."
 }

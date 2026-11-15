@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "タグを保存するには接続してください。Baseアドレスは引き続き使用できます。",
   "Receiving details remain available. Check Activity when connected.": "受け取り情報は使用できます。接続後にアクティビティを確認してください。",
   "Tags are unavailable. Use your Base address.": "タグは使用できません。Baseアドレスを使用してください。",
-  "This contract identifies the token. Do not send funds to it.": "このコントラクトはトークンを識別します。ここに資金を送らないでください。"
+  "This contract identifies the token. Do not send funds to it.": "このコントラクトはトークンを識別します。ここに資金を送らないでください。",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "確認して選択してください。タグは一度だけ登録でき、変更できません。",
+  "This tag is already registered and cannot be changed.": "このタグは登録済みのため変更できません。"
 }

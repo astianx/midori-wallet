@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Maak verbinding om je tag op te slaan. Je Base-adres blijft beschikbaar.",
   "Receiving details remain available. Check Activity when connected.": "Ontvangstgegevens blijven beschikbaar. Controleer Activiteit zodra je verbonden bent.",
   "Tags are unavailable. Use your Base address.": "Tags zijn niet beschikbaar. Gebruik je Base-adres.",
-  "This contract identifies the token. Do not send funds to it.": "Dit contract identificeert de token. Stuur hier geen geld naartoe."
+  "This contract identifies the token. Do not send funds to it.": "Dit contract identificeert de token. Stuur hier geen geld naartoe.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Kies zorgvuldig. Je tag kan maar één keer worden geregistreerd en kan daarna niet worden gewijzigd.",
+  "This tag is already registered and cannot be changed.": "Deze tag is al geregistreerd en kan niet worden gewijzigd."
 }

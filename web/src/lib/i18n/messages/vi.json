@@ -621,5 +621,7 @@
   "Connect to save your tag. Your Base address is still available.": "Kết nối để lưu tag. Địa chỉ Base của bạn vẫn có thể sử dụng.",
   "Receiving details remain available. Check Activity when connected.": "Thông tin nhận tiền vẫn có sẵn. Kiểm tra Hoạt động khi có kết nối.",
   "Tags are unavailable. Use your Base address.": "Tag không khả dụng. Hãy dùng địa chỉ Base của bạn.",
-  "This contract identifies the token. Do not send funds to it.": "Hợp đồng này xác định token. Không gửi tiền đến hợp đồng."
+  "This contract identifies the token. Do not send funds to it.": "Hợp đồng này xác định token. Không gửi tiền đến hợp đồng.",
+  "Choose carefully. Your tag can only be registered once and cannot be changed.": "Hãy chọn cẩn thận. Bạn chỉ được đăng ký tag một lần và không thể thay đổi.",
+  "This tag is already registered and cannot be changed.": "Tag này đã được đăng ký và không thể thay đổi."
 }

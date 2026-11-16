@@ -14,6 +14,7 @@ export function createWebApp(directory = fileURLToPath(new URL('./dist/', import
   const metadata = path.join(directory, 'build-info.json');
   const base = fs.existsSync(metadata) ? JSON.parse(fs.readFileSync(metadata, 'utf8')).basePath || '/' : '/';
   const webApp = express();
+  webApp.locals.receiptPath = `${base.replace(/\/?$/, '/')}receipt`;
   const assets = express();
   webApp.use((req, res, next) => { res.set('Content-Security-Policy', "frame-ancestors 'none'"); next(); });
   assets.use(express.static(directory, { dotfiles:'deny', index:'index.html' }));

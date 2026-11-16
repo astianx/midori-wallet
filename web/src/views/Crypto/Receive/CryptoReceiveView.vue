@@ -23,6 +23,7 @@ export default {
 
 <template>
   <MwSteps
+    ref="steps"
     :steps="$options.steps"
   />
 </template>

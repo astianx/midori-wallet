@@ -148,7 +148,9 @@ export default {
       </MwNavbar>
     </template>
 
-    <div class="&__header-container">
+    <CryptoIndexBalance :price="price" />
+    <CryptoIndexActions />
+    <div v-if="market" class="&__header-container">
       <div class="&__header">
         <CryptoIndexPrice
           :price="price"
@@ -167,9 +169,6 @@ export default {
         @crosshair="setChartPoint"
       />
     </div>
-    <CryptoIndexBalance :price="price" />
-    <CryptoIndexActions />
-
     <div
       v-if="$walletState === $STATE_ERROR"
       class="&__error"

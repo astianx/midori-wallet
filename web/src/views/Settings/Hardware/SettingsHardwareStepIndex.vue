@@ -25,7 +25,7 @@ export default {
     };
   },
   async mounted() {
-    await this.loadKeys();
+    if (this.$account.capabilities.hardwareSecurity) await this.loadKeys(); else this.isLoading = false;
   },
   methods: {
     async add() {
@@ -56,7 +56,8 @@ export default {
 
 <template>
   <MainLayout :title="$t('Hardware security')">
-    <MwLoader v-if="isLoading" />
+    <p v-if="!$account.capabilities.hardwareSecurity">{{ $t('Not supported') }}</p>
+    <MwLoader v-else-if="isLoading" />
     <template v-else>
       <div class="&__hardware-keys">
         <div v-if="keys.length">

@@ -1,3 +1,4 @@
+import { clearNavigationDrafts } from './navigation.js';
 import eventBus from './eventBus.js';
 import * as state from './state.js';
 import Account from './account/Account.js';
@@ -104,8 +105,9 @@ export async function createAccount({ app, router }) {
       }
     }
   });
-  account.on('locked', () => { setSentryUser(false); state.reset(); router.replace({ name: 'unlock' }); });
+  account.on('locked', () => { router.rememberDestination(); setSentryUser(false); state.reset(); router.replace({ name: 'unlock' }); });
   account.on('logout', async () => {
+    clearNavigationDrafts();
     eventBus.emit('discardRampCheckout');
     removeLifecycle();
     if (import.meta.env.VITE_PLATFORM === 'ios') {

@@ -35,7 +35,8 @@ export default {
   <MainLayout
     :title="$t('Tor')"
   >
-    <MwListItems>
+    <p v-if="!env.VITE_SITE_URL_TOR">{{ $t('Not supported') }}</p>
+    <MwListItems v-else>
       <MwListItem
         :title="$t('Tor')"
         :description="$t('Route traffic through Tor network. Ensure that your Tor VPN is active.')"

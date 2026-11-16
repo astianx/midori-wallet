@@ -1,124 +1,38 @@
 <script>
-import { Amount } from '../../lib/account/domain.js';
-
+import { rampAmount, rampStatus } from '../../lib/account/ramp-presentation.js';
+import MwAppIcon from '../../components/MwAppIcon.vue';
 export default {
-  props: {
-    order: {
-      type: Object,
-      required: true,
-    },
-  },
+  components: { MwAppIcon },
+  props: { order: { type: Object, required: true }, interactive: Boolean },
+  emits: ['select'],
   computed: {
-    description() {
-      return this.order.kind === 'buy' ? this.$t('Buy {symbol}', { symbol: this.order.cryptoCurrency }) : this.$t('Sell {symbol}', { symbol: this.order.cryptoCurrency });
-    },
-    amount() {
-      const value = this.order.kind === 'buy' ? this.order.fiatAmount : this.order.cryptoAmount;
-      const currency = this.order.kind === 'buy' ? this.order.fiatCurrency : this.order.cryptoCurrency;
-      return value == null ? '' : `${Amount.fromString(value, 18).toString()} ${currency}`;
-    },
-    status() {
-      return {
-        created: this.$t('Started'),
-        awaiting_payment: this.$t('Awaiting payment'),
-        processing: this.$t('Processing'),
-        completed: this.$t('Completed'),
-        failed: this.$t('Failed'),
-        refunded: this.$t('Refunded'),
-        expired: this.$t('Expired'),
-      }[this.order.status] || this.order.status;
-    },
-    date() {
-      const timestamp = new Date(this.order.updatedAt);
-      const isCurrentYear = timestamp.getFullYear() === (new Date()).getFullYear();
-      return this.$d(timestamp, isCurrentYear ? 'shortCurrentYear' : 'short');
-    },
+    description() { return this.$t(this.order.kind === 'buy' ? 'Buy {symbol}' : 'Sell {symbol}', { symbol: this.order.cryptoCurrency }); },
+    amount() { return this.order.kind === 'buy' ? rampAmount(this.order.fiatAmount, this.order.fiatCurrency) : rampAmount(this.order.cryptoAmount, this.order.cryptoCurrency); },
+    status() { return rampStatus(this.order, this.$t); },
+    date() { const timestamp = new Date(this.order.updatedAt); return Number.isFinite(timestamp.valueOf()) ? this.$d(timestamp, timestamp.getFullYear() === new Date().getFullYear() ? 'shortCurrentYear' : 'short') : '—'; },
   },
 };
 </script>
-
 <template>
-  <div class="&">
-    <div class="&__title">
-      <div class="&__description">
-        {{ description }}
-      </div>
-      <div
-        class="&__amount"
-        dir="ltr"
-      >
-        {{ amount }}
-      </div>
-    </div>
-    <div class="&__subtitle">
-      <div
-        class="&__status"
-        :class="{
-          '&__status--positive': order.status === 'completed',
-          '&__status--negative': ['failed','refunded','expired'].includes(order.status),
-        }"
-      >
-        {{ status }}
-      </div>
-      <div class="&__date">
-        {{ date }}
-      </div>
-    </div>
-  </div>
+  <component :is="interactive ? 'button' : 'div'" :type="interactive ? 'button' : undefined" class="&" :class="{ '&--interactive': interactive }" @click="interactive && $emit('select')">
+    <div class="&__content"><div class="&__title"><span>{{ description }}</span><span class="&__amount" dir="ltr">{{ amount }}</span></div><div class="&__subtitle"><span class="&__status" :class="{ '&__status--positive': order.status === 'completed', '&__status--negative': order.status === 'failed' }">{{ status }}</span><span>{{ date }}</span></div><div v-if="order.environment === 'STAGING'" class="&__environment">{{ $t('Test mode') }}</div></div><MwAppIcon v-if="interactive" name="arrow" />
+  </component>
 </template>
-
 <style lang="scss">
-  .#{ $filename } {
-    padding: var(--spacing-md) var(--spacing-sm);
-    border-radius: 0.625rem;
-
-    &__title {
-      @include text-md;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: var(--spacing-sm);
-      row-gap: var(--spacing-2xs);
-    }
-
-    &__subtitle {
-      @include text-sm;
-      display: flex;
-      justify-content: space-between;
-      color: var(--color-secondary);
-      gap: var(--spacing-sm);
-    }
-
-    &__description {
-      flex-shrink: 0;
-    }
-
-    &__amount {
-      min-width: 0;
-      max-width: 100%;
-      margin-inline-start: auto;
-      flex-shrink: 1;
-      overflow-wrap: anywhere;
-      text-align: end;
-      font-variant-numeric: tabular-nums;
-    }
-
-    &__status {
-      flex-shrink: 0;
-
-      &--positive {
-        color: var(--color-primary);
-      }
-
-      &--negative {
-        color: var(--color-danger);
-      }
-    }
-
-    &__date {
-      flex-shrink: 1;
-      @include ellipsis;
-    }
-  }
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app · pre-emit critique: P5 H5 E4 S5 R5 V4 */
+.#{ $filename } {
+  display: flex; width: 100%; min-width: 0; align-items: center; gap: var(--space-sm); padding: var(--space-md) var(--space-xs); border-bottom: 1px solid var(--color-rule); color: var(--color-ink); text-align: start;
+  &--interactive:hover { background: var(--color-surface-subtle); }
+  &--interactive:active { background: var(--color-surface-tint); }
+  &__content { flex: 1; min-width: 0; }
+  &__title, &__subtitle { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-xs) var(--space-sm); }
+  &__title { font-size: 0.9375rem; font-weight: 550; }
+  &__amount { min-width: 0; margin-inline-start: auto; overflow-wrap: anywhere; text-align: end; font-variant-numeric: tabular-nums; }
+  &__subtitle, &__environment { color: var(--color-muted); font-size: var(--text-label); line-height: 1.6; }
+  &__subtitle { margin-top: var(--space-2xs); }
+  &__environment { margin-top: var(--space-xs); }
+  &__status--positive { color: var(--color-accent); }
+  &__status--negative { color: var(--color-error); }
+  > svg { flex: none; width: 1rem; height: 1rem; }
+}
 </style>

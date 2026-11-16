@@ -63,7 +63,7 @@ npm --prefix phonegap ci --ignore-scripts
 
 After a desktop build, run `npm run dev:electron` to launch the built client. Native targets can override the root settings through their [Electron](electron/.env.example) or [Cordova](phonegap/.env.example) environment files.
 
-[GitHub Actions](.github/workflows/ci.yml) builds the web app, desktop packages for Linux, macOS, and Windows, an Android debug APK, and an iOS Simulator bundle. The workflow also defines a separate, approval-gated Android release-signing job for pushes to `main`. Builds are uploaded as workflow artifacts.
+[GitHub Actions](.github/workflows/ci.yml) builds the web app, desktop packages for Linux, macOS, and Windows, an Android debug APK, and an iOS Simulator bundle. Signed Android APK/AAB builds run automatically on pushes to `main`, or manually on `main` with the `android_release` option, using the `release-signing` environment. Other branches and pull requests only produce validation builds. Artifacts include version, commit and SHA-256 manifests. See the [CI/CD process and troubleshooting guide](.github/README.md) for shared toolchains, signing requirements and manual execution.
 
 Clients can check for updates on the stable or beta channel when the release repository, channel, and Ed25519 public key are configured. Downloads are manual.
 

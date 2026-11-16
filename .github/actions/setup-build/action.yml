@@ -1,0 +1,40 @@
+name: Prepare Midori build
+description: Install the pinned Node version and target dependencies from lockfiles
+inputs:
+  target:
+    description: checks, desktop, or mobile
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v5
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+        cache-dependency-path: |
+          package-lock.json
+          packages/wallet-core/package-lock.json
+          web/package-lock.json
+          server/package-lock.json
+          electron/package-lock.json
+          phonegap/package-lock.json
+    - name: Install locked dependencies
+      shell: bash
+      env:
+        BUILD_TARGET: ${{ inputs.target }}
+      run: |
+        set -euo pipefail
+        case "$BUILD_TARGET" in checks|desktop|mobile) ;; *) exit 1 ;; esac
+        : > "$RUNNER_TEMP/midori-npmrc"
+        npm_ci=(ci --ignore-scripts --no-audit --no-fund --userconfig="$RUNNER_TEMP/midori-npmrc")
+        npm "${npm_ci[@]}"
+        npm --prefix packages/wallet-core "${npm_ci[@]}"
+        npm --prefix web "${npm_ci[@]}"
+        case "$BUILD_TARGET" in
+          checks) npm --prefix server "${npm_ci[@]}" ;;
+          desktop)
+            npm --prefix electron "${npm_ci[@]}"
+            node electron/node_modules/electron/install.js
+            ;;
+          mobile) npm --prefix phonegap "${npm_ci[@]}" ;;
+        esac

@@ -5,8 +5,9 @@ import { sha256 } from '@noble/hashes/sha256';
 import { wordlist } from '@scure/bip39/wordlists/english';
 import { mnemonicToSeed, validateMnemonic } from '@scure/bip39';
 
+import { onShowOnHide } from '../lib/mixins.js';
 import MwButton from './MwButton.vue';
-import { beginRecovery } from '../lib/account/recovery.js';
+import { beginRecovery, discardRecovery } from '../lib/account/recovery.js';
 import MwButtonGroup from './MwButtonGroup.vue';
 import MwFormTextarea from './MwForm/MwFormTextarea.vue';
 
@@ -16,7 +17,11 @@ export default {
     MwButtonGroup,
     MwFormTextarea,
   },
+  mixins: [onShowOnHide],
+  onShow() { this.active = true; },
+  onHide() { this.active = false; this.passphrase = ''; this.suggestions = []; },
   props: {
+    recoveryDescriptor: { type: Object, default: undefined },
     recovery: { type: Boolean, default: false },
     modelValue: {
       type: String,
@@ -30,8 +35,11 @@ export default {
   emits: ['update:modelValue', 'confirm'],
   data() {
     return {
+      active: false,
+      busy: false,
       error: undefined,
       suggestions: [],
+      showHelp: false,
     };
   },
   computed: {
@@ -68,17 +76,20 @@ export default {
   },
   methods: {
     async confirm() {
-      const passphrase = this.words.join(' ');
+      if (this.busy || this.isLoading) return;
+      this.busy = true; const passphrase = this.words.join(' ');
       this.error = undefined;
       try {
         if (!validateMnemonic(passphrase, wordlist)) throw new Error();
         if (this.recovery) {
-          const handle = await beginRecovery(passphrase);
+          const handle = await beginRecovery(passphrase, this.recoveryDescriptor);
+          if (!this.active) { discardRecovery(handle); return; }
           this.$emit('update:modelValue', '');
           this.$emit('confirm', handle);
           return;
         }
         const seed = await mnemonicToSeed(passphrase);
+        if (!this.active) { seed.fill(0); return; }
         if (this.$account.isCreated) {
           const detailsKey = hmac(sha256, 'Midori Wallet', hex.encode(seed));
           if (hex.encode(detailsKey) !== hex.encode(this.$account.clientStorage.getDetailsKey())) {
@@ -87,8 +98,8 @@ export default {
         }
         this.$emit('confirm', seed);
       } catch (err) {
-        this.error = this.$t('Invalid passphrase');
-      }
+        this.error = this.$t(this.recoveryDescriptor ? 'The recovery file does not match this account.' : 'Invalid passphrase');
+      } finally { this.busy = false; }
     },
     acceptSuggestion(suggestion) {
       window.taptic?.tap();
@@ -127,17 +138,18 @@ export default {
     </div>
   </div>
 
+  <p v-if="showHelp" role="status">{{ $t('Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.') }}</p>
   <MwButtonGroup class="&__buttons">
     <MwButton
       type="primary"
-      :isLoading="isLoading"
+      :isLoading="isLoading || busy"
       @click="confirm"
     >
       {{ $t('Confirm') }}
     </MwButton>
     <MwButton
       type="primary-link"
-      @click="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
+      @click="showHelp = !showHelp"
     >
       {{ $t('What is a passphrase?') }}
     </MwButton>

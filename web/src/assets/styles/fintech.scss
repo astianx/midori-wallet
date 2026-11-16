@@ -1,0 +1,77 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
+html, body { overflow-x: clip; }
+[hidden] { display: none !important; }
+html { font-family: var(--font-body); letter-spacing: -0.012em; }
+body { background: var(--color-paper); color: var(--color-ink); overflow-wrap: anywhere; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-style: normal; overflow-wrap: anywhere; min-width: 0; }
+button, input, textarea, select { font-family: var(--font-body); }
+button, [role='button'], a { touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+button:disabled { cursor: not-allowed; }
+.mw-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: clip; clip-path: inset(50%); white-space: nowrap; border: 0; }
+body {
+.mw-button { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; font-size: var(--text-body); }
+.mw-button--base, .mw-button--primary, .mw-button--secondary, .mw-button--primary-light, .mw-button--danger-light, .mw-button--primary-link, .mw-button--white-link {
+  min-height: 3rem; height: auto; padding-block: var(--space-sm); border-radius: var(--radius-control); font-weight: 600;
+}
+.mw-button--primary { box-shadow: none; }
+.mw-button:not(:disabled):active { transform: translateY(1px); }
+.mw-button--small { min-height: 2.75rem; }
+.mw-button--circle { min-width: 0; white-space: normal; }
+.mw-button__circle { border-radius: var(--radius-control); background: var(--color-surface-subtle); color: var(--color-ink); }
+.mw-button--primary svg [stroke] { stroke: currentColor; }
+.mw-button--primary svg [fill] { fill: currentColor; }
+.mw-navbar { min-height: 4.5rem; height: auto; padding-block: var(--space-xs); }
+.mw-navbar__title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 650; letter-spacing: -0.025em; }
+.mw-navbar__description { color: var(--color-muted); font-size: var(--text-label); }
+.mw-navbar-button { border-radius: var(--radius-control); }
+.main-layout, .smart-layout { min-height: 0; background: var(--color-surface); border-radius: var(--radius-panel); color: var(--color-ink); }
+.main-layout__container, .smart-layout__container { min-height: 0; overscroll-behavior-y: contain; }
+.main-layout__content, .smart-layout__content { min-height: 0; padding: var(--space-lg); gap: var(--space-lg); }
+.main-layout__content--narrow, .smart-layout__content--narrow { width: 100%; max-width: 40rem; }
+.main-layout__navbar, .smart-layout__navbar { border-bottom: 1px solid var(--color-rule); }
+.mw-form-element__label { color: var(--color-muted); font-size: var(--text-label); font-weight: 550; margin-bottom: var(--space-xs); }
+.mw-form-element__box, .mw-form-element__boxes > div { min-height: 3.25rem; border-radius: var(--radius-control); border-color: var(--color-rule); background: var(--color-surface-subtle); color: var(--color-ink); }
+.mw-form-textarea-readonly__textarea { font-size: var(--text-body); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.mw-form-element__error { padding-top: var(--space-2xs); }
+.mw-list-items { border-radius: var(--radius-panel); }
+.mw-list-item { min-width: 0; border-bottom: 1px solid var(--color-rule); }
+.mw-list-item:last-child { border-bottom: 0; }
+.mw-list-item__title { font-size: var(--text-body); }
+.mw-list-item__description { font-size: var(--text-label); }
+.mw-list-item:hover { background: var(--color-surface-subtle); color: var(--color-ink); }
+.mw-warning { border-radius: var(--radius-control); padding: var(--space-md); background: var(--color-warning-surface); color: var(--color-warning); font-size: 0.875rem; }
+.auth-step-layout { background: var(--color-paper); color: var(--color-ink); }
+.auth-step-layout__frame { max-width: 60rem; box-shadow: var(--shadow-panel); border: 1px solid var(--color-rule); }
+.auth-step-layout__container { width: 100%; max-width: 36rem; max-height: none; min-height: 0; }
+.auth-step-layout__content { gap: var(--space-lg); padding: var(--space-lg); }
+.auth-step-layout__frame { padding-block: 0; border-radius: var(--radius-panel); }
+.auth-step-layout__container .mw-navbar { border-bottom: 1px solid var(--color-rule); }
+.auth-step-login__description, .auth-step-passphrase-generation__text, .auth-step-passphrase-confirmation__description { font-size: var(--text-body); }
+.mw-pin__keyboard { max-width: 22rem; margin-inline: auto; }
+.crypto-index-view__header-container:has(.crypto-index-price:empty) { display: none; }
+.crypto-index-balance { padding: var(--space-lg); border-radius: var(--radius-panel); background: var(--color-surface-tint); color: var(--color-ink); }
+.crypto-index-balance__amount { font-size: clamp(1.375rem, 4vw, 2rem); font-weight: 650; font-variant-numeric: tabular-nums; }
+.crypto-index-actions__group { max-width: none; }
+.crypto-index-tools { margin-top: var(--space-md); }
+.crypto-ramp-panel__form { gap: var(--space-lg); }
+.crypto-ramp-panel__notice, .crypto-ramp-panel__empty { padding: var(--space-md); border-radius: var(--radius-control); background: var(--color-surface-subtle); color: var(--color-muted); }
+.crypto-receive-step-index__qr { width: 13.5rem; height: 13.5rem; border-radius: var(--radius-panel); }
+@media (min-width: 62rem) {
+  .main-layout__content, .smart-layout__content { padding: var(--space-xl); flex-basis: auto; }
+  .auth-step-layout { padding: var(--space-xl); }
+  .auth-step-layout__frame { min-height: 38rem; justify-content: center; }
+  .auth-step-layout__content { padding: var(--space-xl); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+}
+
+.settings-view .main-layout__content { align-content: start; }
+.crypto-send-step-amount p { overflow-wrap: anywhere; }
+.crypto-send-step-amount .mw-form-amount-input__amount { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.mw-form-element__box, .mw-form-element__boxes > div { transition-property: background-color, border-color; }
+.mw-form-element__error { color: var(--color-error); }
+a:active, [role='button']:active { opacity: 0.8; }
+
+}

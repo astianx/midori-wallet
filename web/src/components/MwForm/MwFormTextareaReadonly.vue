@@ -1,16 +1,19 @@
 <script>
+import { fieldProps, useFormField } from './field.js';
 import MwFormElement from './MwFormElement.vue';
 
 import CopyIcon from '../../assets/svg/copy.svg';
 import TickIcon from '../../assets/svg/tick.svg';
 
 export default {
+  setup(props) { return useFormField(props); },
   components: {
     MwFormElement,
     CopyIcon,
     TickIcon,
   },
   props: {
+    ...fieldProps,
     value: {
       type: String,
       default: '',
@@ -43,16 +46,19 @@ export default {
   data() {
     return {
       isCopied: false,
+      copyError: false,
     };
   },
+  beforeUnmount() { clearTimeout(this.copyTimer); },
   methods: {
-    onCopy() {
-      navigator.clipboard.writeText(this.copyValue || this.value).then(() => {
+    async onCopy() {
+      this.copyError = false;
+      try {
+        await navigator.clipboard.writeText(this.copyValue || this.value);
         this.isCopied = true;
-        setTimeout(() => {
-          this.isCopied = false;
-        }, 1000);
-      }, () => {});
+        clearTimeout(this.copyTimer);
+        this.copyTimer = setTimeout(() => { this.isCopied = false; }, 1500);
+      } catch { this.copyError = true; }
     },
   },
 };
@@ -61,7 +67,15 @@ export default {
 <template>
   <MwFormElement
     class="&"
+    :class="{ '&--copyable': copy }"
     v-bind="$props"
+    :controlId="controlId"
+    :errorId="errorId"
+    :error="copyError ? $t('Could not copy. Select the address and copy it manually.') : false"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <div
       v-if="$slots.before"
@@ -71,6 +85,13 @@ export default {
     </div>
     <div
       class="&__textarea"
+      :id="controlId"
+      :tabindex="disabled ? -1 : 0"
+      :aria-disabled="disabled || undefined"
+      role="textbox"
+      aria-readonly="true"
+      :aria-label="label || ariaLabel"
+      :aria-describedby="copyError ? errorId : undefined"
       lang="en"
     >
       {{ value }}
@@ -81,20 +102,8 @@ export default {
     >
       <slot name="after" />
     </div>
-    <div
-      v-else-if="copy"
-      class="&__icon-after"
-    >
-      <TickIcon
-        v-if="isCopied"
-        class="&__success"
-      />
-      <CopyIcon
-        v-else
-        class="&__copy"
-        @click="onCopy"
-      />
-    </div>
+    <button v-else-if="copy" type="button" class="&__copy-button" :disabled="disabled" :aria-label="$t(isCopied ? 'Copied!' : 'Copy')" @click="onCopy"><TickIcon v-if="isCopied" aria-hidden="true" /><CopyIcon v-else aria-hidden="true" /></button>
+    <span class="mw-sr-only" role="status">{{ isCopied ? $t('Copied!') : '' }}</span>
 
     <template #info>
       <slot name="info" />
@@ -112,7 +121,8 @@ export default {
   .#{ $filename } {
     &__textarea {
       @include text-md;
-      overflow: hidden;
+      min-width: 0;
+      user-select: text;
       flex-grow: 1;
       padding: var(--spacing-sm) 0;
       border: none;
@@ -121,7 +131,7 @@ export default {
       cursor: auto;
       font-family: inherit;
       line-height: inherit;
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
     }
 
     &__icon-before,
@@ -134,6 +144,9 @@ export default {
       margin: calc(--spacing-md - 1px) 0;
     }
 
+    &__copy-button { position: absolute; inset-inline-end: var(--space-2xs); top: var(--space-2xs); display: grid; place-items: center; align-self: flex-start; width: 2.75rem; height: 2.75rem; flex: none; border-radius: var(--radius-control); margin: 0; }
+    &__copy-button svg { width: 1.25rem; height: 1.25rem; }
+
     &__copy {
       cursor: pointer;
     }
@@ -144,4 +157,5 @@ export default {
       }
     }
   }
+.mw-form-textarea-readonly--copyable .mw-form-textarea-readonly__textarea { padding-inline-end: 2.75rem; }
 </style>

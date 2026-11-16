@@ -33,7 +33,7 @@ export default {
         setTimeout(() => {
           this.isCopied = false;
         }, 1000);
-      }, () => {});
+      }, () => { this.recoveryError = this.$t('Copy failed. Select and copy the text manually.'); });
     },
   },
 };
@@ -91,7 +91,7 @@ export default {
                 {{ label }}
               </div>
               <div
-                class="&__item-subtitle"
+                class="&__item-subtitle" tabindex="0" role="textbox" aria-readonly="true" :aria-label="label"
                 dir="ltr"
               >
                 {{ item[key] }}
@@ -158,6 +158,8 @@ export default {
     }
 
     &__item-subtitle {
+      user-select: text;
+      &:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
       @include text-sm;
       word-break: break-all;
     }

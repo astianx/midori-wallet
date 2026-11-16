@@ -1,4 +1,5 @@
 <script>
+import { formatMidoriTag } from '../../../lib/tags.js';
 import * as MoneroSymbols from '../../../lib/ui-runtime/monero-symbols.js';
 import { Transaction, errors } from '../../../lib/account/domain.js';
 
@@ -57,7 +58,7 @@ export default {
     },
     to() {
       if (this.exchange) return this.transaction.exchange.to;
-      if (this.transaction.recipientTag) return `@${this.transaction.recipientTag}`;
+      if (this.transaction.recipientTag) return formatMidoriTag(this.transaction.recipientTag);
       return this.transaction.to === MoneroSymbols.HIDDEN_ADDRESS
         ? this.$t('Stealth address')
         : this.transaction.to;

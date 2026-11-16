@@ -33,6 +33,36 @@
   OSStatus status = SecItemDelete((__bridge CFDictionaryRef)[self query:identifier]);
   [self reply:command value:nil status:status == errSecItemNotFound ? errSecSuccess : status];
 }
+- (void)receipt:(CDVInvokedUrlCommand*)command share:(BOOL)share {
+  if (self.fileCommand) { [self reply:command value:nil status:errSecParam]; return; }
+  NSString* name = [command argumentAtIndex:0 withDefault:nil andClass:[NSString class]];
+  NSString* mime = [command argumentAtIndex:1 withDefault:nil andClass:[NSString class]];
+  NSString* encoded = [command argumentAtIndex:2 withDefault:nil andClass:[NSString class]];
+  BOOL pdf = [mime isEqualToString:@"application/pdf"];
+  NSRegularExpression* pattern = [NSRegularExpression regularExpressionWithPattern:@"^midori-receipt-[0-9a-f-]{36}\\.(png|pdf)$" options:0 error:nil];
+  if (!name || !encoded || encoded.length > 12*1024*1024 || (![mime isEqualToString:@"image/png"] && !pdf) || ![pattern firstMatchInString:name options:0 range:NSMakeRange(0,name.length)]) { [self reply:command value:nil status:errSecParam]; return; }
+  NSData* data = [[NSData alloc] initWithBase64EncodedString:encoded options:0];
+  const unsigned char png[] = {137,80,78,71,13,10,26,10};
+  if (!data || data.length < 8 || data.length > 8*1024*1024 || (pdf && (![name hasSuffix:@".pdf"] || memcmp(data.bytes,"%PDF-",5))) || (!pdf && (![name hasSuffix:@".png"] || memcmp(data.bytes,png,8)))) { [self reply:command value:nil status:errSecParam]; return; }
+  NSURL* folder = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:[NSUUID UUID].UUIDString] isDirectory:YES];
+  [[NSFileManager defaultManager] createDirectoryAtURL:folder withIntermediateDirectories:YES attributes:nil error:nil];
+  self.temporaryFile = [folder URLByAppendingPathComponent:name];
+  if (![data writeToURL:self.temporaryFile atomically:YES]) { [self reply:command value:nil status:errSecParam]; return; }
+  self.fileCommand = command; self.exporting = YES;
+  if (share) {
+    UIActivityViewController* controller = [[UIActivityViewController alloc] initWithActivityItems:@[self.temporaryFile] applicationActivities:nil];
+    controller.popoverPresentationController.sourceView = self.viewController.view;
+    controller.popoverPresentationController.sourceRect = CGRectMake(CGRectGetMidX(self.viewController.view.bounds),CGRectGetMidY(self.viewController.view.bounds),1,1);
+    controller.completionWithItemsHandler = ^(UIActivityType activity, BOOL completed, NSArray* items, NSError* error) {
+      CDVPluginResult* result = error ? [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Receipt could not be shared"] : [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:@{@"cancelled":@(!completed)}];
+      [self.commandDelegate sendPluginResult:result callbackId:command.callbackId]; [self finishPicker];
+    };
+    [self.viewController presentViewController:controller animated:YES completion:nil];
+  } else { UIDocumentPickerViewController* picker = [[UIDocumentPickerViewController alloc] initForExportingURLs:@[self.temporaryFile] asCopy:YES]; picker.delegate = self; [self.viewController presentViewController:picker animated:YES completion:nil]; }
+}
+- (void)shareReceipt:(CDVInvokedUrlCommand*)command { [self receipt:command share:YES]; }
+- (void)saveReceipt:(CDVInvokedUrlCommand*)command { [self receipt:command share:NO]; }
+
 - (void)saveFile:(CDVInvokedUrlCommand*)command {
   if (self.fileCommand) { [self reply:command value:nil status:errSecParam]; return; }
   NSString* text = [command argumentAtIndex:0 withDefault:nil andClass:[NSString class]];
@@ -61,7 +91,13 @@
   }
   [self reply:self.fileCommand value:value status:status]; [self finishPicker];
 }
-- (void)documentPickerWasCancelled:(UIDocumentPickerViewController*)controller { [self reply:self.fileCommand value:nil status:errSecUserCanceled]; [self finishPicker]; }
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController*)controller {
+  if ([self.temporaryFile.pathExtension isEqualToString:@"pdf"] || [self.temporaryFile.pathExtension isEqualToString:@"png"]) {
+    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:@{@"cancelled":@YES}];
+    [self.commandDelegate sendPluginResult:result callbackId:self.fileCommand.callbackId];
+  } else [self reply:self.fileCommand value:nil status:errSecUserCanceled];
+  [self finishPicker];
+}
 - (void)finishPicker {
   if (self.temporaryFile) [[NSFileManager defaultManager] removeItemAtURL:self.temporaryFile.URLByDeletingLastPathComponent error:nil];
   self.temporaryFile = nil; self.fileCommand = nil;

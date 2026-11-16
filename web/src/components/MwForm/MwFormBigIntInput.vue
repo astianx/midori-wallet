@@ -1,13 +1,16 @@
 <script>
+import { fieldProps, useFormField } from './field.js';
 import MwBigIntInput from '../MwBigIntInput.vue';
 import MwFormElement from './MwFormElement.vue';
 
 export default {
+  setup(props) { return useFormField(props); },
   components: {
     MwBigIntInput,
     MwFormElement,
   },
   props: {
+    ...fieldProps,
     modelValue: {
       type: BigInt,
       default: undefined,
@@ -50,8 +53,15 @@ export default {
     :error="error"
     :small="small"
     :info="info"
+    :controlId="controlId"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <MwBigIntInput
+      v-bind="fieldAttrs"
       v-model="inputValue"
       class="&__amount"
     />

@@ -11,11 +11,13 @@ import AuthStepPin from './AuthStepPin.vue';
 import { clearRecovery } from '../../lib/account/recovery.js';
 import MwSelectCryptosStep from '../../components/MwSelectCryptosStep.vue';
 
+const handoffs = new WeakMap();
 export default {
   components: {
     MwSteps,
   },
-  beforeUnmount() { clearRecovery(); },
+  provide() { let pin = ''; const context = { prepare: value => { pin = value; }, enable: () => this.$account.biometry.enable(pin), clear: () => { pin = ''; } }; handoffs.set(this, context); return { setupBiometry: context }; },
+  beforeUnmount() { handoffs.get(this)?.clear(); handoffs.delete(this); clearRecovery(); },
   steps: {
     index: AuthStepIndex,
     passphraseGeneration: AuthStepPassphraseGeneration,

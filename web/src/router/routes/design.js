@@ -1,5 +1,7 @@
 import DesignLayout from '../../layouts/DesignLayout.vue';
 import DesignView from '../../views/Design/DesignView.vue';
+import DesignViewSystem from '../../views/Design/DesignViewSystem.vue';
+import DesignViewPrototype from '../../views/Design/DesignViewPrototype.vue';
 import DesignViewButtons from '../../views/Design/DesignViewButtons.vue';
 import DesignViewCards from '../../views/Design/DesignViewCards.vue';
 import DesignViewCryptoLogo from '../../views/Design/DesignViewCryptoLogo.vue';
@@ -15,7 +17,7 @@ const design = [
     path: '/design',
     component: DesignLayout,
     meta: { dev: true },
-    children: [{
+    children: [{ path: 'system', name: 'design.system', component: DesignViewSystem }, { path: 'prototype', name: 'design.prototype', component: DesignViewPrototype }, {
       path: '',
       name: 'design',
       component: DesignView,

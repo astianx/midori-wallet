@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="org.astian.midori.vault" version="1.0.0">
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android" id="org.astian.midori.vault" version="1.1.0">
   <name>MidoriVault</name>
   <platform name="android">
     <config-file target="res/xml/config.xml" parent="/*"><feature name="MidoriVault"><param name="android-package" value="org.astian.midori.vault.MidoriVault" /></feature></config-file>
+    <config-file target="AndroidManifest.xml" parent="/manifest/application"><provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.midori.receipts" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/midori_receipt_paths" /></provider></config-file>
+    <resource-file src="src/android/midori_receipt_paths.xml" target="res/xml/midori_receipt_paths.xml" />
     <source-file src="src/android/MidoriVault.java" target-dir="src/org/astian/midori/vault" />
   </platform>
   <platform name="ios">

@@ -1,3 +1,4 @@
+import { normalizeTagAlias, formatMidoriTag, isTagRecipient } from '../tags.js';
 import { captureWalletError } from '../sentry.js';
 import { ed25519 } from '@noble/curves/ed25519';
 import { hmac } from '@noble/hashes/hmac';
@@ -221,10 +222,10 @@ export default class MidoriSession {
 
   async resolveRecipient(value) {
     const text = value.trim();
-    if (text.startsWith('@')) {
-      const result = await this.client.request('POST', '/api/v1/tags/resolve', { alias: text, chainId: 8453 });
+    if (isTagRecipient(text)) {
+      const result = await this.client.request('POST', '/api/v1/tags/resolve', { alias: normalizeTagAlias(text), chainId: 8453 });
       if (result.chainId !== 8453 || Date.parse(result.expiresAt) <= Date.now()) throw Object.assign(new Error(), { code: 'TAG_RECONFIRM_REQUIRED' });
-      return { kind: 'midori_tag', address: result.address, alias: `@${result.alias}`, resolutionId: result.id, revision: result.revision, expiresAt: result.expiresAt };
+      return { kind: 'midori_tag', address: result.address, alias: formatMidoriTag(result.alias), resolutionId: result.id, revision: result.revision, expiresAt: result.expiresAt };
     }
     if (!/^0x[0-9a-fA-F]{40}$/.test(text) || /^0x0{40}$/i.test(text) || text.toLowerCase() === this.descriptor.address.toLowerCase()) throw Object.assign(new Error(), { code: 'INVALID_RECIPIENT' });
     return { kind: 'address', address: text };
@@ -278,6 +279,7 @@ export default class MidoriSession {
     if (!this.session || !this.account?.id) return { orders: [] };
     return this.client.request('GET', `/api/v1/accounts/${this.account.id}/ramp/orders`);
   }
+  async issueReceipt(source, reference) { return this.client.request('POST', `/api/v1/accounts/${this.account.id}/receipts`, { source, reference }); }
   async rampOrder(id) { return this.client.request('GET', `/api/v1/ramp/orders/${id}`); }
 
   async signDappRequest(method, data, pinHash, stillApproved = () => true) {
@@ -312,9 +314,17 @@ export default class MidoriSession {
   async updateTag(value) {
     if (!this.session || !this.account?.id || this.connection !== 'online') throw Object.assign(new Error('Midori is offline; the tag was not saved.'), { code: 'NETWORK_UNCONFIRMED' });
     const generation = this.#generation;
-    const alias = value.trim().replace(/^@/, '').toLowerCase();
+    const alias = normalizeTagAlias(value);
     if (this.tag?.alias === alias) return alias;
-    const options = await this.client.request('POST', '/api/v1/tag/options', { alias, accountId: this.account.id });
+    if (this.tag) throw Object.assign(new Error('The registered tag cannot be changed'), { code: 'TAG_IMMUTABLE', status: 409 });
+    let options;
+    try { options = await this.client.request('POST', '/api/v1/tag/options', { alias, accountId: this.account.id }); }
+    catch (error) {
+      if (error.code === 'TAG_IMMUTABLE') {
+        try { const current = await this.client.request('GET', '/api/v1/tag'); if (generation === this.#generation) this.tag = current.tag; } catch { /* The server still enforces the permanent binding if refresh fails. */ }
+      }
+      throw error;
+    }
     if (generation !== this.#generation || options.alias !== alias || options.chainId !== 8453 || options.address !== this.descriptor.address) throw new Error('Tag confirmation changed');
     const fields = options.message.split('\n');
     if (fields.length !== 10 || fields[0] !== 'Midori tag v1' || fields[1] !== this.config.authentication.origin || fields[2] !== options.id || fields[4] !== this.session.walletId || fields[5] !== this.account.id || fields[6] !== '8453' || fields[7] !== this.descriptor.address || fields[8] !== `@${alias}` || fields[9] !== options.expiresAt || Date.parse(options.expiresAt) <= Date.now()) throw new Error('Invalid tag confirmation');
@@ -326,6 +336,11 @@ export default class MidoriSession {
       if (generation !== this.#generation) throw new Error('Account is locked');
       this.tag = result.tag;
       return this.tag.alias;
+    } catch (error) {
+      if (error.code === 'TAG_IMMUTABLE') {
+        try { const current = await this.client.request('GET', '/api/v1/tag'); if (generation === this.#generation) this.tag = current.tag; } catch { /* Preserve the server rejection while offline. */ }
+      }
+      throw error;
     } finally { this.#adapter.lock(); }
   }
 

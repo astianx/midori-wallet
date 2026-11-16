@@ -1,11 +1,14 @@
 <script>
 import MwLoader from './MwLoader.vue';
+import TickIcon from '../assets/svg/tick.svg';
+import DangerTriangleIcon from '../assets/svg/dangerTriangle.svg';
 
 export default {
   components: {
-    MwLoader,
+    MwLoader, TickIcon, DangerTriangleIcon,
   },
   props: {
+    state: { type: String, default: '', validator: value => ['', 'error', 'success'].includes(value) },
     type: {
       type: String,
       default: '',
@@ -39,15 +42,17 @@ export default {
       [`&--${type}`]: type,
       '&--small': small,
       '&--loading': isLoading,
+      '&--error': state === 'error',
+      '&--success': state === 'success',
     }"
-    :disabled="disabled"
+    :disabled="disabled || isLoading"
+    :aria-busy="isLoading"
+    :aria-label="$attrs['aria-label'] || $attrs.title || undefined"
     @click="!isLoading && !disabled && $emit('click')"
   >
-    <MwLoader
-      v-if="isLoading"
-      :type="type"
-    />
-    <template v-else>
+    <MwLoader v-if="isLoading" :type="type" class="&__spinner" aria-hidden="true" />
+    <TickIcon v-else-if="state === 'success'" aria-hidden="true" />
+    <DangerTriangleIcon v-else-if="state === 'error'" aria-hidden="true" />
       <div
         v-if="$slots.circle"
         class="&__circle"
@@ -55,22 +60,23 @@ export default {
         <slot name="circle" />
       </div>
       <slot />
-    </template>
   </button>
 </template>
 
 <style lang="scss">
   %base-button {
     display: flex;
+    position: relative;
     overflow: hidden;
     height: 3.5rem;
     align-items: center;
     justify-content: center;
     padding: 0 var(--spacing-lg);
+    border: 1px solid transparent;
     border-radius: 0.625rem;
     gap: var(--spacing-md);
     line-height: 1.2;
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+    transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
 
     @include text-md;
     @include text-bold;
@@ -97,7 +103,7 @@ export default {
     $self: &;
 
     &:disabled {
-      pointer-events: none;
+      cursor: not-allowed;
     }
 
     &__circle {
@@ -287,8 +293,9 @@ export default {
       height: 2.75rem;
     }
 
-    &--loading {
-      pointer-events: none;
-    }
+    &--loading:disabled { opacity: 1; }
+    &__spinner { flex: none; }
+    &--error { background: var(--color-error-surface); color: var(--color-error); border-color: var(--color-error); }
+    &--success { background: var(--color-surface-tint); color: var(--color-accent); border-color: var(--color-accent); }
   }
 </style>

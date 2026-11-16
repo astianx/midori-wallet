@@ -1,4 +1,5 @@
 <script>
+import { fieldProps, useFormField } from './field.js';
 import MwFormElement from './MwFormElement.vue';
 import TrailingIcon from '../../assets/svg/trailing.svg';
 
@@ -6,8 +7,10 @@ const pad = (n) => String(n).padStart(2, '0');
 const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i);
 
 export default {
+  setup(props) { return useFormField(props); },
   components: { MwFormElement, TrailingIcon },
   props: {
+    ...fieldProps,
     modelValue: { type: String, default: '' }, // YYYY-MM-DD
     maxYear: {
       type: Number,
@@ -72,6 +75,12 @@ export default {
   <MwFormElement
     class="&"
     v-bind="$props"
+    :controlId="`${controlId}-day`"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <template #boxes>
       <div
@@ -84,13 +93,17 @@ export default {
         :class="`&__${box.key}`"
       >
         <div class="&__value">
-          {{ (box.options.find((option) => option.value === this[box.key]) || {}).name }}
+          {{ (box.options.find((option) => option.value === this[box.key]) || {}).name || $t({ day: 'Day', month: 'Month', year: 'Year' }[box.key]) }}
         </div>
         <select
+          v-bind="fieldAttrs"
+          :id="`${controlId}-${box.key}`"
+          :aria-label="`${label || ''} ${$t({ day: 'Day', month: 'Month', year: 'Year' }[box.key])}`"
           class="&__select"
           :value="this[box.key]"
           @change="select(box.key, $event.target.value)"
         >
+          <option disabled value="">{{ $t({ day: 'Day', month: 'Month', year: 'Year' }[box.key]) }}</option>
           <option
             v-for="option in box.options"
             :key="option.value"

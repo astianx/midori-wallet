@@ -15,24 +15,9 @@ export default {
     },
   },
   emits: ['click'],
-  data() {
-    return {
-      isSpinning: false,
-    };
-  },
-  mounted() {
-    // start spinning if isLoading equal true 100ms after mount
-    setTimeout(() => this.isSpinning = this.isLoading, 100);
-  },
   methods: {
     click() {
-      if (this.isLoading) return;
-      if (this.isSpinning) return;
-      this.isSpinning = true;
-      this.$emit('click');
-    },
-    spinningIteration() {
-      this.isSpinning = this.isLoading;
+      if (!this.isLoading) this.$emit('click');
     },
   },
 };
@@ -44,11 +29,13 @@ export default {
     class="&"
     :title="$t('Refresh')"
     :aria-label="$t('Refresh')"
+    :disabled="isLoading"
+    :aria-busy="isLoading"
     @click="click"
   >
     <RefreshIcon
-      :class="{ '&__spinner': isSpinning }"
-      @animationiteration="spinningIteration"
+      :class="{ '&__spinner': isLoading }"
+      aria-hidden="true"
     />
   </MwNavbarButton>
 </template>
@@ -56,15 +43,7 @@ export default {
 <style lang="scss">
   .#{ $filename } {
     $self: &;
-    display: none;
-
-    @include breakpoint(md) {
-      display: flex;
-    }
-
-    @media (pointer: fine) {
-      display: flex;
-    }
+    display: flex;
 
     &__spinner {
       animation: rotation180 0.5s infinite linear;

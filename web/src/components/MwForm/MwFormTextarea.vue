@@ -1,11 +1,14 @@
 <script>
+import { fieldProps, useFormField } from './field.js';
 import MwFormElement from './MwFormElement.vue';
 
 export default {
+  setup(props) { return useFormField(props); },
   components: {
     MwFormElement,
   },
   props: {
+    ...fieldProps,
     modelValue: {
       type: String,
       default: '',
@@ -36,8 +39,15 @@ export default {
   <MwFormElement
     class="&"
     v-bind="$props"
+    :controlId="controlId"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <textarea
+      v-bind="fieldAttrs"
       ref="input"
       dir="ltr"
       lang="en"
@@ -64,7 +74,8 @@ export default {
       color: var(--color-text);
       font-family: inherit;
       line-height: inherit;
-      resize: none;
+      min-height: 6rem;
+      resize: vertical;
 
       [dir="rtl"] & {
         text-align: end;

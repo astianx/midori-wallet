@@ -1,3 +1,4 @@
+import { rememberDestination, consumeDestination, clearNavigationDrafts } from '../lib/navigation.js';
 import * as state from '../lib/state.js';
 import { WalletState } from '../lib/account/domain.js';
 import {
@@ -26,23 +27,44 @@ const router = createRouter({
 });
 
 router.up = async () => {
-  const parent = router.currentRoute.value.path.replace(/(\/[^/]*)$/, '') || '/';
+  const route = router.currentRoute.value;
+  const previous = router.options.history.state.back;
+  if (typeof previous === 'string' && previous.startsWith('/') && !previous.startsWith('//') && previous !== route.fullPath && router.resolve(previous).meta.requiresAuth) {
+    router.back();
+    return;
+  }
+  if (route.path === '/') {
+    if (import.meta.env.VITE_BUILD_TYPE === 'phonegap') window.navigator.app.exitApp();
+    return;
+  }
+  const parent = route.path.replace(/(\/[^/]*)$/, '') || '/';
   await router.replace(parent);
+};
+
+router.rememberDestination = () => rememberDestination(router.currentRoute.value);
+router.resumeDestination = () => router.replace(consumeDestination() || { name: 'home' });
+router.navigateExternal = async path => {
+  clearNavigationDrafts();
+  await router.isReady();
+  return router.push({ path, force: true });
 };
 
 router.beforeEach((to, from) => {
   if (import.meta.env.DEV && to.meta.dev) return;
   const { $account, $app } = router;
   if (to.meta.requiresAuth && !$account.isCreated) {
+    rememberDestination(to);
     return { name: 'auth', replace: true };
   }
   if (to.meta.requiresAuth && $account.isLocked) {
+    rememberDestination(to);
     return { name: 'unlock', replace: true };
   }
+  if (router.closeRampCheckout?.(to, from)) return false;
   if (to.meta.crypto) {
     const wallet = $account.wallet(to.params.cryptoId);
     if (wallet) {
-      setWalletProps($app, wallet);
+      if ($app.config.globalProperties.$wallet !== wallet) setWalletProps($app, wallet);
       registerProtocolHandler(wallet.crypto, $account);
     } else {
       const crypto = $account.cryptoDB.get(to.params.cryptoId);
@@ -62,11 +84,12 @@ router.beforeEach((to, from) => {
     to.meta.transition = toDepth > fromDepth ? 'slide-left' : 'slide-right';
   }
   if (to.name === from.name) {
-    to.meta.ts = Date.now();
+    to.meta.viewRevision = Date.now();
   }
 });
 
-router.afterEach((to) => {
+router.afterEach((to, from, failure) => {
+  if (failure) return;
   const { $account, $app } = router;
   if (to.meta.crypto && $account.wallet(to.params.cryptoId)) {
     return;
@@ -75,22 +98,12 @@ router.afterEach((to) => {
 });
 
 if (import.meta.env.VITE_BUILD_TYPE === 'electron') {
-  window.electron?.registerNavigateHandler((path) => {
-    router.push({
-      path,
-      force: true,
-    });
-  });
+  window.electron?.registerNavigateHandler(router.navigateExternal);
 }
 
 if (import.meta.env.VITE_BUILD_TYPE === 'phonegap' ||
   (import.meta.env.VITE_BUILD_TYPE === 'web' && import.meta.env.DEV)) {
-  window.navigateHandler = function(path) {
-    router.push({
-      path,
-      force: true,
-    });
-  };
+  window.navigateHandler = router.navigateExternal;
 }
 
 function setWalletProps($app, wallet) {

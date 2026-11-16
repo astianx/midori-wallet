@@ -16,7 +16,13 @@ export default {
   methods: {
     scan({ data }) {
       try {
-        const parsed = data.trim().startsWith('@') ? { address: data.trim() } : parseCryptoURI(data);
+        const parsed = parseCryptoURI(data);
+        if (parsed.token && parsed.token !== this.$wallet.crypto.address.toLowerCase()) {
+          const target = this.$account.wallets().find(wallet => wallet.crypto.address.toLowerCase() === parsed.token);
+          if (!target) throw new Error('Unsupported payment asset');
+          this.$router.replace({ name: 'crypto.send', params: { cryptoId: target.crypto._id }, query: { address: parsed.address, ...(parsed.amount ? { amount: parsed.amount } : {}) } });
+          return;
+        }
         const temp = {
           address: parsed.address,
         };
@@ -35,7 +41,7 @@ export default {
         this.updateStorage({ temp });
         this.back();
       } catch (error) {
-        this.back({ error });
+        this.back({ error: { code: 'INVALID_RECIPIENT' } });
       }
     },
   },
@@ -47,7 +53,7 @@ export default {
     :title="$t('Scan QR')"
   >
     <MwQrScan
-      @back="back"
+      @back="back({ error: { code: 'CAMERA_UNAVAILABLE' } })"
       @scan="scan"
     />
   </MainLayout>

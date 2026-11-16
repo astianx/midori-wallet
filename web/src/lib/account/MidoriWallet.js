@@ -19,6 +19,7 @@ export default class MidoriWallet {
   reviewRamp(request) { return this.#session.reviewRamp({ ...request, cryptoCurrency: this.crypto.symbol }); }
   rampOptions() { return this.#session.rampOptions(); }
   rampOrders() { return this.#session.rampOrders(); }
+  issueReceipt(source, reference) { return this.#session.issueReceipt(source, reference); }
   rampOrder(id) { return this.#session.rampOrder(id); }
   transaction(item) {
     return { ...item, amount: new Amount(item.amountAtomic, item.decimals), timestamp: new Date(item.timestamp), chainStatus: item.status,

@@ -38,7 +38,7 @@ export default {
     </div>
     <ChevronRightIcon class="rtl-mirror" />
     <select
-      class="&__select"
+      class="&__select" :aria-label="$attrs['aria-label'] || title || label"
       :value="modelValue"
       @change="$emit('update:modelValue', $event.target.value)"
     >

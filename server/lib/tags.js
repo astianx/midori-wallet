@@ -8,7 +8,7 @@ const reserved = new Set(['admin', 'administrator', 'midori', 'midori-wallet', '
 
 export function normalizeTag(value) {
   requireValue(typeof value === 'string' && value.length <= 65, 'Invalid tag');
-  const alias = value.trim().replace(/^@/, '').toLowerCase();
+  const alias = value.trim().replace(/^[$@]/, '').toLowerCase();
   requireValue(/^[a-z0-9][a-z0-9-]{0,62}$/.test(alias), 'Invalid tag');
   requireValue(!reserved.has(alias), 'This tag is reserved');
   return alias;
@@ -19,11 +19,25 @@ export async function ownTag(db, walletId) {
   return { tag: rows.length ? { alias: rows[0].alias, revision: rows[0].revision, chainId: rows[0].chain_id, address: getAddress(rows[0].address) } : null };
 }
 
+async function requireUnassignedTag(client, walletId) {
+  const { rows } = await client.query(`SELECT 1 FROM wallet_tags WHERE wallet_id=$1
+    UNION ALL SELECT 1 FROM tag_reservations WHERE wallet_id=$1 LIMIT 1`, [walletId]);
+  if (rows.length) throw new ApiError(409, 'TAG_IMMUTABLE', 'This wallet has already registered its permanent tag');
+}
+
+async function requireAvailableAlias(client, alias) {
+  const { rows } = await client.query('SELECT 1 FROM tag_reservations WHERE alias=$1', [alias]);
+  if (rows.length) throw new ApiError(409, 'TAG_TAKEN', 'Username already taken');
+}
+
 export async function tagOptions(client, config, principal, body) {
   exactKeys(body, ['alias', 'accountId']);
   requireValue(uuidPattern.test(body.accountId), 'Invalid account');
   await limitAttempts(client, `tag-register:${principal.wallet_id}`, 10);
   const alias = normalizeTag(body.alias);
+  await lockWallet(client, principal.wallet_id);
+  await requireUnassignedTag(client, principal.wallet_id);
+  await requireAvailableAlias(client, alias);
   const saved = await account(client, principal.wallet_id, body.accountId);
   const id = randomUUID();
   const expiresAt = new Date(Date.now() + config.challengeSeconds * 1000).toISOString();
@@ -36,6 +50,7 @@ export async function registerTag(client, principal, body) {
   exactKeys(body, ['id', 'signature']);
   requireValue(uuidPattern.test(body.id) && typeof body.signature === 'string' && /^0x[0-9a-fA-F]{130}$/.test(body.signature), 'Invalid tag proof');
   await lockWallet(client, principal.wallet_id);
+  await requireUnassignedTag(client, principal.wallet_id);
   const { rows } = await client.query('SELECT c.*,a.owner_address,a.address FROM tag_challenges c JOIN chain_accounts a ON a.id=c.account_id AND a.wallet_id=c.wallet_id WHERE c.id=$1 AND c.wallet_id=$2 AND c.consumed_at IS NULL AND c.expires_at>clock_timestamp() FOR UPDATE OF c', [body.id, principal.wallet_id]);
   const proof = rows[0];
   if (!proof) throw new ApiError(409, 'TAG_PROOF_EXPIRED', 'Request a new tag confirmation');
@@ -43,12 +58,9 @@ export async function registerTag(client, principal, body) {
   try { signer = verifyMessage(proof.message, body.signature).toLowerCase(); } catch { /* invalid proof is rejected below */ }
   requireValue(signer === proof.owner_address, 'The signature does not control this account');
   const alias = normalizeTag(proof.alias);
-  await client.query('INSERT INTO tag_reservations(alias,wallet_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [alias, principal.wallet_id]);
-  const reservation = await client.query('SELECT wallet_id FROM tag_reservations WHERE alias=$1 FOR UPDATE', [alias]);
-  if (reservation.rows[0].wallet_id !== principal.wallet_id) throw new ApiError(409, 'TAG_TAKEN', 'Username already taken');
-  await client.query(`INSERT INTO wallet_tags(alias,wallet_id,account_id) VALUES ($1,$2,$3)
-    ON CONFLICT (wallet_id) DO UPDATE SET alias=EXCLUDED.alias,account_id=EXCLUDED.account_id,
-    revision=wallet_tags.revision+1,active=true,updated_at=clock_timestamp()`, [alias, principal.wallet_id, proof.account_id]);
+  const reservation = await client.query('INSERT INTO tag_reservations(alias,wallet_id) VALUES ($1,$2) ON CONFLICT (alias) DO NOTHING RETURNING alias', [alias, principal.wallet_id]);
+  if (!reservation.rowCount) throw new ApiError(409, 'TAG_TAKEN', 'Username already taken');
+  await client.query('INSERT INTO wallet_tags(alias,wallet_id,account_id) VALUES ($1,$2,$3)', [alias, principal.wallet_id, proof.account_id]);
   await client.query('UPDATE tag_challenges SET consumed_at=clock_timestamp() WHERE id=$1', [body.id]);
   return ownTag(client, principal.wallet_id);
 }
@@ -87,6 +99,7 @@ export async function verifySafeControl(address,owner,rpc) {
 
 export async function verifyTagRegistration(db,principal,body,rpc) {
   exactKeys(body,['id','signature']);requireValue(uuidPattern.test(body.id),'Invalid challenge');
+  await requireUnassignedTag(db,principal.wallet_id);
   const {rows}=await db.query('SELECT c.message,a.address,a.owner_address FROM tag_challenges c JOIN chain_accounts a ON a.id=c.account_id AND a.wallet_id=c.wallet_id WHERE c.id=$1 AND c.wallet_id=$2 AND c.consumed_at IS NULL AND c.expires_at>clock_timestamp()',[body.id,principal.wallet_id]);
   if(!rows.length)throw new ApiError(409,'TAG_PROOF_EXPIRED','Request a new tag confirmation');
   let signer;try{signer=verifyMessage(rows[0].message,body.signature).toLowerCase();}catch{requireValue(false,'Invalid ownership proof');}

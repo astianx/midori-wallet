@@ -46,7 +46,7 @@ export default {
 
 <template>
   <AuthStepLayout
-    :title="$t('Your passphrase')"
+    :title="$t('Your passphrase')" :stepNumber="1"
     :description="$t('12 words')"
   >
     <div class="&__passphrase_wrapper">
@@ -96,7 +96,7 @@ export default {
           tag="span"
         >
           <template #terms>
-            <a @click.prevent="$safeOpen(`${$account.siteUrl}terms-of-service/`)">
+            <a href="https://midoriwallet.com/page/terminos-de-servicio" @click.prevent="$safeOpen('https://midoriwallet.com/page/terminos-de-servicio')">
               {{ agreementLinkTexts?.at(0) }}
             </a>
           </template>
@@ -117,6 +117,7 @@ export default {
 </template>
 
 <style lang="scss">
+  /* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · pre-emit critique: P5 H5 E4 S5 R5 V4 */
   .#{ $filename } {
     $self: &;
 
@@ -165,6 +166,7 @@ export default {
       gap: var(--spacing-md);
     }
 
+    &__default-checkbox:focus-visible + .auth-step-passphrase__checkbox { outline: 2px solid var(--color-focus); outline-offset: 3px; }
     &__default-checkbox {
       position: absolute;
       opacity: 0;

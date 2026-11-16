@@ -78,8 +78,8 @@ export default {
           '&__item--selected': isSelected(item.crypto._id),
           '&__item--columns': columns === true,
         }"
-        @click="!isLoading && $emit('select', item.crypto._id)"
       >
+        <button type="button" class="&__control" :disabled="isLoading" :aria-pressed="isSelected(item.crypto._id)" @click="$emit('select', item.crypto._id)">
         <MwCryptoLogo
           class="&__logo"
           :crypto="item.crypto"
@@ -139,6 +139,7 @@ export default {
         >
           <TickIcon class="&__tick" />
         </div>
+        </button>
       </li>
     </ul>
   </div>
@@ -167,11 +168,14 @@ export default {
       }
     }
 
+    &__control { display: flex; width: 100%; align-items: flex-start; min-height: 3.5rem; padding: var(--spacing-sm); gap: var(--spacing-sm); text-align: start; border-radius: inherit; }
+    &__control:disabled { cursor: not-allowed; }
+
     &__item {
       display: flex;
       flex: 0 0 100%;
       align-items: flex-start;
-      padding: var(--spacing-sm);
+      padding: 0;
 
       border-radius: 0.625rem;
       cursor: pointer;

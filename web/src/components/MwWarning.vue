@@ -9,8 +9,8 @@ export default {
 </script>
 
 <template>
-  <div class="&">
-    <DangerTriangleIcon class="&__triangle" />
+  <div class="&" role="alert">
+    <DangerTriangleIcon class="&__triangle" aria-hidden="true" />
     <slot />
   </div>
 </template>

@@ -214,7 +214,6 @@ export default {
 </script>
 
 <template>
-  <p v-if="isLoading" role="status">{{ $t('Checking…') }}</p>
   <p v-if="pinRejected" class="&__feedback" role="alert">{{ $t('Incorrect PIN. Try again.') }}</p>
   <div
     class="&__dots" role="status" :aria-label="$t('PIN digits entered: {current} of {total}', { current: value.length, total: pinLength })"

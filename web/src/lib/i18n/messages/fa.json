@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "پشتیبانی یک گزارش عمومی باز می‌کند. هرگز عبارت، PIN یا کلید خصوصی را وارد نکنید.",
   "These tools are for recovery and technical details. They do not add money.": "این ابزارها برای بازیابی و جزئیات فنی هستند. پولی اضافه نمی‌کنند.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "نشانی شما همچنان در دسترس است. پیش از ارسال یا تازه‌سازی فعالیت دوباره متصل شوید.",
-  "Recovery": "بازیابی"
+  "Recovery": "بازیابی",
+  "Price history": "تاریخچه قیمت",
+  "Market reference. Buy and sell quotes may differ.": "قیمت مرجع. نرخ‌های خرید و فروش ممکن است متفاوت باشند.",
+  "Price history unavailable": "تاریخچه قیمت در دسترس نیست",
+  "Explore price history": "بررسی تاریخچه قیمت",
+  "Chart period": "بازه زمانی نمودار"
 }

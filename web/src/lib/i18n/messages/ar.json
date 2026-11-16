@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "يفتح الدعم بلاغًا عامًا. لا تدرج عبارتك أو PIN أو مفاتيحك الخاصة مطلقًا.",
   "These tools are for recovery and technical details. They do not add money.": "هذه الأدوات للاسترداد والتفاصيل التقنية. لا تضيف أموالًا.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "عنوانك ما زال متاحًا. أعد الاتصال قبل الإرسال أو تحديث النشاط.",
-  "Recovery": "الاسترداد"
+  "Recovery": "الاسترداد",
+  "Price history": "سجل الأسعار",
+  "Market reference. Buy and sell quotes may differ.": "سعر مرجعي. قد تختلف أسعار الشراء والبيع.",
+  "Price history unavailable": "سجل الأسعار غير متاح",
+  "Explore price history": "استكشاف سجل الأسعار",
+  "Chart period": "الفترة الزمنية للرسم البياني"
 }

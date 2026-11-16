@@ -85,6 +85,7 @@ export default {
 
     &__group {
       max-width: 25rem;
+      grid-template-columns: repeat(auto-fit, minmax(min(4rem, 100%), 1fr));
     }
   }
 </style>

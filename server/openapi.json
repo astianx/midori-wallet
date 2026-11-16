@@ -456,6 +456,283 @@
         }
       }
     },
+    "/api/v1/market/{symbol}/chart": {
+      "get": {
+        "operationId": "Referencepricehistory",
+        "summary": "Reference price history",
+        "security": [],
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "USDC",
+                "USDT"
+              ]
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1D",
+                "7D",
+                "14D",
+                "1M",
+                "1Y"
+              ],
+              "default": "1D"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "AED",
+                "ARS",
+                "AUD",
+                "BDT",
+                "BHD",
+                "BMD",
+                "BRL",
+                "CAD",
+                "CHF",
+                "CLP",
+                "CNY",
+                "CZK",
+                "DKK",
+                "EUR",
+                "GBP",
+                "HKD",
+                "HUF",
+                "IDR",
+                "ILS",
+                "INR",
+                "JPY",
+                "KRW",
+                "KWD",
+                "LKR",
+                "MMK",
+                "MXN",
+                "MYR",
+                "NGN",
+                "NOK",
+                "NZD",
+                "PHP",
+                "PKR",
+                "PLN",
+                "RUB",
+                "SAR",
+                "SEK",
+                "SGD",
+                "THB",
+                "TRY",
+                "TWD",
+                "UAH",
+                "USD",
+                "VEF",
+                "VND",
+                "ZAR"
+              ],
+              "default": "USD"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "symbol": {
+                      "enum": [
+                        "USDC",
+                        "USDT"
+                      ]
+                    },
+                    "currency": {
+                      "enum": [
+                        "AED",
+                        "ARS",
+                        "AUD",
+                        "BDT",
+                        "BHD",
+                        "BMD",
+                        "BRL",
+                        "CAD",
+                        "CHF",
+                        "CLP",
+                        "CNY",
+                        "CZK",
+                        "DKK",
+                        "EUR",
+                        "GBP",
+                        "HKD",
+                        "HUF",
+                        "IDR",
+                        "ILS",
+                        "INR",
+                        "JPY",
+                        "KRW",
+                        "KWD",
+                        "LKR",
+                        "MMK",
+                        "MXN",
+                        "MYR",
+                        "NGN",
+                        "NOK",
+                        "NZD",
+                        "PHP",
+                        "PKR",
+                        "PLN",
+                        "RUB",
+                        "SAR",
+                        "SEK",
+                        "SGD",
+                        "THB",
+                        "TRY",
+                        "TWD",
+                        "UAH",
+                        "USD",
+                        "VEF",
+                        "VND",
+                        "ZAR"
+                      ]
+                    },
+                    "period": {
+                      "enum": [
+                        "1D",
+                        "7D",
+                        "14D",
+                        "1M",
+                        "1Y"
+                      ]
+                    },
+                    "source": {
+                      "const": "CoinGecko"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "prices": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 10000,
+                      "items": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "description": "[Unix timestamp in milliseconds, reference price in the requested currency]"
+                      }
+                    }
+                  },
+                  "required": [
+                    "symbol",
+                    "currency",
+                    "period",
+                    "source",
+                    "updatedAt",
+                    "prices"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Market reference data unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/options": {
       "post": {
         "operationId": "registrationchallenge",

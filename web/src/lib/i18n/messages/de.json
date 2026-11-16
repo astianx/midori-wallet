@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Der Support öffnet ein öffentliches Ticket. Teile dort niemals Phrase, PIN oder private Schlüssel.",
   "These tools are for recovery and technical details. They do not add money.": "Diese Werkzeuge dienen der Wiederherstellung und technischen Details. Sie fügen kein Geld hinzu.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Deine Adresse bleibt verfügbar. Verbinde dich erneut, bevor du sendest oder Aktivitäten aktualisierst.",
-  "Recovery": "Wiederherstellung"
+  "Recovery": "Wiederherstellung",
+  "Price history": "Preisverlauf",
+  "Market reference. Buy and sell quotes may differ.": "Referenzpreis. Kauf- und Verkaufskurse können abweichen.",
+  "Price history unavailable": "Preisverlauf nicht verfügbar",
+  "Explore price history": "Preisverlauf erkunden",
+  "Chart period": "Diagrammzeitraum"
 }

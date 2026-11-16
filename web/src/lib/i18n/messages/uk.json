@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Підтримка відкриває публічне звернення. Ніколи не вказуйте фразу, PIN чи приватні ключі.",
   "These tools are for recovery and technical details. They do not add money.": "Ці інструменти призначені для відновлення й технічних відомостей. Вони не додають гроші.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Ваша адреса залишається доступною. Підключіться перед надсиланням чи оновленням операцій.",
-  "Recovery": "Відновлення"
+  "Recovery": "Відновлення",
+  "Price history": "Історія цін",
+  "Market reference. Buy and sell quotes may differ.": "Довідкова ціна. Котирування купівлі та продажу можуть відрізнятися.",
+  "Price history unavailable": "Історія цін недоступна",
+  "Explore price history": "Переглянути історію цін",
+  "Chart period": "Період графіка"
 }

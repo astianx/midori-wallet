@@ -40,6 +40,7 @@ export default {
       chartSeries: [],
       isLoadingChart: true,
       chartError: false,
+      chartRequest: 0,
       showConfirmRemove: false,
       subtitleWithSymbol: cryptoSubtitleWithSymbol(this.$wallet),
     };
@@ -51,8 +52,12 @@ export default {
     price() {
       return this.market?.price || 0;
     },
+    chartPrice() {
+      return this.chartSeries.at(-1)?.[1] || 0;
+    },
     change() {
-      return this.market?.change[this.period] / 100 || 0;
+      const first = this.chartSeries[0]?.[1];
+      return first ? (this.chartPrice - first) / first : 0;
     },
     market() {
       return this.$cryptos.find((item) => {
@@ -60,12 +65,19 @@ export default {
       })?.market;
     },
   },
+  watch: {
+    '$wallet.crypto._id'() { this.loadPriceChart(); },
+    '$currency'() { this.loadPriceChart(); },
+  },
   mounted() {
     if (this.$walletState === this.$STATE_LOADED) {
       this.$wallet.cleanup();
       this.$account.emit('update');
     }
     this.loadPriceChart();
+  },
+  beforeUnmount() {
+    this.chartRequest++;
   },
   methods: {
     async refresh() {
@@ -75,24 +87,27 @@ export default {
       ]);
     },
     async loadPriceChart(period = this.period) {
+      const request = ++this.chartRequest;
+      const crypto = this.$wallet.crypto;
+      const currency = this.$currency;
+      this.period = period;
       this.isLoadingChart = true;
       this.chartError = false;
+      this.chartPoint = undefined;
+      this.chartSeries = [];
       try {
-        if (!this.$wallet.crypto.coingecko) return;
-        await MwPriceChart.loadApex();
-        this.period = period;
-        if (!this.$wallet) return;
-        const prices = await this.$account.market.getChartData(
-          this.$wallet.crypto._id,
-          period,
-          this.$currency
-        );
-        this.chartSeries = prices;
+        if (!crypto.marketId) return;
+        const [, data] = await Promise.all([
+          MwPriceChart.loadApex(),
+          this.$account.market.getChartData(crypto._id, period, currency),
+        ]);
+        if (request !== this.chartRequest) return;
+        if (data.symbol !== crypto.symbol || data.currency !== currency || data.period !== period || !Array.isArray(data.prices) || data.prices.length < 2) throw new Error('Invalid price history');
+        this.chartSeries = data.prices;
       } catch (err) {
-        console.error('Midori Wallet operation failed');
-        this.chartError = true;
+        if (request === this.chartRequest) this.chartError = true;
       } finally {
-        this.isLoadingChart = false;
+        if (request === this.chartRequest) this.isLoadingChart = false;
       }
     },
     setChartPoint(chartPoint) {
@@ -148,27 +163,28 @@ export default {
       </MwNavbar>
     </template>
 
-    <CryptoIndexBalance :price="price" />
-    <CryptoIndexActions />
-    <div v-if="market" class="&__header-container">
+    <section v-if="$wallet.crypto.marketId" class="&__header-container" :aria-label="$t('Price history')">
       <div class="&__header">
         <CryptoIndexPrice
-          :price="price"
+          :price="chartPrice"
           :change="change"
           :chartPoint="chartPoint"
+          :isLoading="isLoadingChart"
         />
         <CryptoIndexBuySell />
       </div>
       <MwPriceChart
-        v-if="$wallet.crypto.coingecko"
         :chartSeries="chartSeries"
         :period="period"
         :isLoading="isLoadingChart"
         :error="chartError"
         @changePeriod="loadPriceChart"
         @crosshair="setChartPoint"
+        @retry="loadPriceChart()"
       />
-    </div>
+    </section>
+    <CryptoIndexBalance :price="price" />
+    <CryptoIndexActions />
     <div
       v-if="$walletState === $STATE_ERROR"
       class="&__error"

@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Dukungan membuka laporan publik. Jangan pernah sertakan frasa, PIN, atau kunci pribadi.",
   "These tools are for recovery and technical details. They do not add money.": "Alat ini untuk pemulihan dan rincian teknis. Tidak menambahkan uang.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Alamat Anda tetap tersedia. Hubungkan kembali sebelum mengirim atau memperbarui aktivitas.",
-  "Recovery": "Pemulihan"
+  "Recovery": "Pemulihan",
+  "Price history": "Riwayat harga",
+  "Market reference. Buy and sell quotes may differ.": "Harga referensi. Penawaran beli dan jual dapat berbeda.",
+  "Price history unavailable": "Riwayat harga tidak tersedia",
+  "Explore price history": "Jelajahi riwayat harga",
+  "Chart period": "Periode grafik"
 }

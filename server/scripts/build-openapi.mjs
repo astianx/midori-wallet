@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { CHART_PERIODS, MARKET_COINS, MARKET_CURRENCIES } from '../../config/market.js';
 
 const ref = name => ({ $ref: `#/components/schemas/${name}` });
 const string = { type: 'string' };
@@ -46,6 +47,13 @@ endpoint('get', '/healthz', 'Liveness', null, object({ status: { const: 'ok' }, 
 endpoint('get', '/readyz', 'Readiness and migration checksum', null, object({ status: { enum: ['ready', 'unavailable'] }, database: { enum: ['ready', 'unavailable'] } }));
 endpoint('get', '/api/v1/config', 'Public configuration', null, ref('Configuration'));
 endpoint('get', '/api/v1/assets', 'Approved contracts', null, object({ assets: array(ref('Asset')) }));
+endpoint('get', '/api/v1/market/{symbol}/chart', 'Reference price history', null, object({ symbol: { enum: Object.keys(MARKET_COINS) }, currency: { enum: MARKET_CURRENCIES }, period: { enum: Object.keys(CHART_PERIODS) }, source: { const: 'CoinGecko' }, updatedAt: { type: 'string', format: 'date-time' }, prices: { type: 'array', minItems: 2, maxItems: 10000, items: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number', exclusiveMinimum: 0 }, description: '[Unix timestamp in milliseconds, reference price in the requested currency]' } } }));
+spec.paths['/api/v1/market/{symbol}/chart'].get.parameters = [
+  { name: 'symbol', in: 'path', required: true, schema: { enum: Object.keys(MARKET_COINS) } },
+  { name: 'period', in: 'query', schema: { enum: Object.keys(CHART_PERIODS), default: '1D' } },
+  { name: 'currency', in: 'query', schema: { enum: MARKET_CURRENCIES, default: 'USD' } },
+];
+spec.paths['/api/v1/market/{symbol}/chart'].get.responses[503].description = 'Market reference data unavailable';
 for (const [base, input, proof, result] of [['registration', 'Registration', 'RegistrationProof', 'Session'], ['auth', 'LoginOptions', 'LoginProof', 'Session'], ['recovery', 'Recovery', 'RecoveryProof', 'Session'], ['auth/webauthn', 'LoginOptions', 'WebAuthnProof', 'Session']]) {
   endpoint('post', `/api/v1/${base}/options`, `${base} challenge`, ref(input), ref('Challenge'));
   endpoint('post', `/api/v1/${base}/verify`, `${base} verification`, ref(proof), ref(result), { status: ['registration', 'recovery'].includes(base) ? 201 : 200 });

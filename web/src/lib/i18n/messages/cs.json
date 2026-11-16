@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Podpora otevře veřejné hlášení. Nikdy neuvádějte frázi, PIN ani soukromé klíče.",
   "These tools are for recovery and technical details. They do not add money.": "Tyto nástroje slouží k obnově a technickým údajům. Nepřidávají peníze.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Vaše adresa zůstává dostupná. Před odesláním či aktualizací aktivity se znovu připojte.",
-  "Recovery": "Obnova"
+  "Recovery": "Obnova",
+  "Price history": "Historie cen",
+  "Market reference. Buy and sell quotes may differ.": "Referenční cena. Nákupní a prodejní nabídky se mohou lišit.",
+  "Price history unavailable": "Historie cen není k dispozici",
+  "Explore price history": "Procházet historii cen",
+  "Chart period": "Období grafu"
 }

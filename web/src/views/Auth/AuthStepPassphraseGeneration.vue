@@ -6,13 +6,10 @@ import AuthStepLayout from '../../layouts/AuthStepLayout.vue';
 import MwButton from '../../components/MwButton.vue';
 import MwStep from '../../components/MwStep.vue';
 
-import WalletGradientIcon from '../../assets/svg/walletGradient.svg';
-
 export default {
   components: {
     MwButton,
     AuthStepLayout,
-    WalletGradientIcon,
   },
   extends: MwStep,
   mixins: [onShowOnHide],
@@ -35,9 +32,6 @@ export default {
     :title="$t('New wallet')" :stepNumber="1"
     faded
   >
-    <div class="&__wallet">
-      <WalletGradientIcon class="&__wallet-icon" />
-    </div>
     <div class="&__container">
       <div class="&__header">
         {{ $t('12 words') }}
@@ -62,23 +56,6 @@ export default {
 
 <style lang="scss">
   .#{ $filename } {
-    &__wallet {
-      display: flex;
-      flex-grow: 1;
-      justify-content: center;
-      @include breakpoint(lg) {
-        flex-grow: 0;
-        justify-content: flex-start;
-      }
-    }
-
-    &__wallet-icon {
-      width: var(--spacing-8xl);
-      @include breakpoint(lg) {
-        width: var(--spacing-4xl);
-      }
-    }
-
     &__container {
       display: flex;
       flex-direction: column;

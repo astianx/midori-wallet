@@ -17,17 +17,19 @@ import { chainRpc } from './lib/chain-rpc.js';
 import { ownTag, tagOptions, registerTag, resolveTag, verifyTagRegistration, verifyTagSnapshot } from './lib/tags.js';
 import { rampService } from './lib/ramp.js';
 import { receiptService } from './lib/receipts.js';
+import { marketService } from './lib/market.js';
 
 const route = action => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
 const requestIp = req => (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
-export function createApp({ db, config, webApp, provider, rampProvider, reportError = captureServerError, logger = () => {} }) {
+export function createApp({ db, config, webApp, provider, rampProvider, marketProvider, reportError = captureServerError, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
   const webauthn = webauthnService(db, config);
   const payments = paymentService(db, config, provider);
   const ramp = rampService(db, config, rampProvider);
+  const market = marketProvider || marketService({ apiKey: config.coingeckoApiKey });
   const receipts = receiptService({ ...config, receiptPath: webApp?.locals?.receiptPath || '/receipt' });
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy ? 'loopback' : false);
@@ -56,6 +58,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, reportEr
     catch { throw new ApiError(503, 'UPDATES_UNAVAILABLE', 'Updates are temporarily unavailable'); }
   }));
   app.get('/api/v1/assets', route(async (req, res) => res.json({ assets: await catalog(db) })));
+  app.get('/api/v1/market/:symbol/chart', route(async (req, res) => res.json(await market.chart(req.params.symbol, req.query))));
 
   const publicPost = (path, action, status = 200) => app.post(path, route(async (req, res) => { await limitUnauthenticated(db, config, req); res.status(status).json(await action(req.body)); }));
   publicPost('/api/v1/receipts/verify', body => receipts.verify(db, body));

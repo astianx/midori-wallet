@@ -20,6 +20,7 @@ export default {
       dataPointIndex: -1,
       chartOptions: {
         chart: {
+          animations: { enabled: false },
           type: 'area',
           sparkline: { enabled: true },
         },
@@ -47,6 +48,7 @@ export default {
           },
         },
         xaxis: {
+          type: 'datetime',
           crosshairs: {
             opacity: 1,
             stroke: {
@@ -65,14 +67,18 @@ export default {
       ],
     };
   },
-  beforeUnmount() {
-    // prevent destroy for smooth leave animation
-    this.$refs.apex.chart = null;
-  },
   methods: {
-    mouseMove(_, __, { dataPointIndex }) {
+    mouseMove(event) {
       this.updateTooltip(true);
-      if (dataPointIndex === -1) return;
+      const bounds = this.$refs.apex?.chart?.w.globals.dom.Paper.node.getBoundingClientRect();
+      const clientX = event.clientX ?? event.touches?.[0]?.clientX;
+      if (!bounds?.width || !Number.isFinite(clientX)) return;
+      const points = this.series[0].data;
+      const timestamp = points[0][0] + Math.max(0, Math.min(1, (clientX - bounds.left) / bounds.width)) * (points.at(-1)[0] - points[0][0]);
+      let dataPointIndex = 0;
+      for (let index = 1; index < points.length; index++) {
+        if (Math.abs(points[index][0] - timestamp) < Math.abs(points[dataPointIndex][0] - timestamp)) dataPointIndex = index;
+      }
       if (this.dataPointIndex !== dataPointIndex) {
         this.dataPointIndex = dataPointIndex;
         this.$emit('crosshair', this.series[0].data[dataPointIndex]);
@@ -83,21 +89,11 @@ export default {
       this.$emit('crosshair');
       this.updateTooltip(false);
     },
-    async touchstart(e) {
-      this.updateTooltip(true);
-      await this.$nextTick();
+    touchstart(e) {
       this.touchmove(e);
     },
     touchmove(e) {
-      if (!this.$refs.apex?.chart) return;
-      const hoverArea = this.$refs.apex.chart.w.globals.dom.Paper.node;
-      const bounds = hoverArea.getBoundingClientRect();
-      const mouseEvent = new MouseEvent('mousemove', {
-        clientX: Math.min(Math.max(e.touches[0].clientX, bounds.left + 1), bounds.right),
-        clientY: bounds.top + bounds.height / 2,
-        bubbles: true,
-      });
-      hoverArea.dispatchEvent(mouseEvent);
+      this.mouseMove(e);
     },
     touchend() {
       this.$emit('crosshair');

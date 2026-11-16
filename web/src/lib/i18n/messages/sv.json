@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Support öppnar ett offentligt ärende. Ange aldrig din fras, PIN eller privata nycklar.",
   "These tools are for recovery and technical details. They do not add money.": "Dessa verktyg är för återställning och tekniska detaljer. De lägger inte till pengar.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Din adress finns kvar. Anslut igen innan du skickar eller uppdaterar aktivitet.",
-  "Recovery": "Återställning"
+  "Recovery": "Återställning",
+  "Price history": "Prishistorik",
+  "Market reference. Buy and sell quotes may differ.": "Referenspris. Köp- och säljkurser kan variera.",
+  "Price history unavailable": "Prishistorik är inte tillgänglig",
+  "Explore price history": "Utforska prishistorik",
+  "Chart period": "Diagramperiod"
 }

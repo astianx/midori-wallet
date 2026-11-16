@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Nagbubukas ang suporta ng pampublikong ulat. Huwag isama ang iyong phrase, PIN o mga private key.",
   "These tools are for recovery and technical details. They do not add money.": "Para sa recovery at teknikal na detalye ang mga tool na ito. Hindi sila nagdadagdag ng pera.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Available pa rin ang iyong address. Kumonekta muli bago magpadala o mag-refresh ng aktibidad.",
-  "Recovery": "Pag-recover"
+  "Recovery": "Pag-recover",
+  "Price history": "Kasaysayan ng presyo",
+  "Market reference. Buy and sell quotes may differ.": "Presyong sanggunian. Maaaring mag-iba ang mga presyo ng pagbili at pagbenta.",
+  "Price history unavailable": "Hindi available ang kasaysayan ng presyo",
+  "Explore price history": "Tuklasin ang kasaysayan ng presyo",
+  "Chart period": "Panahon ng chart"
 }

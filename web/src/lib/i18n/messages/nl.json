@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Ondersteuning opent een openbare melding. Vermeld nooit je herstelzin, pincode of privésleutels.",
   "These tools are for recovery and technical details. They do not add money.": "Deze hulpmiddelen zijn voor herstel en technische details. Ze voegen geen geld toe.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Je adres blijft beschikbaar. Verbind opnieuw voordat je verstuurt of activiteit vernieuwt.",
-  "Recovery": "Herstel"
+  "Recovery": "Herstel",
+  "Price history": "Prijsgeschiedenis",
+  "Market reference. Buy and sell quotes may differ.": "Referentieprijs. Koop- en verkoopkoersen kunnen afwijken.",
+  "Price history unavailable": "Prijsgeschiedenis niet beschikbaar",
+  "Explore price history": "Prijsgeschiedenis verkennen",
+  "Chart period": "Grafiekperiode"
 }

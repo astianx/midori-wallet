@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Support opens a public issue. Never include your phrase, PIN or private keys.",
   "These tools are for recovery and technical details. They do not add money.": "These tools are for recovery and technical details. They do not add money.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Your address remains available. Reconnect before sending or refreshing activity.",
-  "Recovery": "Recovery"
+  "Recovery": "Recovery",
+  "Price history": "Price history",
+  "Market reference. Buy and sell quotes may differ.": "Market reference. Buy and sell quotes may differ.",
+  "Price history unavailable": "Price history unavailable",
+  "Explore price history": "Explore price history",
+  "Chart period": "Chart period"
 }

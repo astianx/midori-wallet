@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Hỗ trợ mở báo cáo công khai. Không bao giờ cung cấp cụm từ, PIN hoặc khóa riêng.",
   "These tools are for recovery and technical details. They do not add money.": "Những công cụ này dành cho khôi phục và chi tiết kỹ thuật. Chúng không thêm tiền.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Địa chỉ của bạn vẫn khả dụng. Kết nối lại trước khi gửi hoặc cập nhật hoạt động.",
-  "Recovery": "Khôi phục"
+  "Recovery": "Khôi phục",
+  "Price history": "Lịch sử giá",
+  "Market reference. Buy and sell quotes may differ.": "Giá tham khảo. Báo giá mua và bán có thể khác nhau.",
+  "Price history unavailable": "Lịch sử giá không khả dụng",
+  "Explore price history": "Khám phá lịch sử giá",
+  "Chart period": "Khoảng thời gian biểu đồ"
 }

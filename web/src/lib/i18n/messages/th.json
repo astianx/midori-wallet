@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "ฝ่ายสนับสนุนจะเปิดรายงานสาธารณะ อย่าใส่วลีกู้คืน PIN หรือคีย์ส่วนตัว",
   "These tools are for recovery and technical details. They do not add money.": "เครื่องมือเหล่านี้ใช้สำหรับการกู้คืนและข้อมูลทางเทคนิค ไม่ได้เพิ่มเงิน",
   "Your address remains available. Reconnect before sending or refreshing activity.": "ที่อยู่ของคุณยังใช้งานได้ เชื่อมต่อใหม่ก่อนส่งหรือรีเฟรชกิจกรรม",
-  "Recovery": "การกู้คืน"
+  "Recovery": "การกู้คืน",
+  "Price history": "ประวัติราคา",
+  "Market reference. Buy and sell quotes may differ.": "ราคาอ้างอิง ราคาซื้อและขายอาจแตกต่างกัน",
+  "Price history unavailable": "ไม่สามารถดูประวัติราคาได้",
+  "Explore price history": "สำรวจประวัติราคา",
+  "Chart period": "ช่วงเวลาของกราฟ"
 }

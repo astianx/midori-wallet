@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Podrška otvara javni zahtev. Nikada ne unosite frazu, PIN ili privatne ključeve.",
   "These tools are for recovery and technical details. They do not add money.": "Ovi alati služe oporavku i tehničkim detaljima. Ne dodaju novac.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Vaša adresa je i dalje dostupna. Povežite se pre slanja ili osvežavanja aktivnosti.",
-  "Recovery": "Oporavak"
+  "Recovery": "Oporavak",
+  "Price history": "Историја цена",
+  "Market reference. Buy and sell quotes may differ.": "Референтна цена. Понуде за куповину и продају могу се разликовати.",
+  "Price history unavailable": "Историја цена није доступна",
+  "Explore price history": "Истражите историју цена",
+  "Chart period": "Период графикона"
 }

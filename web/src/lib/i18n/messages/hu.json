@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "A támogatás nyilvános hibajegyet nyit. Soha ne add meg a kifejezésed, PIN-ed vagy privát kulcsod.",
   "These tools are for recovery and technical details. They do not add money.": "Ezek az eszközök helyreállításra és műszaki adatokhoz valók. Nem adnak hozzá pénzt.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "A címed továbbra is elérhető. Küldés vagy tevékenységfrissítés előtt csatlakozz újra.",
-  "Recovery": "Helyreállítás"
+  "Recovery": "Helyreállítás",
+  "Price history": "Ártörténet",
+  "Market reference. Buy and sell quotes may differ.": "Tájékoztató ár. A vételi és eladási ajánlatok eltérhetnek.",
+  "Price history unavailable": "Az ártörténet nem érhető el",
+  "Explore price history": "Ártörténet böngészése",
+  "Chart period": "Diagram időszaka"
 }

@@ -50,9 +50,6 @@ body {
 .auth-step-login__description, .auth-step-passphrase-generation__text, .auth-step-passphrase-confirmation__description { font-size: var(--text-body); }
 .mw-pin__keyboard { max-width: 22rem; margin-inline: auto; }
 .crypto-index-view__header-container:has(.crypto-index-price:empty) { display: none; }
-.crypto-index-balance { padding: var(--space-lg); border-radius: var(--radius-panel); background: var(--color-surface-tint); color: var(--color-ink); }
-.crypto-index-balance__amount { font-size: clamp(1.375rem, 4vw, 2rem); font-weight: 650; font-variant-numeric: tabular-nums; }
-.crypto-index-actions__group { max-width: none; }
 .crypto-index-tools { margin-top: var(--space-md); }
 .crypto-ramp-panel__form { gap: var(--space-lg); }
 .crypto-ramp-panel__notice, .crypto-ramp-panel__empty { padding: var(--space-md); border-radius: var(--radius-control); background: var(--color-surface-subtle); color: var(--color-muted); }

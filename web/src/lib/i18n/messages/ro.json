@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Asistența deschide o sesizare publică. Nu include niciodată fraza, PIN-ul sau cheile private.",
   "These tools are for recovery and technical details. They do not add money.": "Aceste instrumente sunt pentru recuperare și detalii tehnice. Nu adaugă bani.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Adresa ta rămâne disponibilă. Reconectează-te înainte de a trimite sau actualiza activitatea.",
-  "Recovery": "Recuperare"
+  "Recovery": "Recuperare",
+  "Price history": "Istoricul prețurilor",
+  "Market reference. Buy and sell quotes may differ.": "Preț de referință. Cotațiile de cumpărare și vânzare pot varia.",
+  "Price history unavailable": "Istoricul prețurilor nu este disponibil",
+  "Explore price history": "Explorează istoricul prețurilor",
+  "Chart period": "Perioada graficului"
 }

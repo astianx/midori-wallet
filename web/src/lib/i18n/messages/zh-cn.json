@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "支持会打开公开的问题页面。切勿包含恢复短语、PIN 或私钥。",
   "These tools are for recovery and technical details. They do not add money.": "这些工具用于恢复和查看技术详情，不会添加资金。",
   "Your address remains available. Reconnect before sending or refreshing activity.": "您的地址仍可使用。发送或刷新交易记录前请重新连接。",
-  "Recovery": "恢复"
+  "Recovery": "恢复",
+  "Price history": "价格历史",
+  "Market reference. Buy and sell quotes may differ.": "参考价格。买入和卖出报价可能有所不同。",
+  "Price history unavailable": "价格历史不可用",
+  "Explore price history": "查看价格历史",
+  "Chart period": "图表时段"
 }

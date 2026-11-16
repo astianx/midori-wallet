@@ -74,6 +74,7 @@ export function loadConfig(env = process.env) {
     trustProxy: env.MIDORI_TRUST_PROXY === 'true',
     connectionString, publicOrigin, rpID, host, rpcUrl,
     wdkIndexer: loadWdkIndexerConfig(env),
+    coingeckoApiKey: env.MIDORI_COINGECKO_DEMO_API_KEY || undefined,
     indexRpcUrl: paymentUrl(env.MIDORI_INDEX_RPC_URL, 'MIDORI_INDEX_RPC_URL') || rpcUrl,
     paymentsEnabled, sponsorshipEnabled, bundlerUrl, paymasterUrl, paymasterAddress, gasToken, maxGasFeeAtomic, sponsorDailyBudget, paymasterProvider,
     entryPoint: '0x0000000071727de22e5e9d8baf0edac6f37da032',

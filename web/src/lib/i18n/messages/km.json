@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "ជំនួយបើករបាយការណ៍សាធារណៈ។ កុំបញ្ចូលឃ្លា PIN ឬសោឯកជនរបស់អ្នក។",
   "These tools are for recovery and technical details. They do not add money.": "ឧបករណ៍ទាំងនេះសម្រាប់ការស្ដារឡើងវិញនិងព័ត៌មានបច្ចេកទេស។ វាមិនបន្ថែមប្រាក់ទេ។",
   "Your address remains available. Reconnect before sending or refreshing activity.": "អាសយដ្ឋានរបស់អ្នកនៅតែអាចប្រើបាន។ ភ្ជាប់ឡើងវិញមុនផ្ញើឬធ្វើបច្ចុប្បន្នភាពសកម្មភាព។",
-  "Recovery": "ស្ដារឡើងវិញ"
+  "Recovery": "ស្ដារឡើងវិញ",
+  "Price history": "ប្រវត្តិតម្លៃ",
+  "Market reference. Buy and sell quotes may differ.": "តម្លៃយោង។ តម្លៃទិញ និងលក់អាចខុសគ្នា។",
+  "Price history unavailable": "មិនមានប្រវត្តិតម្លៃ",
+  "Explore price history": "មើលប្រវត្តិតម្លៃ",
+  "Chart period": "រយៈពេលក្រាហ្វ"
 }

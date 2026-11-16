@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "O suporte abre uma solicitação pública. Nunca inclua sua frase, PIN ou chaves privadas.",
   "These tools are for recovery and technical details. They do not add money.": "Estas ferramentas são para recuperação e detalhes técnicos. Não adicionam dinheiro.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Seu endereço continua disponível. Reconecte antes de enviar ou atualizar a atividade.",
-  "Recovery": "Recuperação"
+  "Recovery": "Recuperação",
+  "Price history": "Histórico de preços",
+  "Market reference. Buy and sell quotes may differ.": "Preço de referência. As cotações de compra e venda podem variar.",
+  "Price history unavailable": "Histórico de preços indisponível",
+  "Explore price history": "Explorar histórico de preços",
+  "Chart period": "Período do gráfico"
 }

@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "Destek herkese açık bir kayıt açar. İfadenizi, PIN kodunuzu veya özel anahtarlarınızı asla eklemeyin.",
   "These tools are for recovery and technical details. They do not add money.": "Bu araçlar kurtarma ve teknik ayrıntılar içindir. Para eklemez.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "Adresiniz kullanılabilir. Göndermeden veya hareketleri yenilemeden önce yeniden bağlanın.",
-  "Recovery": "Kurtarma"
+  "Recovery": "Kurtarma",
+  "Price history": "Fiyat geçmişi",
+  "Market reference. Buy and sell quotes may differ.": "Referans fiyatı. Alış ve satış teklifleri farklılık gösterebilir.",
+  "Price history unavailable": "Fiyat geçmişi kullanılamıyor",
+  "Explore price history": "Fiyat geçmişini incele",
+  "Chart period": "Grafik dönemi"
 }

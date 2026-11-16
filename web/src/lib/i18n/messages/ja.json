@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "サポートは公開の問い合わせを開きます。フレーズ、PIN、秘密鍵を絶対に含めないでください。",
   "These tools are for recovery and technical details. They do not add money.": "これらのツールは復元と技術情報のためのものです。入金は行いません。",
   "Your address remains available. Reconnect before sending or refreshing activity.": "アドレスは引き続き利用できます。送金や履歴の更新前に再接続してください。",
-  "Recovery": "復元"
+  "Recovery": "復元",
+  "Price history": "価格履歴",
+  "Market reference. Buy and sell quotes may differ.": "参考価格です。購入・売却の見積もりとは異なる場合があります。",
+  "Price history unavailable": "価格履歴を利用できません",
+  "Explore price history": "価格履歴を確認",
+  "Chart period": "グラフの期間"
 }

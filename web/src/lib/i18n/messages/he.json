@@ -690,5 +690,10 @@
   "Support opens a public issue. Never include your phrase, PIN or private keys.": "התמיכה פותחת פנייה ציבורית. לעולם אל תכללו ביטוי שחזור, PIN או מפתחות פרטיים.",
   "These tools are for recovery and technical details. They do not add money.": "כלים אלה מיועדים לשחזור ולפרטים טכניים. הם אינם מוסיפים כסף.",
   "Your address remains available. Reconnect before sending or refreshing activity.": "הכתובת שלכם עדיין זמינה. התחברו מחדש לפני שליחה או רענון הפעילות.",
-  "Recovery": "שחזור"
+  "Recovery": "שחזור",
+  "Price history": "היסטוריית מחירים",
+  "Market reference. Buy and sell quotes may differ.": "מחיר לייחוס. הצעות הקנייה והמכירה עשויות להיות שונות.",
+  "Price history unavailable": "היסטוריית המחירים אינה זמינה",
+  "Explore price history": "עיון בהיסטוריית המחירים",
+  "Chart period": "תקופת הגרף"
 }

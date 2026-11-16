@@ -10,7 +10,7 @@ export default {
       const sum = this.$cryptos.reduce((total, item) => total + item.balance.value, 0n);
       const whole = new Intl.NumberFormat(this.$i18n.locale, { maximumFractionDigits: 0, numberingSystem: 'latn' }).format(sum / 1000000n);
       const separator = new Intl.NumberFormat(this.$i18n.locale, { numberingSystem: 'latn' }).formatToParts(1.1).find(part => part.type === 'decimal')?.value || '.';
-      return `${whole}${separator}${(sum % 1000000n).toString().padStart(6, '0').slice(0, 2)}`;
+      return `$${whole}${separator}${(sum % 1000000n).toString().padStart(6, '0').slice(0, 2)}`;
     },
     fresh() { return this.available && this.$cryptos.every(item => item.readState === 'fresh'); },
   },

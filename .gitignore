@@ -34,3 +34,9 @@ __pycache__/
 
 /validation/
 /experiments/wdk-compat/
+
+# Deployment-generated files for container/ (Podman Quadlet): never commit
+# secrets. Scripts and configs under container/ are tracked; only the
+# generated env files and stray on-disk backups are excluded.
+container/*.env
+container/.containerignore.bak.*

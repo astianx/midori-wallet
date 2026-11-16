@@ -1,0 +1,111 @@
+# syntax=docker/dockerfile:1
+# Build de midori-wallet (server Node 22 + SPA Vue servida por el propio
+# Express, sin nginx/php-fpm internos: no hacen falta para una app Node).
+#
+# Contexto de build: raiz del repo (necesita packages/wallet-core, web y
+# server juntos). Ver .containerignore para lo que se excluye.
+
+# ---------- Etapa 1: build de la SPA (web/) ----------
+FROM docker.io/library/node:22-alpine AS web-builder
+WORKDIR /src
+
+# @midori/wallet-core se consume por ruta relativa (file:../packages/wallet-core)
+# desde web/; necesita su propio node_modules resuelto antes de instalar web/.
+COPY packages/wallet-core ./packages/wallet-core
+RUN npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+
+# packages/telemetry (Sentry DSNs + scrubbing helpers, sin package.json ni
+# deps propias): web/vite.config.js, web/src/lib/sentry.js y
+# web/src/lib/version.js lo importan por ruta relativa en build time.
+COPY packages/telemetry ./packages/telemetry
+
+# web/src importa, por rama condicional a VITE_BUILD_TYPE==='phonegap'
+# (nunca ejecutada en un build web, pero SI resuelta estaticamente por
+# Rollup antes del tree-shaking), un par de archivos sueltos de otras
+# plataformas del monorepo. Son hojas sin imports propios (sin node_modules
+# que instalar): alcanza con copiar esos dos lib/, no el resto de
+# electron/phonegap (apps nativas, no hacen falta para el build web).
+#   web/src/main.js          -> ../../phonegap/lib/deviceready.js
+#   web/src/lib/cryptoURI.js -> ../../electron/lib/security.js
+COPY phonegap/lib ./phonegap/lib
+COPY electron/lib ./electron/lib
+
+# web/vite.config.js imports ../config/environment.js (shared build-env
+# resolver added upstream); config/ also has networks.json and targets.json,
+# none of it sensitive (see .containerignore for the explicit allow-list).
+COPY config ./config
+
+COPY web ./web
+# --ignore-scripts: misma politica que usa el propio repo (ver README y CI).
+# Vite emite a ../server/dist por defecto (ver web/vite.config.js, outDir()).
+# BASE_URL=/wallet/: la SPA se sirve bajo midoriwallet.com/wallet (la raiz
+# del dominio la ocupa vvvebCMS, otro contenedor en este mismo Pod). El
+# router (web/src/router/router.js) ya usa import.meta.env.BASE_URL, y
+# vite.config.js ya lee process.env.BASE_URL para el build (ver outDir()/
+# build.base) — no hace falta tocar codigo de la app para esto.
+# VITE_SITE_URL/VITE_API_ORIGIN: vite.config.js (resolveBuildUrls, config/
+# environment.js) ahora exige VITE_SITE_URL y falla el build sin el; antes
+# del merge de config/environment.js upstream no hacia falta pasarlo aqui.
+RUN npm --prefix web ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null \
+ && BASE_URL=/wallet/ VITE_SITE_URL=https://midoriwallet.com/wallet/ VITE_API_ORIGIN=https://midoriwallet.com npm --prefix web run build
+
+# ---------- Etapa 2: dependencias de produccion del server ----------
+# OJO: se instalan en /app (no /app/server). server/lib/payments.js y
+# server/lib/payment-provider.js importan por RUTA RELATIVA fuera de
+# server/ ("../../packages/wallet-core/src/payment.js", que en el repo
+# original sube hasta la raiz del monorepo). Para que esa resolucion siga
+# funcionando en la imagen, server/ y packages/ tienen que quedar como
+# hermanos bajo /app, con node_modules en ese ancestro comun /app
+# (Node camina hacia arriba buscando node_modules desde CADA archivo que
+# hace el import, no solo desde el entrypoint).
+FROM docker.io/library/node:22-alpine AS server-deps
+WORKDIR /app
+COPY server/package.json server/package-lock.json ./
+RUN npm ci --ignore-scripts --omit=dev --no-audit --no-fund --userconfig=/dev/null
+
+# ---------- Etapa 3: runtime ----------
+FROM docker.io/library/node:22-alpine
+WORKDIR /app
+
+COPY --from=server-deps /app/node_modules ./node_modules
+
+# server/ sin test/ ni compat/ (legado no usado por server.js/worker.js; ver
+# server/test/compat.test.mjs, unico lugar que lo importa).
+COPY server/ ./server/
+RUN rm -rf ./server/test ./server/compat ./server/.env.example \
+    ./server/.env.migrations.example ./server/.dockerignore ./server/.spectral.yaml
+
+COPY --from=web-builder /src/server/dist ./server/dist
+
+# Solo lo que server/ realmente importa de packages/ (no el resto de
+# wallet-core: esa parte necesita @tetherto/wdk* completo, pensado para el
+# cliente/navegador, no para este runtime). payment.js solo usa "ethers" y
+# "abstractionkit", ya instalados arriba como dependencias del server.
+#   server/lib/payments.js, payment-provider.js -> packages/wallet-core/src/payment.js
+#   server/lib/github.js                        -> packages/update-core/index.js
+# server/scripts/create-account.mjs SI importa packages/wallet-core/src/index.js
+# (que a su vez pide @tetherto/wdk*) — ese script de mantenimiento manual
+# queda fuera del alcance de esta imagen minima; ver notas de despliegue.
+COPY packages/wallet-core/src ./packages/wallet-core/src
+COPY packages/update-core ./packages/update-core
+# server/lib/sentry.js y server/scripts/check-sentry.mjs importan esto en
+# runtime (no solo en build), por eso va tambien en la etapa final.
+COPY packages/telemetry ./packages/telemetry
+
+COPY container/config/entrypoint.sh /usr/local/bin/midori-wallet-entrypoint
+RUN chmod +x /usr/local/bin/midori-wallet-entrypoint
+
+# /app queda escribible por "node": en runtime no importa (ReadOnly=true lo
+# bloquea de todas formas), pero setup.sh SI necesita correr
+# "node scripts/bootstrap.mjs" una vez, sin --read-only, como este mismo
+# usuario no root, y ese script escribe server/.env y
+# server/.env.migrations ahi mismo.
+RUN chown -R node:node /app
+
+ENV NODE_ENV=production
+# node:22-alpine ya trae un usuario "node" (uid 1000) sin privilegios.
+USER node
+WORKDIR /app/server
+
+EXPOSE 8080
+ENTRYPOINT ["midori-wallet-entrypoint"]

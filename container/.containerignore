@@ -1,0 +1,42 @@
+# Carpeta de despliegue: nunca dentro de la imagen, salvo container/config/
+# (el containerfile la copia explicitamente).
+container/*
+!container/config/
+!container/config/**
+
+.git
+.github
+
+# electron/ y phonegap/ son apps nativas aparte; solo hace falta lib/ (dos
+# archivos sin dependencias propias que web/src resuelve en una rama
+# condicional a VITE_BUILD_TYPE, ver containerfile).
+electron/*
+!electron/lib/
+!electron/lib/**
+phonegap/*
+!phonegap/lib/
+!phonegap/lib/**
+
+assets
+# Root config/ (environment.js, networks.json, targets.json) IS needed: web/vite.config.js
+# imports config/environment.js for the web build (see containerfile COPY config ./config).
+config
+!config/environment.js
+!config/networks.json
+!config/targets.json
+docs
+*.md
+LICENSE
+THIRD-PARTY-NOTICES.txt
+.env
+.env.*
+.env.mainnet.example
+.env.testnet.example
+.editorconfig
+eslint.config.js
+node_modules
+**/node_modules
+web/dist
+server/dist
+server/.env
+server/.env.*

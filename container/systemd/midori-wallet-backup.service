@@ -1,0 +1,8 @@
+[Unit]
+Description=midori-wallet — backup periódico de PostgreSQL (sin storage/: app sin estado en disco)
+After=default.target
+
+[Service]
+Type=oneshot
+ExecStart=__BACKUP_SCRIPT__
+TimeoutStartSec=900

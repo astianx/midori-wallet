@@ -17,7 +17,7 @@ export function receiptContent(document, t, locale) {
 const loadImage = source => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(Error('Image unavailable')); image.src = source; });
 const bytes = value => new TextEncoder().encode(value);
 function pdfFromCanvas(canvas) {
-  // One immutable raster is used in both formats. PDF does not reformat amounts,
+  // The PDF embeds the reviewed raster without reformatting amounts; it does not
   // drop RTL glyphs, or depend on a reader's installed fonts.
   const jpeg = Uint8Array.from(atob(canvas.toDataURL('image/jpeg', 0.97).split(',')[1]), c => c.charCodeAt(0));
   const pageWidth = 595.28, pageHeight = 841.89, scale = Math.min(547.28 / canvas.width, 793.89 / canvas.height), width = canvas.width * scale, height = canvas.height * scale;
@@ -60,7 +60,8 @@ export async function renderReceipt(document, verificationUrl, t, locale) {
   write(t('Scan to verify'), 30, accent, 600); write(link.origin, 28, muted, 400, true); y += 12; write(`${t('Created')}: ${receiptDate(document.issuedAt, locale)}`, 23, muted); y += 55;
   if (y > canvas.height) throw Error('Receipt layout overflow');
   const result = globalThis.document.createElement('canvas'); result.width = width; result.height = Math.ceil(y); result.getContext('2d').drawImage(canvas, 0, 0);
-  const png = await new Promise(resolve => result.toBlob(resolve, 'image/png')); if (!png) throw Error('Receipt image unavailable');
+  // This blob is only the in-app preview; PDF is the sole exported file.
+  const preview = await new Promise(resolve => result.toBlob(resolve, 'image/png')); if (!preview) throw Error('Receipt preview unavailable');
   const pdf = pdfFromCanvas(result), name = `midori-receipt-${document.id}`;
-  return { png: new globalThis.File([png], name + '.png', { type: 'image/png' }), pdf: new globalThis.File([pdf], name + '.pdf', { type: 'application/pdf' }), content };
+  return { preview, pdf: new globalThis.File([pdf], name + '.pdf', { type: 'application/pdf' }), content };
 }

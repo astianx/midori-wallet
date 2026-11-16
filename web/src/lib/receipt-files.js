@@ -1,6 +1,6 @@
 export const fileBase64 = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(file); });
 export async function deliverReceiptFile(file, runtime, share = true) {
-  if (!file || !['image/png', 'application/pdf'].includes(file.type) || file.size > 8 * 1024 * 1024) throw Error('Invalid receipt file');
+  if (!file || file.type !== 'application/pdf' || file.size > 8 * 1024 * 1024) throw Error('Invalid receipt file');
   if (runtime === 'electron' && window.electron?.receiptFiles) return window.electron.receiptFiles.save({ name: file.name, type: file.type, data: await fileBase64(file) });
   if (runtime === 'phonegap' && window.cordova?.exec) {
     const data = await fileBase64(file);

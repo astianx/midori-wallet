@@ -9,7 +9,7 @@ export default {
   components: { MwModal, MwButton },
   props: { show: Boolean, record: { type: Object, default: null }, loading: Boolean, error: { type: String, default: '' } },
   emits: ['close', 'refresh'],
-  data() { return { files: null, imageUrl: '', format: 'png', generating: false, sharing: false, exportError: '', exportGeneration: 0 }; },
+  data() { return { files: null, imageUrl: '', generating: false, sharing: false, exportError: '', exportGeneration: 0 }; },
   computed: {
     title() { return this.record ? activityTitle(this.record, this.$t) : this.$t('View receipt'); },
     rows() { return this.record ? activityRows(this.record, this.$t, value => this.date(value)).filter(row => !row.technical) : []; },
@@ -31,15 +31,15 @@ export default {
         const issued = await activityReader(this.$account).issueReceipt(this.record);
         const files = await renderReceipt(issued.document, issued.verificationUrl, this.$t, this.$i18n.locale);
         if (generation !== this.exportGeneration || !this.show || this.$isHiddenBalance) return;
-        this.files = files; this.imageUrl = URL.createObjectURL(files.png);
-        this.$nextTick(() => this.$refs.format?.focus({ preventScroll: true }));
+        this.files = files; this.imageUrl = URL.createObjectURL(files.preview);
+        this.$nextTick(() => this.$refs.share?.$el.focus({ preventScroll: true }));
       } catch { if (generation === this.exportGeneration) this.exportError = this.$t('Could not generate the receipt. Try again.'); }
       finally { if (generation === this.exportGeneration) this.generating = false; }
     },
     async share(download = false) {
       if (this.sharing || !this.files || this.$isHiddenBalance) return;
       this.sharing = true; this.exportError = ''; const generation = this.exportGeneration;
-      try { await deliverReceiptFile(this.files[this.format], this.runtime, !download); }
+      try { await deliverReceiptFile(this.files.pdf, this.runtime, !download); }
       catch { if (generation === this.exportGeneration) this.exportError = this.$t('Could not save or share this file. Try again.'); }
       finally { if (generation === this.exportGeneration) this.sharing = false; }
     },
@@ -58,7 +58,7 @@ export default {
         <dl><div v-for="row in rows.filter(item => item.label !== $t('Status'))" :key="row.label"><dt>{{ row.label }}</dt><dd :dir="row.financial ? 'ltr' : undefined">{{ row.financial && $isHiddenBalance ? '••••' : row.value }}</dd></div></dl>
         <details class="&__technical"><summary>{{ $t('Details') }}</summary><dl><div v-for="row in technicalRows" :key="row.label"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div><template v-if="record.transactionHash"><dt>{{ $t('Transaction ID') }}</dt><dd>{{ record.transactionHash }}</dd></template><template v-if="record.updatedAt"><dt>{{ $t('Last updated {time}', { time: '' }) }}</dt><dd>{{ date(record.updatedAt) }}</dd></template></dl><MwButton v-if="record.url" type="primary-link" @click="$safeOpen(record.url)">{{ $t('Explorer') }}</MwButton></details>
         <MwButton v-if="!files && !$isHiddenBalance" type="secondary" :isLoading="generating" @click="reviewShare">{{ $t('Share') }}</MwButton>
-        <section v-if="files && !$isHiddenBalance" class="&__preview"><h3>{{ $t('Review before sharing') }}</h3><p>{{ $t('Anyone with this QR can view these details.') }}</p><figure><img :src="imageUrl" :alt="$t('Receipt')" /><figcaption>{{ $t('Scan to verify') }}</figcaption></figure><details><summary>{{ $t('Details') }}</summary><dl><div v-for="row in files.content.rows" :key="row.label"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div></dl></details><div class="&__actions"><label>{{ $t('Receipt') }}<select ref="format" v-model="format" :disabled="sharing"><option value="png">{{ $t('Image') }} · PNG</option><option value="pdf">PDF</option></select></label><MwButton type="primary" :isLoading="sharing" @click="share()">{{ $t(runtime === 'electron' ? 'Save' : 'Share') }}</MwButton><MwButton v-if="runtime !== 'electron'" type="secondary" :disabled="sharing" @click="share(true)">{{ $t('Save') }}</MwButton></div></section>
+        <section v-if="files && !$isHiddenBalance" class="&__preview"><h3>{{ $t('Review before sharing') }}</h3><p>{{ $t('Anyone with this QR can view these details.') }}</p><figure><img :src="imageUrl" :alt="$t('Receipt')" /><figcaption>{{ $t('Scan to verify') }}</figcaption></figure><details><summary>{{ $t('Details') }}</summary><dl><div v-for="row in files.content.rows" :key="row.label"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div></dl></details><div class="&__actions"><MwButton ref="share" type="primary" :isLoading="sharing" @click="share()">{{ $t(runtime === 'electron' ? 'Save' : 'Share') }}</MwButton><MwButton v-if="runtime !== 'electron'" type="secondary" :disabled="sharing" @click="share(true)">{{ $t('Save') }}</MwButton></div></section>
         <p v-if="exportError" class="&__error" role="alert">{{ exportError }}</p>
       </template>
       <p v-if="error" class="&__error" role="alert">{{ error }}</p>
@@ -88,8 +88,6 @@ export default {
   &__preview figcaption { color: var(--color-muted); font-size: var(--text-label); margin-top: var(--space-xs); }
   &__preview summary { min-height: 2.75rem; align-content: center; cursor: pointer; }
   &__preview dd { white-space: pre-wrap; }
-  &__actions label { display: grid; gap: var(--space-xs); font-size: var(--text-label); }
-  &__actions select { border: 1px solid var(--color-rule); border-radius: var(--radius-control); background: var(--color-surface-subtle); color: var(--color-ink); min-height: 2.75rem; padding: var(--space-xs); font: inherit; }
   &__actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-sm); }
   &__error { color: var(--color-error); font-size: var(--text-label); }
 }

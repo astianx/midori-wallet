@@ -34,4 +34,5 @@ export async function consumeRecovery(handle, callback) {
   value.seed.fill(0); value.phrase = ''; drafts.delete(handle);
   return result;
 }
-export function clearRecovery() { for (const value of drafts.values()) { value.seed.fill(0); value.phrase = ''; } drafts.clear(); }
+export function discardRecovery(handle) { const value = drafts.get(handle); if (!value) return; value.seed.fill(0); value.phrase = ''; drafts.delete(handle); }
+export function clearRecovery() { for (const handle of drafts.keys()) discardRecovery(handle); }

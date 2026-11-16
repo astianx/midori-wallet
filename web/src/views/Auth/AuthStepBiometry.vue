@@ -11,6 +11,7 @@ import { TYPES } from '../../lib/account/Biometry.js';
 import { redirectToApp } from '../../lib/mixins.js';
 
 export default {
+  inject: ['setupBiometry'],
   components: {
     MwButton,
     MwButtonGroup,
@@ -57,11 +58,12 @@ export default {
   methods: {
     async setup() {
       this.isLoading = true;
-      const result = await this.$account.biometry.enable(this.storage.pin, this.storage.seed);
+      const result = await this.setupBiometry.enable();
       if (!result) return this.isLoading = false;
       this.done();
     },
     done() {
+      this.setupBiometry.clear();
       if (this.$account.cryptosToSelect) {
         this.next('selectCryptos');
       } else {
@@ -75,7 +77,7 @@ export default {
 <template>
   <AuthStepLayout
     :title="title"
-    @back="done"
+    :onBack="done"
   >
     <div class="&__icon-wrapper">
       <component

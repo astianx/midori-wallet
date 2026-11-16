@@ -1,4 +1,5 @@
 <script>
+import { clearRecovery } from '../../lib/account/recovery.js';
 import MwButton from '../../components/MwButton.vue';
 import MwAppIcon from '../../components/MwAppIcon.vue';
 import MwStep from '../../components/MwStep.vue';
@@ -7,14 +8,14 @@ import LogoIcon from '../../assets/svg/logo.svg';
 export default {
   components: { MwButton, MwAppIcon, LogoIcon }, extends: MwStep, mixins: [onShowOnHide],
   computed: { copyright() { return `© ${new Date().getFullYear()} Midori Wallet`; } },
-  onShow() { window.systemBars?.setStyle('dark'); document.documentElement.dataset.statusbarStyle = 'locked'; },
+  onShow() { clearRecovery(); window.systemBars?.setStyle('dark'); document.documentElement.dataset.statusbarStyle = 'locked'; },
   onHide() { window.systemBars?.setStyle(this.$resolvedTheme); delete document.documentElement.dataset.statusbarStyle; },
 };
 </script>
 <template>
   <div class="&">
     <section class="&__story"><LogoIcon class="&__logo" /><div class="&__message"><div class="&__coins"><span>USDC</span><span>USDT</span></div><h1>{{ $t('Stablecoins, in your hands.') }}</h1><p>{{ $t('Send and receive USDC and USDT with your own wallet.') }}</p></div><span class="&__network">Base · Midori Wallet</span></section>
-    <section class="&__start"><div class="&__actions"><span class="&__mark"><MwAppIcon name="receive" /></span><h2>{{ $t('Your wallet') }}</h2><p>{{ $t('Start with USDC and USDT.') }}</p><MwButton type="primary" @click="next('passphraseGeneration')">{{ $t('Create new wallet') }}<MwAppIcon name="arrow" /></MwButton><MwButton type="secondary" @click="next('login')">{{ $t('Open existing wallet') }}</MwButton><div class="&__ownership"><MwAppIcon name="check" /><span>{{ $t('Your keys. Your control.') }}</span></div></div><small class="&__copyright">{{ copyright }}</small></section>
+    <section class="&__start"><div class="&__actions"><span class="&__mark"><MwAppIcon name="receive" /></span><h2>{{ $t('Your wallet') }}</h2><p>{{ $t('Start with USDC and USDT.') }}</p><MwButton type="primary" @click="updateStorage({ flow: 'create', recoveryHandle: undefined }); next('passphraseGeneration')">{{ $t('Create new wallet') }}<MwAppIcon name="arrow" /></MwButton><MwButton type="secondary" @click="updateStorage({ flow: 'recover', recoveryHandle: undefined }); next('login')">{{ $t('Open existing wallet') }}</MwButton><div class="&__ownership"><MwAppIcon name="check" /><span>{{ $t('Your keys. Your control.') }}</span></div></div><small class="&__copyright">{{ copyright }}</small></section>
   </div>
 </template>
 <style lang="scss">

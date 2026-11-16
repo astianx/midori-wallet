@@ -25,6 +25,8 @@ import SettingsAccountView from '../../views/Settings/Account/SettingsAccountVie
 import SettingsHardwareView from '../../views/Settings/Hardware/SettingsHardwareView.vue';
 import SettingsPinView from '../../views/Settings/Pin/SettingsPinView.vue';
 import SettingsTorView from '../../views/Settings/Tor/SettingsTorView.vue';
+import SettingsAdvancedView from '../../views/Settings/SettingsAdvancedView.vue';
+import SettingsHelpView from '../../views/Settings/SettingsHelpView.vue';
 import SettingsView from '../../views/Settings/SettingsView.vue';
 import SettingsRecoveryView from '../../views/Settings/SettingsRecoveryView.vue';
 import SettingsWalletConnectView from '../../views/Settings/WalletConnect/WalletConnectView.vue';
@@ -81,7 +83,9 @@ const app = [
         name: 'settings.account',
         component: SettingsAccountView,
       }, {
-        path: 'recovery',
+        path: 'advanced', name: 'settings.advanced', component: SettingsAdvancedView,
+      }, { path: 'help', name: 'settings.help', component: SettingsHelpView,
+      }, { path: 'recovery',
         name: 'settings.recovery',
         component: SettingsRecoveryView,
       }, {

@@ -1,4 +1,5 @@
 <script>
+import { onShowOnHide } from '../../../lib/mixins.js';
 import { formatMidoriTag, normalizeTagAlias } from '../../../lib/tags.js';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
@@ -24,8 +25,12 @@ export default {
     MwFormTextareaReadonly,
   },
   extends: MwStep,
+  mixins: [onShowOnHide],
+  onShow() { this.active = true; },
+  onHide() { this.active = false; },
   data() {
     return {
+      active: false,
       isLoading: false,
       registeredTag: formatMidoriTag(this.$account.tag?.alias),
       tagLocked: !!this.$account.tag,
@@ -64,7 +69,7 @@ export default {
         });
         await this.$account.details.save();
         this.$account.emit('update', 'user');
-        this.$router.up();
+        if (this.active) this.$router.up();
       } catch (err) {
         if (err.code === 'TAG_IMMUTABLE') {
           this.tagLocked = true; this.registeredTag = formatMidoriTag(this.$account.tag?.alias);
@@ -86,7 +91,7 @@ export default {
 
 <template>
   <MainLayout
-    :title="$t('Account')"
+    :title="$t('Profile')"
   >
     <MwFormGroup class="&__content">
       <MwFormTextareaReadonly v-if="!canCreateTag" :value="registeredTag || '—'" :label="$t('Your Midori tag')" :copy="!!registeredTag" />
@@ -111,7 +116,7 @@ export default {
       <div class="&__note">
         <!-- eslint-disable-next-line max-len -->
         {{ $t('Gravatar (globally recognised avatar) is a service that lets you re-use the same avatar across websites and apps by specifying an email address.') }}
-        <a @click="$safeOpen('https://gravatar.com/')">{{ $t('Create Gravatar.') }}</a>
+        <a href="https://gravatar.com/" @click.prevent="$safeOpen('https://gravatar.com/')">{{ $t('Create Gravatar.') }}</a>
       </div>
     </MwFormGroup>
     <MwButtonGroup>
@@ -123,11 +128,12 @@ export default {
         {{ $t('Save') }}
       </MwButton>
       <MwButton
-        type="danger-link"
-        @click="next('remove')"
+        type="primary-link"
+        @click="$router.push({name: 'settings.advanced'})"
       >
-        {{ $t('Remove account') }}
+        {{ $t('Advanced tools') }}
       </MwButton>
+      <MwButton type="secondary" :disabled="isLoading" @click="$router.up()">{{ $t('Cancel') }}</MwButton>
     </MwButtonGroup>
   </MainLayout>
 </template>

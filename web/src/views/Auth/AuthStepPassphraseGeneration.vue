@@ -1,5 +1,6 @@
 <script>
-import { beginRecovery } from '../../lib/account/recovery.js';
+import { onShowOnHide } from '../../lib/mixins.js';
+import { beginRecovery, discardRecovery } from '../../lib/account/recovery.js';
 
 import AuthStepLayout from '../../layouts/AuthStepLayout.vue';
 import MwButton from '../../components/MwButton.vue';
@@ -14,11 +15,16 @@ export default {
     WalletGradientIcon,
   },
   extends: MwStep,
+  mixins: [onShowOnHide],
+  onShow() { this.active = true; },
+  onHide() { this.active = false; },
+  data() { return { active: false, isLoading: false, error: '' }; },
   methods: {
     async generate() {
-      const recoveryHandle = await beginRecovery();
-      this.updateStorage({ recoveryHandle });
-      this.next('passphrase');
+      if (this.isLoading) return; this.isLoading = true; this.error = '';
+      try { const recoveryHandle = await beginRecovery(); if (!this.active) { discardRecovery(recoveryHandle); return; } this.updateStorage({ recoveryHandle }); this.next('passphrase'); }
+      catch { this.error = this.$t('Error! Please check your internet connection and try again.'); }
+      finally { this.isLoading = false; }
     },
   },
 };
@@ -26,7 +32,7 @@ export default {
 
 <template>
   <AuthStepLayout
-    :title="$t('New wallet')"
+    :title="$t('New wallet')" :stepNumber="1"
     faded
   >
     <div class="&__wallet">
@@ -34,7 +40,7 @@ export default {
     </div>
     <div class="&__container">
       <div class="&__header">
-        {{ $t('We are about to generate your very own passphrase') }}
+        {{ $t('12 words') }}
       </div>
       <div class="&__text">
         {{ $t('This allows you to open your wallet on multiple devices and keeps it secure.') }}
@@ -43,8 +49,9 @@ export default {
         {{ $t('It is very important to write down the passphrase.') }}
       </div>
     </div>
+    <p v-if="error" role="alert">{{ error }}</p>
     <MwButton
-      class="&__generate"
+      class="&__generate" :isLoading="isLoading"
       type="primary"
       @click="generate"
     >

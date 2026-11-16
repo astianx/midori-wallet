@@ -64,7 +64,7 @@ export default {
   onHide() {
     this.paymentActive = false;
     this.paymentEpoch++;
-    if (this.mode === 'payment') this.value = '';
+    this.value = '';
     window.removeEventListener('keydown', this.keydown);
   },
   methods: {
@@ -156,6 +156,7 @@ export default {
         if (this.env.VITE_BUILD_TYPE === 'phonegap') {
           const pin = await this.$account.biometry.phonegap();
           if (!pin) return;
+          this.isLoading = false;
           return await this.confirm(pin);
         }
         switch (this.mode) {
@@ -213,9 +214,10 @@ export default {
 </script>
 
 <template>
+  <p v-if="isLoading" role="status">{{ $t('Checking…') }}</p>
   <p v-if="pinRejected" class="&__feedback" role="alert">{{ $t('Incorrect PIN. Try again.') }}</p>
   <div
-    class="&__dots"
+    class="&__dots" role="status" :aria-label="$t('PIN digits entered: {current} of {total}', { current: value.length, total: pinLength })"
     :class="{
       '&__dots--loading': isLoading,
       '&__dots--wrong': isWrong
@@ -223,7 +225,7 @@ export default {
   >
     <span
       v-if="error && !isLoading"
-      class="&__error"
+      class="&__error" role="alert"
     >
       {{ error }}
     </span>
@@ -245,7 +247,7 @@ export default {
         v-for="(number) in [1, 2, 3]"
         :key="number"
         class="&__key"
-        type="secondary"
+        type="secondary" :disabled="isLoading"
         @click="enter(number)"
       >
         {{ number }}
@@ -294,7 +296,7 @@ export default {
       <MwButton
         :key="0"
         class="&__key"
-        type="secondary"
+        type="secondary" :disabled="isLoading"
         @click="enter(0)"
       >
         0
@@ -307,7 +309,7 @@ export default {
         {{ $t('Delete') }}
       </MwButton>
       <MwButton
-        v-else-if="biometryIsEnabled"
+        v-else-if="biometryIsEnabled" :aria-label="$t('Biometrics')"
         class="&__key"
         @click="biometry"
       >
@@ -322,12 +324,13 @@ export default {
       />
     </div>
   </div>
-  <MwButton type="primary-link" :disabled="isLoading" @click="switchPinLength">
+  <MwButton v-if="mode === 'setup'" type="primary-link" :disabled="isLoading" @click="switchPinLength">
     {{ pinLength === 4 ? $t('Use a 6-digit PIN') : $t('Use a 4-digit PIN') }}
   </MwButton>
 </template>
 
 <style lang="scss">
+/* Hallmark · component: PIN · design-system: design.md · pre-emit critique: P5 H5 E5 S5 R5 V4 */
   .#{ $filename } {
     $self: &;
 
@@ -374,6 +377,9 @@ export default {
         opacity: 1;
       }
     }
+
+    &__keyboard .mw-pin__key { height: var(--space-3xl); min-height: var(--space-3xl); padding: 0; }
+    &__keyboard .mw-pin__key--named { font-size: var(--text-label); }
 
     &__keyboard {
       display: flex;

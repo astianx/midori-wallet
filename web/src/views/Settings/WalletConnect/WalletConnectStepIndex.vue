@@ -105,7 +105,7 @@ export default {
         .then((text) => {
           this.error = undefined;
           this.uri = text;
-        }, () => {});
+        }, () => { this.error = this.$t('Paste failed. Enter the connection link manually.'); });
     },
   },
 };
@@ -117,7 +117,7 @@ export default {
   >
     <MwFormGroup class="&__container">
       <p>{{ $t('Open the app you want to connect, choose WalletConnect, then paste its connection link or scan its QR code here.') }}</p>
-      <p>{{ $t('Links opened from an app go directly to permission review.') }}</p>
+      <p>{{ $t('Connecting does not send money or sign a message.') }}</p>
       <MwFormInput
         v-model="uri"
         :label="$t('WalletConnect URI')"
@@ -163,7 +163,7 @@ export default {
       </MwButton>
       <MwButton
         type="primary-link"
-        @click="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
+        @click="$router.push({name:'settings.help'})"
       >
         {{ $t('What is WalletConnect?') }}
       </MwButton>

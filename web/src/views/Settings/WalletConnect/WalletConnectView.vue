@@ -1,4 +1,6 @@
 <script>
+import MainLayout from '../../../layouts/MainLayout.vue';
+import MwButton from '../../../components/MwButton.vue';
 import MwPinStep from '../../../components/MwPinStep.vue';
 import MwSteps from '../../../components/MwSteps.vue';
 
@@ -14,7 +16,7 @@ import { onShowOnHide } from '../../../lib/mixins.js';
 
 export default {
   components: {
-    MwSteps,
+    MwSteps, MainLayout, MwButton,
   },
   mixins: [onShowOnHide],
   data() {
@@ -27,6 +29,10 @@ export default {
   },
   async onShow() {
     this.active = true;
+    await this.load();
+  },
+  methods: {
+    async load() { this.error = '';
     try {
       const walletConnect = await this.$account.walletConnect();
       if (!this.active) return;
@@ -34,6 +40,8 @@ export default {
       this.ready = true;
       walletConnect.on('disconnect', this.disconnect);
     } catch (error) { this.error = this.$t(error.message); }
+    },
+    disconnect() { this.$router.replace({ name: 'settings.walletconnect', force: true }); },
   },
   async onHide() {
     this.active = false;
@@ -49,11 +57,6 @@ export default {
     qr: WalletConnectStepQr,
     proposal: WalletConnectStepProposal,
   },
-  methods: {
-    disconnect() {
-      this.$router.replace({ name: 'settings.walletconnect', force: true });
-    },
-  },
 };
 </script>
 
@@ -63,5 +66,5 @@ export default {
     :steps="$options.steps"
     :initialStorage="storage"
   />
-  <p v-else role="alert">{{ error }}</p>
+  <MainLayout v-else :title="$t('Connections')"><p v-if="error" role="alert">{{ $t('Connection unavailable. Try again or use Help.') }}</p><p v-else role="status">{{ $t('Checking…') }}</p><MwButton v-if="error" type="secondary" @click="load">{{ $t('Refresh') }}</MwButton><MwButton type="primary-link" @click="$router.push({name:'settings.help'})">{{ $t('Help') }}</MwButton></MainLayout>
 </template>

@@ -1,4 +1,5 @@
 <script>
+import { onShowOnHide } from '../../lib/mixins.js';
 import AuthStepLayout from '../../layouts/AuthStepLayout.vue';
 import MwButton from '../../components/MwButton.vue';
 import MwButtonGroup from '../../components/MwButtonGroup.vue';
@@ -18,6 +19,8 @@ export default {
     MwFormGroup,
   },
   extends: MwStep,
+  mixins: [onShowOnHide],
+  onHide() { this.firstWord = ''; this.secondWord = ''; },
   data() {
     return {
       words: [],
@@ -50,7 +53,7 @@ export default {
 </script>
 
 <template>
-  <AuthStepLayout :title="$t('Confirm passphrase')">
+  <AuthStepLayout :title="$t('Confirm passphrase')" :stepNumber="2">
     <div class="&__description">
       {{ $t('Almost done! Enter the following words from your passphrase.') }}
     </div>

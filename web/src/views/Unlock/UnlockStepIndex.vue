@@ -25,7 +25,7 @@ export default {
     }
   },
   onHide() {
-    this.$refs.pin.value = '';
+    if (this.$refs.pin) this.$refs.pin.value = '';
   },
   methods: {
     async success() {
@@ -48,7 +48,7 @@ export default {
   <AuthStepLayout
     :title="$t('Enter your PIN')"
     :showBack="false"
-    :centered="true"
+    :centered="true" :description="$t('for quick access')"
   >
     <MwPin
       v-if="isReady"
@@ -57,5 +57,6 @@ export default {
       logoutButton
       @success="success"
     />
+    <details><summary>{{ $t('Forgot your PIN?') }}</summary><p>{{ $t('Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.') }}</p><p>{{ $t('Log out only if you have your recovery phrase.') }}</p></details>
   </AuthStepLayout>
 </template>

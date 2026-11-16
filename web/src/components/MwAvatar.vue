@@ -39,6 +39,7 @@ export default {
       '&--own-tor': own && ($isOnion || env.VITE_DISTRIBUTION === 'tor'),
     }"
     :src="src"
+    alt=""
   >
 </template>
 
@@ -51,7 +52,7 @@ export default {
 
     &--own {
       outline: 2px solid transparent;
-      transition: all 0.1s ease-out;
+      transition: opacity var(--dur-short) var(--ease-out);
     }
 
     &--own-tor {

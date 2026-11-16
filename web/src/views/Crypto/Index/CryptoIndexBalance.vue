@@ -34,32 +34,36 @@ export default {
       {{ $t('Balance') }}
     </div>
 
-    <div
+    <button
+      type="button"
+      :aria-label="$t($isHiddenBalance ? 'Show balance' : 'Hide balance')"
+      :aria-pressed="$isHiddenBalance"
       class="&__balance"
       @click="$account.toggleHiddenBalance()"
     >
       <div
         class="&__amount"
-        :title="amount"
+        :title="$isHiddenBalance ? undefined : amount"
         dir="ltr"
       >
-        {{ $isHiddenBalance ? '*****' : amount }}
+        {{ $isHiddenBalance ? '••••' : amount }}
+
+      </div>
+      <div
+        v-if="$wallet.crypto.coingecko"
+        class="&__fiat"
+        :title="$isHiddenBalance ? undefined : fiat"
+        dir="ltr"
+      >
+        {{ $isHiddenBalance ? '••••' : fiat }}
+      </div>
+    </button>
         <a
           v-if="$wallet.crypto._id === 'monero@monero' && $wallet.balance.value === 0n && !$isHiddenBalance"
           @click.stop="$safeOpen('https://github.com/astianx/midori-wallet/issues')"
         >
           {{ $t('Support') }}
         </a>
-      </div>
-      <div
-        v-if="$wallet.crypto.coingecko"
-        class="&__fiat"
-        :title="fiat"
-        dir="ltr"
-      >
-        {{ $isHiddenBalance ? '*****' : fiat }}
-      </div>
-    </div>
   </div>
 </template>
 
@@ -76,6 +80,8 @@ export default {
 
     &__balance {
       display: flex;
+      width: 100%;
+      text-align: start;
       flex-wrap: wrap;
       align-items: baseline;
       justify-content: space-between;
@@ -86,7 +92,9 @@ export default {
     &__amount {
       @include text-md;
       @include text-bold;
-      @include ellipsis;
+      overflow-wrap: anywhere;
+      white-space: normal;
+      min-width: 0;
 
       display: flex;
       gap: var(--spacing-xs);
@@ -95,7 +103,9 @@ export default {
     &__fiat {
       @include text-sm;
       @include text-bold;
-      @include ellipsis;
+      overflow-wrap: anywhere;
+      white-space: normal;
+      min-width: 0;
     }
   }
 </style>

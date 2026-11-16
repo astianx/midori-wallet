@@ -8,8 +8,8 @@ export default {
       if (this.$isHiddenBalance) return '••••';
       if (!this.available) return '—';
       const sum = this.$cryptos.reduce((total, item) => total + item.balance.value, 0n);
-      const whole = new Intl.NumberFormat(this.$i18n.locale, { maximumFractionDigits: 0 }).format(sum / 1000000n);
-      const separator = new Intl.NumberFormat(this.$i18n.locale).formatToParts(1.1).find(part => part.type === 'decimal')?.value || '.';
+      const whole = new Intl.NumberFormat(this.$i18n.locale, { maximumFractionDigits: 0, numberingSystem: 'latn' }).format(sum / 1000000n);
+      const separator = new Intl.NumberFormat(this.$i18n.locale, { numberingSystem: 'latn' }).formatToParts(1.1).find(part => part.type === 'decimal')?.value || '.';
       return `≈ ${whole}${separator}${(sum % 1000000n).toString().padStart(6, '0').slice(0, 2)}`;
     },
     fresh() { return this.available && this.$cryptos.every(item => item.readState === 'fresh'); },
@@ -37,7 +37,7 @@ export default {
   &__status { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--text-label); color: var(--color-muted); }
   &__dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--color-accent); }
   &__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); margin-block: var(--space-xl) var(--space-md); }
-  &__action { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 3rem; padding: var(--space-sm) var(--space-xs); border-radius: var(--radius-control); gap: var(--space-xs); background: var(--color-surface); color: var(--color-ink); font-size: 0.875rem; font-weight: 600; white-space: nowrap; }
+  &__action { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 3rem; padding: var(--space-sm) var(--space-xs); border-radius: var(--radius-control); gap: var(--space-xs); background: var(--color-surface); color: var(--color-ink); font-size: 0.875rem; font-weight: 600; white-space: normal; text-align: center; }
   &__action svg { width: 1.25rem; height: 1.25rem; flex: none; }
   &__action:hover { background: var(--color-surface-subtle); color: var(--color-ink); }
   &__action:active { transform: translateY(1px); }

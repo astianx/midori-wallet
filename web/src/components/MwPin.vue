@@ -378,7 +378,7 @@ export default {
       }
     }
 
-    &__keyboard .mw-pin__key { height: var(--space-3xl); min-height: var(--space-3xl); padding: 0; }
+    &__keyboard .mw-pin__key { width: min(4rem, 100%); height: auto; min-height: 44px; aspect-ratio: 1; padding: 0; justify-self: center; }
     &__keyboard .mw-pin__key--named { font-size: var(--text-label); }
 
     &__keyboard {
@@ -388,9 +388,9 @@ export default {
     }
 
     &__row {
-      display: flex;
-      justify-content: center;
-      gap: var(--spacing-lg);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.5rem, 3vw, 1.5rem);
     }
 
     &__key {

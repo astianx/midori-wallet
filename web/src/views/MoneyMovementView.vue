@@ -102,7 +102,7 @@ export default {
   &__row:active { background: var(--color-surface-tint); }
   &__row:disabled { color: var(--color-muted); }
   &__label { flex: 1; min-width: 0; font-size: 0.875rem; font-weight: 550; overflow-wrap: anywhere; }
-  &__label strong { display: block; font: inherit; white-space: nowrap; }
+  &__label strong { display: block; font: inherit; white-space: normal; }
   &__label small { display: block; margin-top: var(--space-xs); color: var(--color-muted); font-size: var(--text-label); font-weight: 400; line-height: 1.5; }
   &__row > .mw-crypto-logo { width: 2.75rem; height: 2.75rem; flex: none; }
   &__row > svg:last-child, &__icon svg { width: 1.25rem; height: 1.25rem; flex: none; }

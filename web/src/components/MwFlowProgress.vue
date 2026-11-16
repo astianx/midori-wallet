@@ -10,7 +10,7 @@ export default { props: { current: { type: Number, default: 0 } }, computed: { l
   &__current { margin: 0 0 var(--space-sm); color: var(--color-muted); font-size: var(--text-label); }
   ol { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; gap: var(--space-xs); }
   li { display: flex; align-items: center; gap: var(--space-xs); min-width: 0; font-size: 0.75rem; color: var(--color-muted); }
-  &__number { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; flex: none; border-radius: 50%; border: 1px solid var(--color-rule); background: var(--color-surface-subtle); }
+  &__number { display: grid; place-items: center; width: min(1.5rem, 100%); height: auto; aspect-ratio: 1; flex: none; border-radius: 50%; border: 1px solid var(--color-rule); background: var(--color-surface-subtle); }
   &__label { display: none; }
   &__step--current { color: var(--color-accent) !important; font-weight: 600; }
   &__step--current &__number, &__step--complete &__number { background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }

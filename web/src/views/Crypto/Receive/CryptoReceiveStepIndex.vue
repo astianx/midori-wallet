@@ -93,7 +93,7 @@ export default {
   &__qr { width: min(14rem,100%); padding: var(--space-md); align-self: center; background: var(--color-white); border-radius: var(--radius-control); }
   &__qr svg { display: block; width: 100%; height: auto; }
   &__actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
-  &__actions > button { flex: 1 0 auto; }
+  &__actions > button { flex: 1 1 8rem; min-width: 0; }
   &__actions svg { width: 1.25rem; height: 1.25rem; }
   &__select { align-self: center; }
   &__activity { min-height: 2.75rem; display: flex; align-items: center; color: var(--color-accent); cursor: pointer; }

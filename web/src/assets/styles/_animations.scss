@@ -1,12 +1,12 @@
 @mixin slide($enter-x, $leave-x) {
   &-leave-active {
     overflow: hidden;
-    transition-duration: 0.1s;
+    transition-duration: var(--dur-short);
   }
 
   &-enter-active {
     overflow: hidden;
-    transition-duration: 0.2s;
+    transition-duration: var(--dur-panel);
   }
 
   &-enter-from [data-transition] {
@@ -15,11 +15,11 @@
   }
 
   &-enter-active [data-transition] {
-    transition: opacity 0.1s ease-in 0.1s, transform 0.1s ease-in 0.1s;
+    transition: opacity var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out);
   }
 
   &-leave-active [data-transition] {
-    transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+    transition: opacity var(--dur-short) var(--ease-in), transform var(--dur-short) var(--ease-in);
   }
 
   &-leave-to [data-transition] {
@@ -43,7 +43,7 @@
 
 .modal {
   &-enter-active {
-    transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+    transition: opacity var(--dur-panel) var(--ease-out), transform var(--dur-panel) var(--ease-out);
   }
 
   &-enter-from,
@@ -53,7 +53,7 @@
   }
 
   &-leave-active {
-    transition: opacity 0.1s ease-out, transform 0.1s ease-out;
+    transition: opacity var(--dur-short) var(--ease-in), transform var(--dur-short) var(--ease-in);
   }
 }
 

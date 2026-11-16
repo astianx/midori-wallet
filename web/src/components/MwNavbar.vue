@@ -74,8 +74,8 @@ export default {
 
     &__action {
       display: flex;
-      height: 100%;
-      flex-basis: var(--spacing-5xl);
+      min-height: var(--spacing-5xl);
+      flex-basis: auto;
       flex-shrink: 0;
       align-items: center;
       justify-content: center;
@@ -99,12 +99,14 @@ export default {
     &__title {
       @include text-md;
       @include text-bold;
-      @include ellipsis;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     &__description {
       @include text-sm;
-      @include ellipsis;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
   }
 </style>

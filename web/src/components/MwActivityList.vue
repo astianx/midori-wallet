@@ -97,7 +97,8 @@ export default {
 /* Hallmark · component-scope · design-system: design.md · pre-emit critique: P4 H5 E5 S5 R5 V4 */
   min-width: 0; padding: var(--space-xs); border: 1px solid var(--color-rule); border-radius: var(--radius-panel); background: var(--color-surface); color: var(--color-ink);
   &__toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); padding-inline: var(--space-sm); }
-  &__toolbar > span { color: var(--color-muted); font-size: 0.75rem; overflow-wrap: anywhere; }
+  &__toolbar > button { flex: none; }
+  &__toolbar > span { flex: 1; min-width: 0; color: var(--color-muted); font-size: 0.75rem; overflow-wrap: anywhere; }
   &__list { margin: 0; padding: 0; list-style: none; }
   &__row { display: flex; width: 100%; min-width: 0; align-items: center; gap: var(--space-sm); text-align: start; padding: var(--space-md) var(--space-xs); border-bottom: 1px solid var(--color-rule); }
   li:last-child &__row { border-bottom: 0; }
@@ -106,7 +107,7 @@ export default {
   &__icon svg { width: 1.125rem; height: 1.125rem; }
   &__description { flex: 1; min-width: 0; }
   &__description strong, &__values strong { display: block; font-size: 0.8125rem; font-weight: 550; overflow-wrap: anywhere; }
-  &__description small, &__values small { display: block; color: var(--color-muted); font-size: 0.75rem; margin-top: var(--space-2xs); }
+  &__description small, &__values small { display: block; overflow-wrap: anywhere; color: var(--color-muted); font-size: 0.75rem; margin-top: var(--space-2xs); }
   &__values { max-width: 48%; text-align: end; font-variant-numeric: tabular-nums; }
   &__empty { display: flex; align-items: center; flex-direction: column; padding: var(--space-xl) var(--space-md); text-align: center; }
   &__empty-icon { width: 3rem; height: 3rem; margin-bottom: var(--space-md); }

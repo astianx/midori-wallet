@@ -30,7 +30,9 @@ export default {
   &__asset .mw-crypto-logo { width: 2.5rem; height: 2.5rem; flex: none; }
   &__asset strong { font-size: 1rem; font-weight: 600; }
   &__context small { display: block; font-size: var(--text-label); color: var(--color-muted); line-height: 1.5; }
-  &__balance { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-md); }
+  &__balance { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-sm); margin-top: var(--space-md); }
+  &__balance > div { min-width: 0; flex: 1 1 10rem; }
+  &__balance > button { flex: none; max-width: 100%; }
   &__balance span { display: block; margin-top: var(--space-2xs); font-size: 1.125rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
   &__balance span small { display: inline; }
   &__recipient { padding-top: var(--space-md); margin-top: var(--space-md); border-top: 1px solid var(--color-rule); font-size: 0.875rem; overflow-wrap: anywhere; }

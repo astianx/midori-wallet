@@ -26,7 +26,7 @@ export default {
   &__brand { display: block; padding: var(--space-xs) var(--space-md); }
   &__brand svg { width: 8.5rem; height: auto; }
   &__nav { display: flex; flex-direction: column; gap: var(--space-xs); }
-  &__link { display: flex; align-items: center; gap: var(--space-sm); min-height: 3rem; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-control); color: var(--color-muted); font-size: 0.875rem; white-space: nowrap; }
+  &__link { display: flex; align-items: center; gap: var(--space-sm); min-height: 3rem; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-control); color: var(--color-muted); font-size: 0.875rem; white-space: normal; }
   &__link svg { width: 1.25rem; height: 1.25rem; flex: none; }
   &__link:hover, &__link--active { background: var(--color-surface-tint); color: var(--color-accent); }
   &__link--active { font-weight: 600; }

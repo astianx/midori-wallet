@@ -76,7 +76,7 @@ export default {
     border-radius: 0.625rem;
     gap: var(--spacing-md);
     line-height: 1.2;
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+    transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
 
     @include text-md;
     @include text-bold;

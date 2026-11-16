@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Dijelit će se samo tekst ispod.",
   "Could not share. Copy or select the text instead.": "Dijeljenje nije uspjelo. Kopirajte ili odaberite tekst.",
   "Could not copy. Select the text and copy it manually.": "Kopiranje nije uspjelo. Odaberite tekst i kopirajte ga ručno.",
-  "Reference": "Referenca"
+  "Reference": "Referenca",
+  "Receipt": "Potvrda",
+  "Image": "Slika",
+  "Verify receipt": "Provjeri potvrdu",
+  "Scan to verify": "Skenirajte za provjeru",
+  "Anyone with this QR can view these details.": "Svako ko ima ovaj QR može vidjeti ove podatke.",
+  "Not a completed payment.": "Plaćanje nije završeno.",
+  "Could not generate the receipt. Try again.": "Potvrda nije generisana. Pokušajte ponovo.",
+  "Could not save or share this file. Try again.": "Datoteka nije sačuvana ili podijeljena. Pokušajte ponovo.",
+  "Receipt unavailable.": "Potvrda nije dostupna.",
+  "Current status": "Trenutni status",
+  "Verified from Midori records.": "Provjereno u evidenciji Midori."
 }

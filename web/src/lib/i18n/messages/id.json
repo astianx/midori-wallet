@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Hanya teks di bawah yang akan dibagikan.",
   "Could not share. Copy or select the text instead.": "Tidak dapat berbagi. Salin atau pilih teks.",
   "Could not copy. Select the text and copy it manually.": "Tidak dapat menyalin. Pilih teks dan salin secara manual.",
-  "Reference": "Referensi"
+  "Reference": "Referensi",
+  "Receipt": "Bukti",
+  "Image": "Gambar",
+  "Verify receipt": "Periksa bukti",
+  "Scan to verify": "Pindai untuk memeriksa",
+  "Anyone with this QR can view these details.": "Siapa pun dengan QR ini dapat melihat detail ini.",
+  "Not a completed payment.": "Pembayaran ini belum selesai.",
+  "Could not generate the receipt. Try again.": "Bukti tidak dapat dibuat. Coba lagi.",
+  "Could not save or share this file. Try again.": "File tidak dapat disimpan atau dibagikan. Coba lagi.",
+  "Receipt unavailable.": "Bukti tidak tersedia.",
+  "Current status": "Status saat ini",
+  "Verified from Midori records.": "Diperiksa melalui catatan Midori."
 }

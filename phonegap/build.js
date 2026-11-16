@@ -46,6 +46,12 @@ const platformPackage = platform === 'android' ? 'cordova-android' : 'cordova-io
 if (!fs.existsSync(path.join(build,'platforms',platform))) run(['platform','add',`${platformPackage}@${versionInfo.dependencies[platformPackage]}`,'--save']);
 const scheme = release ? 'midoriwallet' : 'midoriwallet-beta';
 const plugins = [ ['org.astian.midori.vault',path.join(directory,'plugins/midori-vault')], ['cordova-plugin-inappbrowser','cordova-plugin-inappbrowser@7.0.0'], ['cordova-plugin-customurlscheme','cordova-plugin-customurlscheme@5.0.2'], ['cordova-plugin-fingerprint-aio','cordova-plugin-fingerprint-aio@6.0.1'] ];
+for (const [id, source] of plugins) {
+  if (id === 'org.astian.midori.vault' && fs.existsSync(path.join(build,'plugins',id))) {
+    const files = ['plugin.xml','src/android/MidoriVault.java','src/ios/MidoriVault.m'];
+    if (files.some(file => !fs.readFileSync(path.join(build,'plugins',id,file)).equals(fs.readFileSync(path.join(source,file))))) run(['plugin','remove',id]);
+  }
+}
 for (const [id,source] of plugins) if (!fs.existsSync(path.join(build,'plugins',id))) run(['plugin','add',source,'--save', ...(id === 'cordova-plugin-customurlscheme' ? ['--variable',`URL_SCHEME=${scheme}`] : [])]);
 run(['prepare',platform]);
 if (platform === 'android') {

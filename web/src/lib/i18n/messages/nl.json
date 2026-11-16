@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Alleen de onderstaande tekst wordt gedeeld.",
   "Could not share. Copy or select the text instead.": "Delen mislukt. Kopieer of selecteer de tekst.",
   "Could not copy. Select the text and copy it manually.": "Kopiëren mislukt. Selecteer de tekst en kopieer deze handmatig.",
-  "Reference": "Referentie"
+  "Reference": "Referentie",
+  "Receipt": "Bewijs",
+  "Image": "Afbeelding",
+  "Verify receipt": "Bewijs controleren",
+  "Scan to verify": "Scan om te controleren",
+  "Anyone with this QR can view these details.": "Iedereen met deze QR-code kan deze gegevens bekijken.",
+  "Not a completed payment.": "Deze betaling is niet voltooid.",
+  "Could not generate the receipt. Try again.": "Het bewijs kon niet worden gemaakt. Probeer opnieuw.",
+  "Could not save or share this file. Try again.": "Het bestand kon niet worden opgeslagen of gedeeld. Probeer opnieuw.",
+  "Receipt unavailable.": "Bewijs niet beschikbaar.",
+  "Current status": "Huidige status",
+  "Verified from Midori records.": "Gecontroleerd in de Midori-gegevens."
 }

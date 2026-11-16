@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Va fi distribuit doar textul de mai jos.",
   "Could not share. Copy or select the text instead.": "Distribuirea a eșuat. Copiază sau selectează textul.",
   "Could not copy. Select the text and copy it manually.": "Copierea a eșuat. Selectează textul și copiază-l manual.",
-  "Reference": "Referință"
+  "Reference": "Referință",
+  "Receipt": "Chitanță",
+  "Image": "Imagine",
+  "Verify receipt": "Verifică chitanța",
+  "Scan to verify": "Scanează pentru verificare",
+  "Anyone with this QR can view these details.": "Oricine are acest QR poate vedea aceste date.",
+  "Not a completed payment.": "Această plată nu este finalizată.",
+  "Could not generate the receipt. Try again.": "Chitanța nu a putut fi generată. Încearcă din nou.",
+  "Could not save or share this file. Try again.": "Fișierul nu a putut fi salvat sau distribuit. Încearcă din nou.",
+  "Receipt unavailable.": "Chitanță indisponibilă.",
+  "Current status": "Starea actuală",
+  "Verified from Midori records.": "Verificat în evidențele Midori."
 }

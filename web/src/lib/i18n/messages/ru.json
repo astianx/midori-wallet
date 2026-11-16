@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Будет отправлен только текст ниже.",
   "Could not share. Copy or select the text instead.": "Не удалось поделиться. Скопируйте или выделите текст.",
   "Could not copy. Select the text and copy it manually.": "Не удалось скопировать. Выделите текст и скопируйте вручную.",
-  "Reference": "Номер операции"
+  "Reference": "Номер операции",
+  "Receipt": "Квитанция",
+  "Image": "Изображение",
+  "Verify receipt": "Проверить квитанцию",
+  "Scan to verify": "Сканируйте для проверки",
+  "Anyone with this QR can view these details.": "Любой, у кого есть этот QR-код, может увидеть эти данные.",
+  "Not a completed payment.": "Этот платёж не завершён.",
+  "Could not generate the receipt. Try again.": "Не удалось создать квитанцию. Повторите попытку.",
+  "Could not save or share this file. Try again.": "Не удалось сохранить файл или поделиться им. Повторите попытку.",
+  "Receipt unavailable.": "Квитанция недоступна.",
+  "Current status": "Текущий статус",
+  "Verified from Midori records.": "Проверено по записям Midori."
 }

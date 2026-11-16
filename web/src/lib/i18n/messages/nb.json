@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Bare teksten nedenfor deles.",
   "Could not share. Copy or select the text instead.": "Kunne ikke dele. Kopier eller marker teksten.",
   "Could not copy. Select the text and copy it manually.": "Kunne ikke kopiere. Marker teksten og kopier den manuelt.",
-  "Reference": "Referanse"
+  "Reference": "Referanse",
+  "Receipt": "Kvittering",
+  "Image": "Bilde",
+  "Verify receipt": "Kontroller kvittering",
+  "Scan to verify": "Skann for å kontrollere",
+  "Anyone with this QR can view these details.": "Alle med denne QR-koden kan se disse opplysningene.",
+  "Not a completed payment.": "Denne betalingen er ikke fullført.",
+  "Could not generate the receipt. Try again.": "Kvitteringen kunne ikke opprettes. Prøv igjen.",
+  "Could not save or share this file. Try again.": "Filen kunne ikke lagres eller deles. Prøv igjen.",
+  "Receipt unavailable.": "Kvitteringen er utilgjengelig.",
+  "Current status": "Nåværende status",
+  "Verified from Midori records.": "Kontrollert mot Midoris oppføringer."
 }

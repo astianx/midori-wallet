@@ -65,6 +65,7 @@ export function activityReader(account) {
       })().finally(() => { if (current === generation) { state.loading = false; request = undefined; } });
       return request;
     },
+    issueReceipt(record) { const wallet = account.wallet(record.walletId || state.sources[0]?.id); if (!wallet || account.isLocked) throw Error('Unavailable'); return wallet.issueReceipt(record.source, record.reference); },
     async detail(source, walletId, reference) {
       const current = generation;
       if (!['payment', 'ramp'].includes(source) || typeof reference !== 'string') throw Error('Invalid reference');

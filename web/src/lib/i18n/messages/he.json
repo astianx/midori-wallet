@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "רק הטקסט שלמטה ישותף.",
   "Could not share. Copy or select the text instead.": "השיתוף נכשל. יש להעתיק או לבחור את הטקסט.",
   "Could not copy. Select the text and copy it manually.": "ההעתקה נכשלה. יש לבחור את הטקסט ולהעתיק ידנית.",
-  "Reference": "אסמכתה"
+  "Reference": "אסמכתה",
+  "Receipt": "קבלה",
+  "Image": "תמונה",
+  "Verify receipt": "בדיקת קבלה",
+  "Scan to verify": "סריקה לבדיקה",
+  "Anyone with this QR can view these details.": "כל מי שיש לו קוד זה יכול לצפות בפרטים האלה.",
+  "Not a completed payment.": "התשלום לא הושלם.",
+  "Could not generate the receipt. Try again.": "לא ניתן ליצור קבלה. יש לנסות שוב.",
+  "Could not save or share this file. Try again.": "לא ניתן לשמור או לשתף את הקובץ. יש לנסות שוב.",
+  "Receipt unavailable.": "הקבלה אינה זמינה.",
+  "Current status": "מצב נוכחי",
+  "Verified from Midori records.": "נבדק ברישומי Midori."
 }

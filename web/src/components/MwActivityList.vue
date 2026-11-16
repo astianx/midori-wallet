@@ -33,7 +33,7 @@ export default {
     selectionKey() { this.syncSelection(); },
     receiptOpen(value) { if (!value) { this.selected = null; this.detailError = ''; this.$nextTick(() => { if (this.returnFocus?.isConnected) this.returnFocus.focus({ preventScroll: true }); }); } },
   },
-  mounted() { this.load(); this.syncSelection(); this.timer = setInterval(() => { if (!document.hidden && !this.$account.isLocked) this.load(); }, 15000); },
+  mounted() { this.load(); this.timer = setInterval(() => { if (!document.hidden && !this.$account.isLocked && !this.receiptOpen) this.load(); }, 15000); },
   beforeUnmount() { this.disposed = true; this.selectionGeneration++; clearInterval(this.timer); },
   methods: {
     title(item) { return activityTitle(item, this.$t); },

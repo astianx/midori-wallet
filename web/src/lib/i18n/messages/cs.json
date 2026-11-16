@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Bude sdílen pouze následující text.",
   "Could not share. Copy or select the text instead.": "Sdílení se nezdařilo. Text zkopírujte nebo vyberte.",
   "Could not copy. Select the text and copy it manually.": "Kopírování se nezdařilo. Vyberte text a zkopírujte jej ručně.",
-  "Reference": "Reference"
+  "Reference": "Reference",
+  "Receipt": "Potvrzení",
+  "Image": "Obrázek",
+  "Verify receipt": "Ověřit potvrzení",
+  "Scan to verify": "Naskenujte pro ověření",
+  "Anyone with this QR can view these details.": "Kdokoli s tímto QR kódem může zobrazit tyto údaje.",
+  "Not a completed payment.": "Platba není dokončena.",
+  "Could not generate the receipt. Try again.": "Potvrzení nelze vytvořit. Zkuste to znovu.",
+  "Could not save or share this file. Try again.": "Soubor nelze uložit nebo sdílet. Zkuste to znovu.",
+  "Receipt unavailable.": "Potvrzení není dostupné.",
+  "Current status": "Aktuální stav",
+  "Verified from Midori records.": "Ověřeno v záznamech Midori."
 }

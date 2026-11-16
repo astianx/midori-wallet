@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Yalnızca aşağıdaki metin paylaşılacak.",
   "Could not share. Copy or select the text instead.": "Paylaşılamadı. Metni kopyalayın veya seçin.",
   "Could not copy. Select the text and copy it manually.": "Kopyalanamadı. Metni seçip elle kopyalayın.",
-  "Reference": "Referans"
+  "Reference": "Referans",
+  "Receipt": "Makbuz",
+  "Image": "Görsel",
+  "Verify receipt": "Makbuzu doğrula",
+  "Scan to verify": "Doğrulamak için tarayın",
+  "Anyone with this QR can view these details.": "Bu QR koduna sahip herkes bu bilgileri görebilir.",
+  "Not a completed payment.": "Bu ödeme tamamlanmadı.",
+  "Could not generate the receipt. Try again.": "Makbuz oluşturulamadı. Tekrar deneyin.",
+  "Could not save or share this file. Try again.": "Dosya kaydedilemedi veya paylaşılamadı. Tekrar deneyin.",
+  "Receipt unavailable.": "Makbuz kullanılamıyor.",
+  "Current status": "Güncel durum",
+  "Verified from Midori records.": "Midori kayıtlarından kontrol edildi."
 }

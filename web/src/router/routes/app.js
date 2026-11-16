@@ -1,4 +1,5 @@
 import AppLayout from '../../layouts/AppLayout.vue';
+import ReceiptVerifyView from '../../views/ReceiptVerifyView.vue';
 
 import HomeView from '../../views/HomeView.vue';
 import ActivityView from '../../views/ActivityView.vue';
@@ -39,6 +40,7 @@ import schemes from '../../lib/schemes.js';
 const CRYPTO_ID = ':cryptoId([A-Za-z0-9-_:]+@[a-z0-9-]+)';
 
 const app = [
+  { path: '/receipt', name: 'receipt.verify', component: ReceiptVerifyView },
   {
     path: '/',
     component: AppLayout,

@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Nur der folgende Text wird geteilt.",
   "Could not share. Copy or select the text instead.": "Teilen fehlgeschlagen. Kopiere oder markiere den Text.",
   "Could not copy. Select the text and copy it manually.": "Kopieren fehlgeschlagen. Markiere den Text und kopiere ihn manuell.",
-  "Reference": "Referenz"
+  "Reference": "Referenz",
+  "Receipt": "Beleg",
+  "Image": "Bild",
+  "Verify receipt": "Beleg prüfen",
+  "Scan to verify": "Zum Prüfen scannen",
+  "Anyone with this QR can view these details.": "Jeder mit diesem QR-Code kann diese Daten sehen.",
+  "Not a completed payment.": "Diese Zahlung ist nicht abgeschlossen.",
+  "Could not generate the receipt. Try again.": "Beleg konnte nicht erstellt werden. Versuche es erneut.",
+  "Could not save or share this file. Try again.": "Datei konnte nicht gespeichert oder geteilt werden. Versuche es erneut.",
+  "Receipt unavailable.": "Beleg nicht verfügbar.",
+  "Current status": "Aktueller Status",
+  "Verified from Midori records.": "Mit den Midori-Daten abgeglichen."
 }

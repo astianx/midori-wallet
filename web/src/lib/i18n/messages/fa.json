@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "فقط متن زیر به اشتراک گذاشته می‌شود.",
   "Could not share. Copy or select the text instead.": "اشتراک‌گذاری ناموفق بود. متن را کپی یا انتخاب کنید.",
   "Could not copy. Select the text and copy it manually.": "کپی انجام نشد. متن را انتخاب و دستی کپی کنید.",
-  "Reference": "شناسه"
+  "Reference": "شناسه",
+  "Receipt": "رسید",
+  "Image": "تصویر",
+  "Verify receipt": "بررسی رسید",
+  "Scan to verify": "برای بررسی اسکن کنید",
+  "Anyone with this QR can view these details.": "هر کسی با این کد می‌تواند این جزئیات را ببیند.",
+  "Not a completed payment.": "این پرداخت تکمیل نشده است.",
+  "Could not generate the receipt. Try again.": "رسید ایجاد نشد. دوباره تلاش کنید.",
+  "Could not save or share this file. Try again.": "فایل ذخیره یا به اشتراک گذاشته نشد. دوباره تلاش کنید.",
+  "Receipt unavailable.": "رسید در دسترس نیست.",
+  "Current status": "وضعیت کنونی",
+  "Verified from Midori records.": "با سوابق Midori بررسی شد."
 }

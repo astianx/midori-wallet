@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Ang teksto sa ibaba lang ang ibabahagi.",
   "Could not share. Copy or select the text instead.": "Hindi maibahagi. Kopyahin o piliin ang teksto.",
   "Could not copy. Select the text and copy it manually.": "Hindi makopya. Piliin ang teksto at manu-manong kopyahin.",
-  "Reference": "Sanggunian"
+  "Reference": "Sanggunian",
+  "Receipt": "Resibo",
+  "Image": "Larawan",
+  "Verify receipt": "Suriin ang resibo",
+  "Scan to verify": "I-scan para suriin",
+  "Anyone with this QR can view these details.": "Maaaring makita ng sinumang may QR na ito ang mga detalyeng ito.",
+  "Not a completed payment.": "Hindi pa kumpleto ang bayad na ito.",
+  "Could not generate the receipt. Try again.": "Hindi magawa ang resibo. Subukang muli.",
+  "Could not save or share this file. Try again.": "Hindi mai-save o maibahagi ang file. Subukang muli.",
+  "Receipt unavailable.": "Hindi available ang resibo.",
+  "Current status": "Kasalukuyang katayuan",
+  "Verified from Midori records.": "Sinuri sa mga tala ng Midori."
 }

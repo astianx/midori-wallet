@@ -1,7 +1,9 @@
 import { assertCaller } from './security.js';
+import { installReceiptFiles } from './receipt-files.js';
 import fs from 'node:fs/promises';
 import { ipcMain, safeStorage, BrowserWindow, powerMonitor, dialog } from 'electron';
 export function installVault() {
+  installReceiptFiles();
   const check = event => {
     assertCaller(event);
     if (!safeStorage.isEncryptionAvailable() || safeStorage.getSelectedStorageBackend?.() === 'basic_text') throw new Error('Unlock the operating system keyring to use protected storage.');

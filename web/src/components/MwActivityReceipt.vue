@@ -2,12 +2,14 @@
 import MwModal from './MwModal.vue';
 import MwButton from './MwButton.vue';
 import { activityTitle, activityStatus, activityMessage, activityGroup, activityRows } from '../lib/account/activity-presentation.js';
-import { shareReceivingText, selectReceivingText } from '../lib/receive-actions.js';
+import { activityReader } from '../lib/account/activity-reader.js';
+import { renderReceipt } from '../lib/receipt-document.js';
+import { deliverReceiptFile } from '../lib/receipt-files.js';
 export default {
   components: { MwModal, MwButton },
   props: { show: Boolean, record: { type: Object, default: null }, loading: Boolean, error: { type: String, default: '' } },
   emits: ['close', 'refresh'],
-  data() { return { preview: '', sharing: false, copyMessage: '', shareError: false }; },
+  data() { return { files: null, imageUrl: '', format: 'png', generating: false, sharing: false, exportError: '', exportGeneration: 0 }; },
   computed: {
     title() { return this.record ? activityTitle(this.record, this.$t) : this.$t('View receipt'); },
     rows() { return this.record ? activityRows(this.record, this.$t, value => this.date(value)).filter(row => !row.technical) : []; },
@@ -17,26 +19,31 @@ export default {
     tone() { return this.record ? activityGroup(this.record) : ''; },
     runtime() { return this.env.VITE_BUILD_TYPE; },
   },
-  watch: { 'record.id'() { this.preview = ''; }, show() { this.preview = ''; this.copyMessage = ''; this.shareError = false; }, '$isHiddenBalance'() { this.preview = ''; } },
+  watch: { 'record.id'() { this.resetExport(); }, show() { this.resetExport(); }, '$isHiddenBalance'() { this.resetExport(); } },
+  beforeUnmount() { this.resetExport(); },
   methods: {
-    selectReceivingText,
-    date(value) { const date = new Date(value); return Number.isFinite(date.valueOf()) ? this.$d(date, 'short') : '—'; },
-    reviewShare() {
-      this.preview = [this.title, this.record.amount, this.message, ...(this.record.environment === 'STAGING' ? [this.$t('Test mode. Do not use real money.')] : []), ...this.rows.map(row => `${row.label}: ${row.value}`)].join('\n');
-      this.copyMessage = ''; this.shareError = false;
-      this.$nextTick(() => this.$refs.preview?.focus());
+    date(value) { const date = new Date(value); return Number.isFinite(date.valueOf()) ? this.$d(date, 'short') || new Intl.DateTimeFormat(this.$i18n.locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date) : '—'; },
+    resetExport() { this.exportGeneration++; if (this.imageUrl) URL.revokeObjectURL(this.imageUrl); this.files = null; this.imageUrl = ''; this.generating = false; this.sharing = false; this.exportError = ''; },
+    async reviewShare() {
+      if (this.generating || this.$isHiddenBalance || !this.record) return;
+      const generation = ++this.exportGeneration; this.generating = true; this.exportError = '';
+      try {
+        const issued = await activityReader(this.$account).issueReceipt(this.record);
+        const files = await renderReceipt(issued.document, issued.verificationUrl, this.$t, this.$i18n.locale);
+        if (generation !== this.exportGeneration || !this.show || this.$isHiddenBalance) return;
+        this.files = files; this.imageUrl = URL.createObjectURL(files.png);
+        this.$nextTick(() => this.$refs.format?.focus({ preventScroll: true }));
+      } catch { if (generation === this.exportGeneration) this.exportError = this.$t('Could not generate the receipt. Try again.'); }
+      finally { if (generation === this.exportGeneration) this.generating = false; }
     },
-    async share() {
-      if (this.sharing || this.$isHiddenBalance) return;
-      this.sharing = true; this.shareError = false;
-      try { const result = await shareReceivingText(this.preview, this.title, this.runtime); if (result === 'fallback') selectReceivingText(this.$refs.preview); }
-      catch { this.shareError = true; }
-      finally { this.sharing = false; }
+    async share(download = false) {
+      if (this.sharing || !this.files || this.$isHiddenBalance) return;
+      this.sharing = true; this.exportError = ''; const generation = this.exportGeneration;
+      try { await deliverReceiptFile(this.files[this.format], this.runtime, !download); }
+      catch { if (generation === this.exportGeneration) this.exportError = this.$t('Could not save or share this file. Try again.'); }
+      finally { if (generation === this.exportGeneration) this.sharing = false; }
     },
-    async copy() {
-      try { await navigator.clipboard.writeText(this.preview); this.copyMessage = this.$t('Copied!'); }
-      catch { this.copyMessage = this.$t('Could not copy. Select the text and copy it manually.'); selectReceivingText(this.$refs.preview); }
-    },
+    refresh() { this.resetExport(); this.$emit('refresh'); },
   },
 };
 </script>
@@ -50,12 +57,13 @@ export default {
         <p v-if="record.environment === 'STAGING'" class="&__message">{{ $t('Test mode. Do not use real money.') }}</p>
         <dl><div v-for="row in rows.filter(item => item.label !== $t('Status'))" :key="row.label"><dt>{{ row.label }}</dt><dd :dir="row.financial ? 'ltr' : undefined">{{ row.financial && $isHiddenBalance ? '••••' : row.value }}</dd></div></dl>
         <details class="&__technical"><summary>{{ $t('Details') }}</summary><dl><div v-for="row in technicalRows" :key="row.label"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div><template v-if="record.transactionHash"><dt>{{ $t('Transaction ID') }}</dt><dd>{{ record.transactionHash }}</dd></template><template v-if="record.updatedAt"><dt>{{ $t('Last updated {time}', { time: '' }) }}</dt><dd>{{ date(record.updatedAt) }}</dd></template></dl><MwButton v-if="record.url" type="primary-link" @click="$safeOpen(record.url)">{{ $t('Explorer') }}</MwButton></details>
-        <MwButton v-if="!preview && !$isHiddenBalance" type="secondary" @click="reviewShare">{{ $t('Share') }}</MwButton>
-        <section v-if="preview && !$isHiddenBalance" class="&__preview"><h3>{{ $t('Review before sharing') }}</h3><p>{{ $t('Only the text below will be shared.') }}</p><textarea ref="preview" :value="preview" readonly :aria-label="$t('Review before sharing')" /><div class="&__actions"><MwButton type="primary" :isLoading="sharing" @click="share">{{ $t('Share') }}</MwButton><MwButton type="secondary" @click="copy">{{ $t('Copy') }}</MwButton><MwButton type="primary-link" @click="selectReceivingText($refs.preview)">{{ $t('Select text') }}</MwButton></div><p v-if="copyMessage" role="status">{{ copyMessage }}</p><p v-if="shareError" role="alert">{{ $t('Could not share. Copy or select the text instead.') }}</p></section>
+        <MwButton v-if="!files && !$isHiddenBalance" type="secondary" :isLoading="generating" @click="reviewShare">{{ $t('Share') }}</MwButton>
+        <section v-if="files && !$isHiddenBalance" class="&__preview"><h3>{{ $t('Review before sharing') }}</h3><p>{{ $t('Anyone with this QR can view these details.') }}</p><figure><img :src="imageUrl" :alt="$t('Receipt')" /><figcaption>{{ $t('Scan to verify') }}</figcaption></figure><details><summary>{{ $t('Details') }}</summary><dl><div v-for="row in files.content.rows" :key="row.label"><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div></dl></details><div class="&__actions"><label>{{ $t('Receipt') }}<select ref="format" v-model="format" :disabled="sharing"><option value="png">{{ $t('Image') }} · PNG</option><option value="pdf">PDF</option></select></label><MwButton type="primary" :isLoading="sharing" @click="share()">{{ $t(runtime === 'electron' ? 'Save' : 'Share') }}</MwButton><MwButton v-if="runtime !== 'electron'" type="secondary" :disabled="sharing" @click="share(true)">{{ $t('Save') }}</MwButton></div></section>
+        <p v-if="exportError" class="&__error" role="alert">{{ exportError }}</p>
       </template>
       <p v-if="error" class="&__error" role="alert">{{ error }}</p>
     </div>
-    <template #footer><MwButton type="secondary" :isLoading="loading" @click="$emit('refresh')">{{ $t('Refresh') }}</MwButton></template>
+    <template #footer><MwButton v-if="!files && !generating && (!record || ['pending','checking'].includes(tone) || error)" type="secondary" :isLoading="loading" @click="refresh">{{ $t('Refresh') }}</MwButton></template>
   </MwModal>
 </template>
 <style lang="scss">
@@ -75,7 +83,13 @@ export default {
   &__preview { border-top: 1px solid var(--color-rule); padding-top: var(--space-lg); margin-top: var(--space-lg); }
   &__preview h3 { margin: 0; font-size: 1rem; }
   &__preview p { font-size: var(--text-label); }
-  &__preview textarea { width: 100%; min-height: 14rem; resize: vertical; box-sizing: border-box; border: 1px solid var(--color-rule); border-radius: var(--radius-control); padding: var(--space-sm); background: var(--color-surface-subtle); color: var(--color-ink); font: inherit; font-size: var(--text-label); }
+  &__preview figure { margin: var(--space-md) 0; }
+  &__preview img { display: block; width: 100%; height: auto; }
+  &__preview figcaption { color: var(--color-muted); font-size: var(--text-label); margin-top: var(--space-xs); }
+  &__preview summary { min-height: 2.75rem; align-content: center; cursor: pointer; }
+  &__preview dd { white-space: pre-wrap; }
+  &__actions label { display: grid; gap: var(--space-xs); font-size: var(--text-label); }
+  &__actions select { border: 1px solid var(--color-rule); border-radius: var(--radius-control); background: var(--color-surface-subtle); color: var(--color-ink); min-height: 2.75rem; padding: var(--space-xs); font: inherit; }
   &__actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-sm); }
   &__error { color: var(--color-error); font-size: var(--text-label); }
 }

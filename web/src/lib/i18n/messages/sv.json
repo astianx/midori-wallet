@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Endast texten nedan delas.",
   "Could not share. Copy or select the text instead.": "Kunde inte dela. Kopiera eller markera texten.",
   "Could not copy. Select the text and copy it manually.": "Kunde inte kopiera. Markera texten och kopiera manuellt.",
-  "Reference": "Referens"
+  "Reference": "Referens",
+  "Receipt": "Kvitto",
+  "Image": "Bild",
+  "Verify receipt": "Kontrollera kvittot",
+  "Scan to verify": "Skanna för att kontrollera",
+  "Anyone with this QR can view these details.": "Alla med den här QR-koden kan se uppgifterna.",
+  "Not a completed payment.": "Den här betalningen är inte slutförd.",
+  "Could not generate the receipt. Try again.": "Kvittot kunde inte skapas. Försök igen.",
+  "Could not save or share this file. Try again.": "Filen kunde inte sparas eller delas. Försök igen.",
+  "Receipt unavailable.": "Kvittot är inte tillgängligt.",
+  "Current status": "Aktuell status",
+  "Verified from Midori records.": "Kontrollerat mot Midoris uppgifter."
 }

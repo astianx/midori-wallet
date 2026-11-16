@@ -71,14 +71,14 @@ export default {
         if (this.disposed) return;
         this.orders = data.orders.filter(order => order.cryptoCurrency === wallet.crypto.symbol);
         if (this.currentOrder) this.currentOrder = this.orders.find(order => order.id === this.currentOrder.id) || this.currentOrder;
-        if (this.selectedOrder) this.selectedOrder = this.orders.find(order => order.id === this.selectedOrder.id) || this.selectedOrder;
+        // The open receipt is a stable snapshot; only Refresh replaces it.
       }).catch(error => { if (!this.disposed) this.ordersError = rampError(error, this.$t); }).finally(() => { this.ordersRequest = null; if (!this.disposed) this.isLoadingOrders = false; });
       return this.ordersRequest;
     },
-    async pollOrders() { this.sync(); if (!this.disposed && this.online && document.visibilityState === 'visible' && !this.isLoading && !this.ordersRequest && this.orders.some(isPendingRampOrder)) await this.loadOrders(); },
+    async pollOrders() { this.sync(); if (!this.disposed && !this.selectedOrder && this.online && document.visibilityState === 'visible' && !this.isLoading && !this.ordersRequest && this.orders.some(isPendingRampOrder)) await this.loadOrders(); },
     async refreshPending(id) {
       if (this.disposed) return;
-      try { const order = await this.$wallet.rampOrder(id); if (!this.disposed) this.upsertOrder(order); }
+      try { const order = await this.$wallet.rampOrder(id); if (!this.disposed) { this.upsertOrder(order); this.selectedOrder = order; } }
       catch (error) { if (!this.disposed) this.ordersError = rampError(error, this.$t); }
     },
     upsertOrder(order) {
@@ -86,13 +86,13 @@ export default {
       if (index >= 0 && new Date(this.orders[index].updatedAt) > new Date(order.updatedAt)) return;
       if (index === -1) this.orders.unshift(order); else this.orders.splice(index, 1, order);
       if (this.currentOrder?.id === order.id) this.currentOrder = order;
-      if (this.selectedOrder?.id === order.id) this.selectedOrder = order;
+
     },
     async openDetails(order) { this.selectedOrder = order; this.detailError = ''; await this.refreshDetail(); },
     async refreshDetail() {
       if (!this.selectedOrder || this.detailLoading) return;
       const id = this.selectedOrder.id; this.detailLoading = true; this.detailError = '';
-      try { const order = await this.$wallet.rampOrder(id); if (!this.disposed) this.upsertOrder(order); }
+      try { const order = await this.$wallet.rampOrder(id); if (!this.disposed) { this.upsertOrder(order); this.selectedOrder = order; } }
       catch (error) { if (!this.disposed && this.selectedOrder?.id === id) this.detailError = rampError(error, this.$t); }
       finally { if (!this.disposed) this.detailLoading = false; }
     },

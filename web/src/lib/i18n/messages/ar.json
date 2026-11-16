@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "ستتم مشاركة النص أدناه فقط.",
   "Could not share. Copy or select the text instead.": "تعذرت المشاركة. انسخ النص أو حدده.",
   "Could not copy. Select the text and copy it manually.": "تعذر النسخ. حدد النص وانسخه يدوياً.",
-  "Reference": "المرجع"
+  "Reference": "المرجع",
+  "Receipt": "إيصال",
+  "Image": "صورة",
+  "Verify receipt": "التحقق من الإيصال",
+  "Scan to verify": "امسح للتحقق",
+  "Anyone with this QR can view these details.": "يمكن لأي شخص لديه هذا الرمز الاطلاع على هذه التفاصيل.",
+  "Not a completed payment.": "هذه الدفعة غير مكتملة.",
+  "Could not generate the receipt. Try again.": "تعذر إنشاء الإيصال. حاول مجدداً.",
+  "Could not save or share this file. Try again.": "تعذر حفظ الملف أو مشاركته. حاول مجدداً.",
+  "Receipt unavailable.": "الإيصال غير متاح.",
+  "Current status": "الحالة الحالية",
+  "Verified from Midori records.": "تمت المراجعة في سجلات Midori."
 }

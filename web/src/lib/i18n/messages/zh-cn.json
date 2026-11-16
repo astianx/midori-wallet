@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "仅分享下方文字。",
   "Could not share. Copy or select the text instead.": "无法分享，请复制或选择文字。",
   "Could not copy. Select the text and copy it manually.": "无法复制，请选择文字并手动复制。",
-  "Reference": "参考编号"
+  "Reference": "参考编号",
+  "Receipt": "收据",
+  "Image": "图片",
+  "Verify receipt": "验证收据",
+  "Scan to verify": "扫码验证",
+  "Anyone with this QR can view these details.": "拥有此二维码的人都可以查看这些信息。",
+  "Not a completed payment.": "此付款尚未完成。",
+  "Could not generate the receipt. Try again.": "无法生成收据，请重试。",
+  "Could not save or share this file. Try again.": "无法保存或分享文件，请重试。",
+  "Receipt unavailable.": "收据不可用。",
+  "Current status": "当前状态",
+  "Verified from Midori records.": "已从Midori记录核对。"
 }

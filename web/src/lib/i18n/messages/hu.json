@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Csak az alábbi szöveg lesz megosztva.",
   "Could not share. Copy or select the text instead.": "Sikertelen megosztás. Másolja ki vagy jelölje ki a szöveget.",
   "Could not copy. Select the text and copy it manually.": "Sikertelen másolás. Jelölje ki a szöveget, és másolja ki kézzel.",
-  "Reference": "Hivatkozás"
+  "Reference": "Hivatkozás",
+  "Receipt": "Bizonylat",
+  "Image": "Kép",
+  "Verify receipt": "Bizonylat ellenőrzése",
+  "Scan to verify": "Beolvasás az ellenőrzéshez",
+  "Anyone with this QR can view these details.": "A QR-kód birtokában bárki láthatja ezeket az adatokat.",
+  "Not a completed payment.": "Ez a fizetés nem teljesült.",
+  "Could not generate the receipt. Try again.": "A bizonylat nem hozható létre. Próbálja újra.",
+  "Could not save or share this file. Try again.": "A fájl nem menthető vagy osztható meg. Próbálja újra.",
+  "Receipt unavailable.": "A bizonylat nem érhető el.",
+  "Current status": "Jelenlegi állapot",
+  "Verified from Midori records.": "Ellenőrizve a Midori nyilvántartásában."
 }

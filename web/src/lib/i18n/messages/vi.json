@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Chỉ văn bản bên dưới sẽ được chia sẻ.",
   "Could not share. Copy or select the text instead.": "Không thể chia sẻ. Hãy sao chép hoặc chọn văn bản.",
   "Could not copy. Select the text and copy it manually.": "Không thể sao chép. Chọn văn bản và sao chép thủ công.",
-  "Reference": "Mã tham chiếu"
+  "Reference": "Mã tham chiếu",
+  "Receipt": "Biên nhận",
+  "Image": "Hình ảnh",
+  "Verify receipt": "Kiểm tra biên nhận",
+  "Scan to verify": "Quét để kiểm tra",
+  "Anyone with this QR can view these details.": "Bất kỳ ai có mã QR này đều có thể xem thông tin này.",
+  "Not a completed payment.": "Thanh toán này chưa hoàn tất.",
+  "Could not generate the receipt. Try again.": "Không thể tạo biên nhận. Hãy thử lại.",
+  "Could not save or share this file. Try again.": "Không thể lưu hoặc chia sẻ tệp. Hãy thử lại.",
+  "Receipt unavailable.": "Biên nhận không có sẵn.",
+  "Current status": "Trạng thái hiện tại",
+  "Verified from Midori records.": "Đã kiểm tra trong hồ sơ Midori."
 }

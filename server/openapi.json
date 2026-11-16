@@ -3213,7 +3213,7 @@
     },
     "/api/v1/tag/options": {
       "post": {
-        "operationId": "Challengetobindatagtotheownedaccount",
+        "operationId": "ValidateavailabilityandrequestonepermanenttagbindingTAGIMMUTABLEorTAGTAKENonconflict",
         "summary": "Validate availability and request one permanent tag binding; TAG_IMMUTABLE or TAG_TAKEN on conflict",
         "security": [
           {
@@ -3345,7 +3345,7 @@
     },
     "/api/v1/tag/verify": {
       "post": {
-        "operationId": "Registertagwithaccountownerproof",
+        "operationId": "Registerapermanentuniquetagoncewithaccountownerproofconcurrentconflictsrejected",
         "summary": "Register a permanent unique tag once with account owner proof; concurrent conflicts rejected",
         "security": [
           {
@@ -3867,6 +3867,312 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/receipts": {
+      "post": {
+        "operationId": "PublishanownoperationreceiptsnapshotforareviewedPNGorPDF",
+        "summary": "Publish an own-operation receipt snapshot for a reviewed PNG or PDF",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "document": {
+                      "$ref": "#/components/schemas/ReceiptDocument"
+                    },
+                    "verificationUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "digest": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "document",
+                    "verificationUrl",
+                    "digest"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "payment",
+                      "ramp"
+                    ]
+                  },
+                  "reference": {
+                    "type": "string",
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "source",
+                  "reference"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/verify": {
+      "post": {
+        "operationId": "VerifyareceiptbearertokenwithoutdisclosingthetokeninaURLpath",
+        "summary": "Verify a receipt bearer token without disclosing the token in a URL path",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "document": {
+                      "$ref": "#/components/schemas/ReceiptDocument"
+                    },
+                    "digest": {
+                      "type": "string"
+                    },
+                    "currentStatus": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "checkedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "document",
+                    "digest",
+                    "currentStatus",
+                    "checkedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{43}$"
+                  }
+                },
+                "required": [
+                  "token"
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -6784,6 +7090,216 @@
           "feeMode",
           "feeToken",
           "maxFeeAtomic"
+        ],
+        "additionalProperties": false
+      },
+      "ReceiptAmount": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "ReceiptParty": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "tag": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "address",
+          "tag"
+        ],
+        "additionalProperties": false
+      },
+      "ReceiptDocument": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": 1
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "enum": [
+              "payment",
+              "ramp"
+            ]
+          },
+          "reference": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "send",
+              "receive",
+              "buy",
+              "sell"
+            ]
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "environment": {
+            "enum": [
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
+          "network": {
+            "type": "string"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "received": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "from": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptParty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "to": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptParty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptParty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "transactionHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "midoriFee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "networkCost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "sponsored": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "sponsored"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "id",
+          "source",
+          "reference",
+          "kind",
+          "symbol",
+          "status",
+          "environment",
+          "network",
+          "amount",
+          "paid",
+          "received",
+          "from",
+          "to",
+          "owner",
+          "date",
+          "issuedAt",
+          "transactionHash",
+          "midoriFee",
+          "networkCost"
         ],
         "additionalProperties": false
       },

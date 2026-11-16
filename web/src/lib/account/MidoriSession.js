@@ -279,6 +279,7 @@ export default class MidoriSession {
     if (!this.session || !this.account?.id) return { orders: [] };
     return this.client.request('GET', `/api/v1/accounts/${this.account.id}/ramp/orders`);
   }
+  async issueReceipt(source, reference) { return this.client.request('POST', `/api/v1/accounts/${this.account.id}/receipts`, { source, reference }); }
   async rampOrder(id) { return this.client.request('GET', `/api/v1/ramp/orders/${id}`); }
 
   async signDappRequest(method, data, pinHash, stillApproved = () => true) {

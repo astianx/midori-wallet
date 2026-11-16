@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "Only the text below will be shared.",
   "Could not share. Copy or select the text instead.": "Could not share. Copy or select the text instead.",
   "Could not copy. Select the text and copy it manually.": "Could not copy. Select the text and copy it manually.",
-  "Reference": "Reference"
+  "Reference": "Reference",
+  "Receipt": "Receipt",
+  "Image": "Image",
+  "Verify receipt": "Verify receipt",
+  "Scan to verify": "Scan to verify",
+  "Anyone with this QR can view these details.": "Anyone with this QR can view these details.",
+  "Not a completed payment.": "Not a completed payment.",
+  "Could not generate the receipt. Try again.": "Could not generate the receipt. Try again.",
+  "Could not save or share this file. Try again.": "Could not save or share this file. Try again.",
+  "Receipt unavailable.": "Receipt unavailable.",
+  "Current status": "Current status",
+  "Verified from Midori records.": "Verified from Midori records."
 }

@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "以下のテキストのみを共有します。",
   "Could not share. Copy or select the text instead.": "共有できませんでした。テキストをコピーまたは選択してください。",
   "Could not copy. Select the text and copy it manually.": "コピーできませんでした。テキストを選択して手動でコピーしてください。",
-  "Reference": "参照番号"
+  "Reference": "参照番号",
+  "Receipt": "明細",
+  "Image": "画像",
+  "Verify receipt": "明細を確認",
+  "Scan to verify": "スキャンして確認",
+  "Anyone with this QR can view these details.": "このQRを持つ人は情報を確認できます。",
+  "Not a completed payment.": "この支払いは未完了です。",
+  "Could not generate the receipt. Try again.": "明細を作成できませんでした。再試行してください。",
+  "Could not save or share this file. Try again.": "ファイルを保存または共有できませんでした。再試行してください。",
+  "Receipt unavailable.": "明細を利用できません。",
+  "Current status": "現在の状態",
+  "Verified from Midori records.": "Midoriの記録で確認済み。"
 }

@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "จะแชร์เฉพาะข้อความด้านล่าง",
   "Could not share. Copy or select the text instead.": "แชร์ไม่ได้ คัดลอกหรือเลือกข้อความ",
   "Could not copy. Select the text and copy it manually.": "คัดลอกไม่ได้ เลือกข้อความแล้วคัดลอกด้วยตนเอง",
-  "Reference": "เลขอ้างอิง"
+  "Reference": "เลขอ้างอิง",
+  "Receipt": "ใบเสร็จ",
+  "Image": "รูปภาพ",
+  "Verify receipt": "ตรวจสอบใบเสร็จ",
+  "Scan to verify": "สแกนเพื่อตรวจสอบ",
+  "Anyone with this QR can view these details.": "ทุกคนที่มี QR นี้สามารถดูข้อมูลนี้ได้",
+  "Not a completed payment.": "การชำระเงินนี้ยังไม่สำเร็จ",
+  "Could not generate the receipt. Try again.": "สร้างใบเสร็จไม่ได้ ลองอีกครั้ง",
+  "Could not save or share this file. Try again.": "บันทึกหรือแชร์ไฟล์ไม่ได้ ลองอีกครั้ง",
+  "Receipt unavailable.": "ใบเสร็จไม่พร้อมใช้งาน",
+  "Current status": "สถานะปัจจุบัน",
+  "Verified from Midori records.": "ตรวจสอบจากบันทึก Midori แล้ว"
 }

@@ -652,5 +652,16 @@
   "Only the text below will be shared.": "មានតែអត្ថបទខាងក្រោមប៉ុណ្ណោះដែលនឹងត្រូវចែករំលែក។",
   "Could not share. Copy or select the text instead.": "មិនអាចចែករំលែក។ ចម្លង ឬជ្រើសអត្ថបទ។",
   "Could not copy. Select the text and copy it manually.": "មិនអាចចម្លង។ ជ្រើសអត្ថបទ ហើយចម្លងដោយដៃ។",
-  "Reference": "លេខយោង"
+  "Reference": "លេខយោង",
+  "Receipt": "បង្កាន់ដៃ",
+  "Image": "រូបភាព",
+  "Verify receipt": "ផ្ទៀងផ្ទាត់បង្កាន់ដៃ",
+  "Scan to verify": "ស្កេនដើម្បីផ្ទៀងផ្ទាត់",
+  "Anyone with this QR can view these details.": "អ្នកដែលមាន QR នេះអាចមើលព័ត៌មាននេះបាន។",
+  "Not a completed payment.": "ការទូទាត់នេះមិនទាន់បញ្ចប់។",
+  "Could not generate the receipt. Try again.": "មិនអាចបង្កើតបង្កាន់ដៃ។ សូមព្យាយាមម្ដងទៀត។",
+  "Could not save or share this file. Try again.": "មិនអាចរក្សាទុក ឬចែករំលែកឯកសារ។ សូមព្យាយាមម្ដងទៀត។",
+  "Receipt unavailable.": "បង្កាន់ដៃមិនអាចប្រើបាន។",
+  "Current status": "ស្ថានភាពបច្ចុប្បន្ន",
+  "Verified from Midori records.": "បានផ្ទៀងផ្ទាត់ក្នុងកំណត់ត្រា Midori។"
 }

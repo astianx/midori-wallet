@@ -13,7 +13,7 @@ import { transakClient } from '../lib/transak.js';
 import { createApp } from '../app.js';
 import { createDatabase } from '../lib/db.js';
 import { loadConfig } from '../lib/config.js';
-import { migrate } from '../lib/migrations.js';
+import { migrate, migrationFiles } from '../lib/migrations.js';
 import { requestMessage } from '../lib/crypto.js';
 import { deviceEnrollmentMessage } from '../lib/wallets.js';
 import { MidoriClient } from '../lib/client.js';
@@ -37,7 +37,7 @@ before(async () => {
   config = loadConfig({ DATABASE_URL: url.href, MIDORI_RATE_LIMIT: '10000', MIDORI_PUBLIC_ORIGIN: 'http://localhost:5173' });
   db = createDatabase(config);
   const initial = await migrate(db);
-  assert.equal(initial.length, 7);
+  assert.deepEqual(initial, (await migrationFiles()).map(file => file.version));
   assert.deepEqual(await migrate(db), []);
   if (process.env.MIDORI_TEST_RUNTIME_DATABASE_URL) {
     const runtimeUrl = new URL(process.env.MIDORI_TEST_RUNTIME_DATABASE_URL);

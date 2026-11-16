@@ -1,0 +1,56 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · tone: calm, personal, precise · anchor hue: Midori green · design-system: design.md · designed-as-app
+ * pre-emit critique: P5 H5 E5 S5 R5 V4 · UX-12: shared presentation layer, financial states retain their semantics */
+body {
+  .mw-balance-card :focus-visible { outline-color: var(--color-brand-panel-ink); }
+  .mw-button { font-weight: 550; transition-property: transform, opacity; }
+  .mw-button:not(:disabled):active, .mw-balance-card__action:active { opacity: 0.88; }
+  .mw-button--primary:focus-visible, .mw-balance-card__action:focus-visible { outline-offset: 4px; }
+  .mw-navbar__title { font-weight: 600; letter-spacing: -0.025em; }
+  .mw-navbar__description { margin-top: var(--space-2xs); line-height: 1.5; }
+  .mw-sidebar__link { border-inline-start: 3px solid transparent; padding-inline: var(--space-sm); }
+  .mw-sidebar__link--active { border-inline-start-color: var(--color-accent); }
+  .app-layout__destination { font-weight: 500; }
+  .app-layout__destination--active { font-weight: 600; }
+  .home-view__header { padding-block: var(--space-xs); }
+  .home-view__identity { display: block; margin-top: var(--space-xs); color: var(--color-muted); font-size: var(--text-label); font-weight: 450; overflow-wrap: anywhere; }
+  .home-view__section-heading h2 { font-size: 1.125rem; font-weight: 550; }
+  .home-view__asset-grid { column-gap: var(--space-lg); row-gap: 0; }
+  .home-view__asset { border: 0; border-bottom: 1px solid var(--color-rule); border-radius: 0; padding: var(--space-md) 0; background: transparent; }
+  .home-view__asset:hover { background: var(--color-surface-subtle); }
+  .home-view__asset-value { letter-spacing: -0.025em; }
+  .mw-activity-list { padding: 0; border: 0; border-radius: 0; background: transparent; }
+  .mw-activity-list__toolbar { padding-inline: 0; }
+  .mw-activity-list__row { border-radius: var(--radius-control); }
+  .mw-activity-list__description strong, .mw-activity-list__values strong { font-weight: 550; }
+  .mw-form-element__label { font-weight: 500; }
+  .mw-form-element__box, .mw-form-element__boxes > div { border-radius: var(--radius-control); }
+  .mw-form-element__box:focus-within { background: var(--color-surface); }
+  .money-movement-view__intro h1, .crypto-send-step-status__result h1 { letter-spacing: -0.03em; }
+  .money-movement-view__row { padding-block: var(--space-lg); }
+  .money-movement-view__label { font-size: var(--text-body); }
+  .money-movement-view__label small { line-height: 1.55; }
+  .crypto-send-layout__context strong { font-weight: 550; }
+  .crypto-send-layout__body { line-height: 1.55; }
+  .crypto-send-step-confirm__hero strong, .crypto-send-step-status__result > strong, .mw-activity-receipt__amount { font-size: var(--text-balance); font-weight: 550; letter-spacing: -0.035em; }
+  .crypto-send-step-confirm__details, .mw-activity-receipt dl { font-size: 0.9375rem; }
+  .crypto-receive-step-index__lead { font-size: 1.0625rem; line-height: 1.55; }
+  .crypto-receive-step-index__qr-heading { font-weight: 550; }
+  .crypto-ramp-panel__title, .settings-view__intro h1 { letter-spacing: -0.03em; }
+  .crypto-ramp-panel__summary { line-height: 1.55; }
+  .mw-modal__title { font-weight: 600; }
+  .mw-modal__body p { line-height: 1.55; }
+  .mw-flow-progress__number { border-radius: var(--radius-control); }
+  .mw-flow-progress__step--complete .mw-flow-progress__number { background: var(--color-surface-tint); border-color: var(--color-surface-tint); color: var(--color-accent); }
+  .settings-view h2, .settings-help-view h2 { font-weight: 550; }
+  .auth-step-index__message h1 { max-width: 14ch; letter-spacing: -0.035em; }
+  .auth-step-layout__guide { border-inline-end: 1px solid var(--color-rule); }
+  @media (min-width: 62rem) {
+    .main-layout, .smart-layout { box-shadow: var(--shadow-panel); }
+    .home-view__next { padding-inline: var(--space-md); }
+    .crypto-send-layout__context { padding-inline-start: var(--space-xl); }
+    .app-layout[data-runtime='phonegap'] .main-layout, .app-layout[data-runtime='phonegap'] .smart-layout { box-shadow: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mw-button:not(:disabled):active, .mw-balance-card__action:active { transform: none; }
+  }
+}

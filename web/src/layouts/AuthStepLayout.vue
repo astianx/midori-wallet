@@ -1,10 +1,14 @@
 <script>
 import MwNavbar from '../components/MwNavbar.vue';
+import LogoIcon from '../../../assets/brand/logo.svg';
+import LogoOnDark from '../../../assets/brand/logo-on-dark.svg';
 import { onShowOnHide } from '../lib/mixins.js';
 
 export default {
   components: {
     MwNavbar,
+    LogoIcon,
+    LogoOnDark,
   },
   mixins: [onShowOnHide],
   props: {
@@ -73,8 +77,16 @@ export default {
     }"
   >
     <div class="&__frame" :data-runtime="env.VITE_BUILD_TYPE">
-      <aside class="&__guide"><strong>Midori Wallet</strong><h1>{{ $t('Your wallet') }}</h1><p>{{ $t('Your keys. Your control.') }}</p><p>{{ $t('Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.') }}</p></aside>
+      <aside class="&__guide">
+        <LogoOnDark class="&__logo" role="img" aria-label="Midori Wallet" />
+        <div class="&__message">
+          <h1>{{ $t('Your wallet') }}</h1>
+          <p>{{ $t('Send and receive USDC and USDT with your own wallet.') }}</p>
+        </div>
+        <p class="&__ownership">{{ $t('Your keys. Your control.') }}</p>
+      </aside>
       <div class="&__container">
+        <div class="&__brand"><component :is="$resolvedTheme === 'dark' ? 'LogoOnDark' : 'LogoIcon'" class="&__logo" role="img" aria-label="Midori Wallet" /></div>
         <MwNavbar
           :title="title"
           :description="description"
@@ -96,14 +108,98 @@ export default {
 </template>
 
 <style lang="scss">
-/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · pre-emit critique: P5 H5 E4 S5 R5 V4 */
-.#{ $filename } { height: 100%; min-height: 0; display: flex; flex-direction: column; background: var(--color-paper); color: var(--color-ink); overflow-y: auto;
- &__frame { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
- &__guide { display: none; }
- &__container { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--color-surface); padding-top: env(safe-area-inset-top); }
- &__content { display: flex; flex-direction: column; min-height: 0; flex: 1; overflow-y: auto; gap: var(--space-lg); padding: var(--space-lg) max(var(--space-lg), env(safe-area-inset-right)) max(var(--space-lg), env(safe-area-inset-bottom)) max(var(--space-lg), env(safe-area-inset-left)); }
- &__progress { display: grid; gap: var(--space-xs); color: var(--color-muted); font-size: var(--text-label); }
- progress { width: 100%; height: .25rem; accent-color: var(--color-accent); }
- @media(min-width: 64rem) { &__frame:not([data-runtime='phonegap']) { grid-template-columns: minmax(0, .85fr) minmax(0, 1fr); } &__frame:not([data-runtime='phonegap']) &__guide { display: flex; flex-direction: column; justify-content: center; gap: var(--space-lg); padding: var(--space-2xl); background: var(--color-brand-panel); color: var(--color-brand-panel-ink); } &__guide h1 { font-size: 2.5rem; letter-spacing: -.04em; } &__guide p { max-width: 32ch; line-height: 1.7; } &__container { padding-inline: max(var(--space-lg), calc((100% - 32rem) / 2)); } &__frame[data-runtime='phonegap'] &__container { padding-inline: 0; } }
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app
+ * pre-emit critique: P5 H5 E5 S5 R5 V4 · centered access, compact PIN, existing brand assets */
+body .#{ $filename } {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow-y: auto;
+  background: var(--color-paper);
+  color: var(--color-ink);
+
+  .#{ $filename }__frame {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    flex: none;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+    margin: auto;
+    border: 0;
+    border-radius: 0;
+    overflow: clip;
+    box-shadow: none;
+  }
+
+  .#{ $filename }__guide { display: none; }
+  .#{ $filename }__logo { display: block; width: 8rem; max-width: 100%; height: auto; flex: none; }
+  .#{ $filename }__brand { display: flex; justify-content: center; padding: var(--space-lg) var(--space-lg) var(--space-xs); }
+  .#{ $filename }__container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-width: none;
+    padding: env(safe-area-inset-top) 0 0;
+    background: var(--color-surface);
+  }
+  .#{ $filename }__container > .mw-navbar { flex: none; padding-inline: var(--space-lg); }
+  .#{ $filename }__content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: var(--space-lg);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding: var(--space-lg) max(var(--space-lg), env(safe-area-inset-right)) max(var(--space-lg), env(safe-area-inset-bottom)) max(var(--space-lg), env(safe-area-inset-left));
+  }
+  .#{ $filename }__content:has(> .mw-pin__keyboard) { justify-content: safe center; }
+  .#{ $filename }__content .mw-pin__dots { flex: none; min-height: 3rem; }
+  .#{ $filename }__content .mw-pin__keyboard { width: min(100%, 18rem); }
+  .#{ $filename }__content .mw-pin__keyboard .mw-pin__key { width: min(3.5rem, 100%); }
+  .#{ $filename }__progress { display: grid; gap: var(--space-xs); color: var(--color-muted); font-size: var(--text-label); }
+  progress { width: 100%; height: .25rem; accent-color: var(--color-accent); }
+
+  @media (min-width: 48rem) {
+    padding: var(--space-lg);
+    .#{ $filename }__frame:not([data-runtime='phonegap']) {
+      max-width: 36rem;
+      height: min(44rem, 100%);
+      border: 1px solid var(--color-rule);
+      border-radius: var(--radius-hero);
+      box-shadow: var(--shadow-panel);
+    }
+  }
+  @media (min-width: 64rem) {
+    padding: var(--space-xl);
+    .#{ $filename }__frame:not([data-runtime='phonegap']) { grid-template-columns: minmax(0, .85fr) minmax(0, 1fr); max-width: 60rem; }
+    .#{ $filename }__frame:not([data-runtime='phonegap']) .#{ $filename }__guide {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+      min-width: 0;
+      min-height: 0;
+      overflow-y: auto;
+      padding: var(--space-2xl);
+      background: var(--color-brand-panel);
+      color: var(--color-brand-panel-ink);
+    }
+    .#{ $filename }__message { margin-block: auto; }
+    .#{ $filename }__message h1 { margin: 0 0 var(--space-lg); font-size: 2.5rem; font-weight: 550; line-height: 1.15; letter-spacing: -.04em; }
+    .#{ $filename }__message p { max-width: 30ch; margin: 0; line-height: 1.7; color: var(--color-brand-panel-muted); }
+    .#{ $filename }__ownership { margin: 0; font-size: var(--text-label); color: var(--color-brand-panel-muted); }
+    .#{ $filename }__frame:not([data-runtime='phonegap']) .#{ $filename }__brand { display: none; }
+    .#{ $filename }__content { padding: var(--space-xl); }
+  }
+  &:has(> [data-runtime='phonegap']) { padding: 0; }
 }
 </style>

@@ -1,0 +1,63 @@
+[
+  {
+    "date": "2026-11-16",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Midori stablecoin",
+    "enrichment": "none",
+    "brief": "Centered branded access and grouped PIN across web, Electron and Android",
+    "variation": "Bounded centered split on desktop; branded single column on mobile; compact PIN group",
+    "audit": "docs/41-acceso-centrado-y-marca-midori.md",
+    "preEmitCritique": "P5 H5 E5 S5 R5 V4"
+  },
+  {
+    "date": "2026-11-16",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Midori stablecoin",
+    "enrichment": "none",
+    "nav": "N3 side rail + mobile destinations",
+    "footer": "Ft2 access only",
+    "brief": "UX-12 acento cercano y preciso para día a día, freelancers y profesionales",
+    "variation": "Brand balance panel, quieter divided rows, contextual identity and direct copy; retain approved app navigation",
+    "status": "Technical validation web, Firefox, Electron Linux, Android; participant round pending by user choice",
+    "audit": "docs/39-validacion-ux-12-y-acento-midori.md",
+    "preEmitCritique": "P5 H5 E5 S5 R5 V4"
+  },
+  {
+    "date": "2026-11-16",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Midori stablecoin",
+    "enrichment": "none",
+    "brief": "UX-10 Acceso, Cuenta, recuperación/avanzado y ayuda",
+    "status": "validated web, Electron, Android; native file pickers and isolated connection states",
+    "audit": "docs/37-cierre-ux-10-acceso-cuenta-ayuda.md",
+    "preEmitCritique": "P5 H5 E5 S5 R5 V4"
+  },
+  {
+    "date": "2026-11-15",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Midori stablecoin",
+    "enrichment": "none",
+    "brief": "UX-08 Agregar/Retirar: importe, resumen, checkout y órdenes",
+    "status": "validated web, Electron, Android with isolated provider",
+    "audit": "docs/32-cierre-ux-08-agregar-retirar.md",
+    "preEmitCritique": "P5 H5 E4 S5 R5 V4"
+  },
+  {
+    "date": "2026-11-14",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Midori stablecoin",
+    "theme_axes": "light and dark / grotesk-sans / green",
+    "enrichment": "none",
+    "nav": "N3 side rail + mobile destinations",
+    "footer": "Ft2 inline for access only",
+    "brief": "USDC/USDT first; preserve financial flows",
+    "status": "implemented; validation partial",
+    "audit": "docs/evidencia/ui-ux/hallmark-audit.json",
+    "preEmitCritique": "P4 H4 E4 S5 R5 V4"
+  }
+]

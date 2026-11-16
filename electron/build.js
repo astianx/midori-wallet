@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { loadBuildEnvironment, resolveBuildUrls } from '../config/environment.js';
+import { createDmg } from './create-dmg.mjs';
 
 const directory = fileURLToPath(new URL('.', import.meta.url));
 const root = path.resolve(directory, '..');
@@ -21,5 +22,5 @@ run(path.join(directory,'node_modules/@electron-forge/cli/dist/electron-forge.js
 if (process.platform === 'darwin') {
   const name = profile === 'release' ? 'Midori Wallet' : 'Midori Wallet Beta';
   const folder = path.join(directory,'out',`${name}-darwin-${process.arch}`);
-  execFileSync('hdiutil', ['create','-volname',name,'-srcfolder',folder,'-ov','-format','UDZO',path.join(directory,'out/make',`Midori-Wallet-${pkg.version}-${process.arch}.dmg`)], { stdio:'inherit' });
+  await createDmg({ name, folder, destination: path.join(directory,'out/make',`Midori-Wallet-${pkg.version}-${process.arch}.dmg`) });
 }

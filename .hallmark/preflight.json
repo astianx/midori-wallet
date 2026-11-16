@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-14",
+  "revision": "d337e1ee7a82ae39978376ab36ca9ef08feaed0f",
+  "framework": {
+    "value": "Vue 3.5 / Vite 6 / SCSS",
+    "source": "web/package.json:49"
+  },
+  "fonts": {
+    "existing": "system UI + local locale fonts",
+    "source": "web/src/assets/styles/_base.scss:7",
+    "change": "Local Geist variable font with OFL; keep locale fallback fonts"
+  },
+  "palette": {
+    "anchor": "Midori green",
+    "source": "web/src/assets/styles/variables.css:5",
+    "preserved": true
+  },
+  "motion": {
+    "stance": "motion-cut; CSS feedback only",
+    "source": "web/package.json"
+  },
+  "spacing": {
+    "scale": "4/8 px",
+    "source": "web/src/assets/styles/variables.css:23"
+  },
+  "scope": "app",
+  "audience": "stablecoin users; progressive crypto and investment features later",
+  "userConfirmed": true
+}

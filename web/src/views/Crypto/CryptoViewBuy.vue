@@ -2,25 +2,28 @@
 import CryptoRampPanel from './CryptoRampPanel.vue';
 import MainLayout from '../../layouts/MainLayout.vue';
 
-import { cryptoSubtitle } from '../../lib/helpers.js';
-
 export default {
   components: {
     CryptoRampPanel,
     MainLayout,
   },
-  data() {
-    return {
-      subtitle: cryptoSubtitle(this.$wallet),
-    };
+  methods: {
+    back() {
+      const previous = this.$router.options.history.state.back;
+      if (previous && this.$router.resolve(previous).name === 'add-money' && this.$router.resolve(previous).query.method === 'buy') this.$router.back();
+      else this.$router.replace({ name: 'add-money', query: { method: 'buy' } });
+    },
   },
 };
 </script>
 
 <template>
   <MainLayout
-    :title="$t('Buy {symbol}', { symbol: $wallet.crypto.symbol })"
-    :description="subtitle"
+    :title="$t('Add money')"
+    :description="$wallet.crypto.symbol"
+    :onBack="back"
+    wide
+    allowReadFailure
   >
     <CryptoRampPanel kind="buy" />
   </MainLayout>

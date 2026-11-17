@@ -1,0 +1,14 @@
+<script>
+import MainLayout from '../../layouts/MainLayout.vue';import MwButton from '../../components/MwButton.vue';import { SUPPORT_URL } from '../../lib/legal.js';
+export default { components: { MainLayout, MwButton }, data() { return { support: SUPPORT_URL }; } };
+</script>
+<template><MainLayout :title="$t('Help')"><div class="&">
+<details><summary>{{ $t('What is a passphrase?') }}</summary><p>{{ $t('Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.') }}</p></details>
+<details><summary>{{ $t('Forgot your PIN?') }}</summary><p>{{ $t('Log out only if you have your recovery phrase.') }}</p><p>{{ $t('Your 12 words restore your wallet. You can also save this optional recovery file. It contains no private keys.') }}</p></details>
+<details><summary>{{ $t('Only Base is supported') }}</summary><p>{{ $t('Choose Base for USDC and USDT. Other networks are not supported.') }}</p><MwButton type="primary-link" @click="$router.push({name:'receive'})">{{ $t('Receive') }}</MwButton></details>
+<details><summary>{{ $t('This quote expired. Review the payment again.') }}</summary><p>{{ $t('Review the payment again before entering your PIN. Do not repeat a pending payment.') }}</p></details>
+<details><summary>{{ $t('Awaiting payment') }}</summary><p>{{ $t('Closing this screen does not cancel or confirm this order.') }}</p><MwButton type="primary-link" @click="$router.push({name:'activity'})">{{ $t('Activity') }}</MwButton></details>
+<details><summary>{{ $t('Error! Please check your internet connection and try again.') }}</summary><p>{{ $t('Your address remains available. Reconnect before sending or refreshing activity.') }}</p></details>
+<details><summary>{{ $t('WalletConnect') }}</summary><p>{{ $t('Connecting does not send money or sign a message.') }}</p><p>{{ $t('Every signature and payment requires your approval and PIN.') }}</p><p>{{ $t('USDT and USDC transfers on Base are supported. Other contract calls are unavailable.') }}</p><MwButton type="primary-link" @click="$router.push({name:'settings.walletconnect'})">{{ $t('Connections') }}</MwButton></details>
+</div><h2>{{ $t('Support') }}</h2><p>{{ $t('Support opens a public issue. Never include your phrase, PIN or private keys.') }}</p><p>{{ $t('No private data is sent automatically.') }}</p><MwButton type="secondary" @click="$safeOpen(support)">{{ $t('Support (English)') }}</MwButton></MainLayout></template>
+<style lang="scss">/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · pre-emit critique: P5 H5 E4 S5 R5 V4 */ .#{ $filename } { details { border-bottom: 1px solid var(--color-rule); padding-block: var(--space-sm); } summary { cursor: pointer; min-height: 2.75rem; align-content: center; font-weight: 550; } p { line-height: 1.7; color: var(--color-muted); } }</style>

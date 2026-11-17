@@ -15,18 +15,24 @@ import { history } from './lib/history.js';
 import { paymentService } from './lib/payments.js';
 import { chainRpc } from './lib/chain-rpc.js';
 import { ownTag, tagOptions, registerTag, resolveTag, verifyTagRegistration, verifyTagSnapshot } from './lib/tags.js';
+import { exchangeService } from './lib/exchange.js';
 import { rampService } from './lib/ramp.js';
+import { receiptService } from './lib/receipts.js';
+import { marketService } from './lib/market.js';
 
 const route = action => (req, res, next) => Promise.resolve(action(req, res)).catch(next);
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
 const requestIp = req => (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
-export function createApp({ db, config, webApp, provider, rampProvider, reportError = captureServerError, logger = () => {} }) {
+export function createApp({ db, config, webApp, provider, rampProvider, exchangeProvider, marketProvider, reportError = captureServerError, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
   const webauthn = webauthnService(db, config);
   const payments = paymentService(db, config, provider);
+  const exchange = exchangeService(db, config, exchangeProvider);
   const ramp = rampService(db, config, rampProvider);
+  const market = marketProvider || marketService({ apiKey: config.coingeckoApiKey });
+  const receipts = receiptService({ ...config, receiptPath: webApp?.locals?.receiptPath || '/receipt' });
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy ? 'loopback' : false);
   app.set('query parser', 'simple');
@@ -47,15 +53,17 @@ export function createApp({ db, config, webApp, provider, rampProvider, reportEr
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'unavailable', database: ready ? 'ready' : 'unavailable' });
   }));
   app.get('/api/v1/openapi.json', (req, res) => res.sendFile(new URL('./openapi.json', import.meta.url).pathname));
-  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, ramp: config.transakEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, ramp: config.transakEnabled, exchange: config.changellyEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
   app.get('/api/v1/updates/:platform/:arch', route(async (req, res) => {
     requireValue(['win32','darwin','linux','android','ios','web'].includes(req.params.platform) && ['x64','arm64','any'].includes(req.params.arch));
     try { res.json({ enabled: githubUpdates.enabled, update: await githubUpdates.getUpdate(req.params.platform, req.params.arch) || null }); }
     catch { throw new ApiError(503, 'UPDATES_UNAVAILABLE', 'Updates are temporarily unavailable'); }
   }));
   app.get('/api/v1/assets', route(async (req, res) => res.json({ assets: await catalog(db) })));
+  app.get('/api/v1/market/:symbol/chart', route(async (req, res) => res.json(await market.chart(req.params.symbol, req.query))));
 
   const publicPost = (path, action, status = 200) => app.post(path, route(async (req, res) => { await limitUnauthenticated(db, config, req); res.status(status).json(await action(req.body)); }));
+  publicPost('/api/v1/receipts/verify', body => receipts.verify(db, body));
   publicPost('/api/v1/registration/options', body => wallets.registrationOptions(body));
   publicPost('/api/v1/registration/verify', body => wallets.register(body), 201);
   publicPost('/api/v1/auth/options', body => wallets.loginOptions(body));
@@ -91,11 +99,17 @@ export function createApp({ db, config, webApp, provider, rampProvider, reportEr
   protectedRoute('get', '/api/v1/accounts/:id/balances', async (req, client, principal) => { uuid(req.params.id); return readBalances(db, config, principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/accounts/:id/history', (req, client, principal) => { uuid(req.params.id); return history(client, config, principal.wallet_id, req.params.id, req.query); });
   protectedRoute('get', '/api/v1/accounts/:id/history/:eventId', async (req, client, principal) => { uuid(req.params.id); return (await history(client, config, principal.wallet_id, req.params.id, {}, req.params.eventId)).transactions[0]; });
+  protectedRoute('post', '/api/v1/accounts/:id/receipts', (req, client, principal) => { uuid(req.params.id); return receipts.issue(client, principal, req.params.id, req.body); }, 201);
   protectedRoute('post', '/api/v1/accounts/:id/intents', (req, client, principal) => { uuid(req.params.id); return payments.create(principal, req.params.id, req.body); }, 200, false);
   protectedRoute('get', '/api/v1/accounts/:id/intents', (req, client, principal) => { uuid(req.params.id); return payments.list(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/intents/:id', (req, client, principal) => { uuid(req.params.id); return payments.get(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/authorize', (req, client, principal) => { uuid(req.params.id); return payments.authorize(principal, req.params.id, req.body); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/cancel', (req, client, principal) => { uuid(req.params.id); exactKeys(req.body, []); return payments.cancel(principal, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/accounts/:id/exchange/options', (req, client, principal) => { uuid(req.params.id); return exchange.options(principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('post', '/api/v1/accounts/:id/exchange/quotes', (req, client, principal) => { uuid(req.params.id); return exchange.quote(principal.wallet_id, req.params.id, req.body); }, 200, false);
+  protectedRoute('post', '/api/v1/accounts/:id/exchange/orders', (req, client, principal) => { uuid(req.params.id); return exchange.create(principal, req.params.id, req.body); }, 200, false);
+  protectedRoute('get', '/api/v1/accounts/:id/exchange/orders', (req, client, principal) => { uuid(req.params.id); return exchange.list(principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/exchange/orders/:id', (req, client, principal) => { uuid(req.params.id); return exchange.get(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/ramp/options', () => ramp.options(), 200, false);
   protectedRoute('post', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.create(principal, req.params.id, req.body, requestIp(req)); }, 200, false);
   protectedRoute('get', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.list(principal.wallet_id, req.params.id); }, 200, false);
@@ -142,6 +156,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, reportEr
     if (error.code === '23505') { status = 409; code = 'DUPLICATE_RESOURCE'; message = 'Identity, device or account already registered'; }
     if (['40P01', '40001'].includes(error.code)) { status = 409; code = 'RETRY_REQUIRED'; message = 'Concurrent change; retry the request with a new nonce'; }
     if (['23514', '23503', '22P02', '22003'].includes(error.code)) { status = 400; code = 'INVALID_REQUEST'; message = 'Data violates a persistence constraint'; }
+    if (error.code === '23514' && ['wallet_tag_immutable', 'tag_reservation_immutable'].includes(error.constraint)) { status = 409; code = 'TAG_IMMUTABLE'; message = 'The registered tag cannot be changed or reassigned'; }
     if (error.type === 'entity.parse.failed' || error.type === 'entity.too.large') { status = error.status; code = 'INVALID_BODY'; message = 'Invalid or oversized JSON body'; }
     if (/^(08|53|57P)/.test(error.code || '') || ['55000', '3D000', '28P01', '28000', 'ECONNREFUSED', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNRESET'].includes(error.code) || /connection timeout|timeout exceeded|pool.*end/i.test(error.message)) { status = 503; code = 'DATABASE_UNAVAILABLE'; message = 'Persistence is temporarily unavailable'; }
     if (status >= 500) {

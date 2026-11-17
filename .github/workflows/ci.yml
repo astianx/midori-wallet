@@ -3,11 +3,17 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      android_release:
+        description: Build signed Android APK and AAB (main only)
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
 concurrency:
   group: midori-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 env:
   MIDORI_ALLOW_PUBLISH: 'false'
   MIDORI_SIGN_ARTIFACTS: 'false'
@@ -21,30 +27,36 @@ env:
   SENTRY_ORG: ${{ vars.SENTRY_ORG }}
   SENTRY_PROJECT: ${{ vars.SENTRY_FRONT_PROJECT }}
 jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      android-release: ${{ steps.policy.outputs.android-release }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Explain build and signing policy
+        id: policy
+        run: node scripts/ci/plan.mjs
+        env:
+          ANDROID_RELEASE_REQUESTED: ${{ inputs.android_release || false }}
   checks:
+    needs: plan
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v5
+      - uses: ./.github/actions/setup-build
         with:
-          node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            web/package-lock.json
-            server/package-lock.json
-            packages/wallet-core/package-lock.json
-      - run: npm ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
-      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
-      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
-      - run: npm --prefix server ci --ignore-scripts --no-audit --no-fund --userconfig=/dev/null
+          target: checks
       - name: Reject retired dependency registries
         run: |
           if rg -i '@coinspace|npm.pkg.github.com|github.com/CoinSpace|"mongodb"' package-lock.json web/package-lock.json server/package-lock.json electron/package-lock.json phonegap/package-lock.json .npmrc web/.npmrc server/.npmrc; then exit 1; fi
       - run: npm run lint
+      - run: npm run test:build
       - run: npm --prefix web run check:i18n
       - name: Prepare isolated PostgreSQL database
         run: |
@@ -63,12 +75,11 @@ jobs:
       - run: npm run build:web
         env:
           SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
+      - run: node scripts/ci/artifacts.mjs web
       - uses: actions/upload-artifact@v4
         with:
           name: midori-web-${{ github.sha }}
-          path: |
-            server/dist
-            artifacts/*build.json
+          path: artifacts/web
           if-no-files-found: error
   desktop:
     needs: checks
@@ -82,26 +93,23 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v5
+      - uses: ./.github/actions/setup-build
         with:
-          node-version-file: .nvmrc
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix electron ci --ignore-scripts --no-audit --no-fund
-      - run: node electron/node_modules/electron/install.js
+          target: desktop
       - name: Install Linux packaging tools
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
       - run: npm run build:electron
         env:
           SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
+      - name: Collect desktop artifacts and manifest
+        if: ${{ !cancelled() }}
+        run: node scripts/ci/artifacts.mjs desktop
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: midori-desktop-${{ matrix.os }}-${{ github.sha }}
-          path: |
-            electron/out/make
-            artifacts/*build.json
+          path: artifacts/desktop
           if-no-files-found: error
   android:
     needs: checks
@@ -111,42 +119,22 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v5
+      - uses: ./.github/actions/setup-build
         with:
-          node-version-file: .nvmrc
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.14.2'
-      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
+          target: mobile
+      - uses: ./.github/actions/setup-android
       - run: npm run build:android
         env:
           SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
+      - run: node scripts/ci/artifacts.mjs android
       - uses: actions/upload-artifact@v4
         with:
           name: midori-android-${{ github.sha }}
-          path: |
-            phonegap/build-native/debug/platforms/android/app/build/outputs/apk/debug/*.apk
-            artifacts/*build.json
+          path: artifacts/android
           if-no-files-found: error
-  # Signed release APK: separate job, gated by the "release-signing"
-  # GitHub Environment (manual approval required every run, admins included;
-  # see repo Settings > Environments). Only runs for pushes to main, never
-  # for pull_request (including same-repo branches), so the keystore is
-  # never reachable from an unreviewed change.
   android-release:
-    needs: android
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [plan, android]
+    if: needs.plan.outputs.android-release == 'true'
     environment: release-signing
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -154,53 +142,37 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v5
+      - uses: ./.github/actions/setup-build
         with:
-          node-version-file: .nvmrc
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.14.2'
-      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
-      - name: Decode Android keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/midori-wallet-release.p12"
-      - name: Build signed release APK
-        run: npm run build:android
+          target: mobile
+      - uses: ./.github/actions/setup-android
+      - name: Validate and decode Android signing configuration
+        run: node scripts/ci/android-signing.mjs prepare
         env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          MIDORI_BUILD_PROFILE: release
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/midori-wallet-release.p12
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      - name: Remove decoded keystore
-        if: always()
-        run: rm -f "$RUNNER_TEMP/midori-wallet-release.p12"
-      # Flatten the deep Cordova/Gradle output paths into a single folder
-      # with a predictable name, so downloading the artifact zip doesn't
-      # require digging through platforms/android/app/build/outputs/...
-      - name: Stage release files
+      - name: Build and verify signed APK and AAB
         run: |
-          set -euo pipefail
-          version="$(node -p "require('./phonegap/package.json').version")"
-          mkdir -p dist/release
-          cp phonegap/build-native/release/platforms/android/app/build/outputs/apk/release/app-release.apk "dist/release/midori-wallet-android-v${version}.apk"
-          cp phonegap/build-native/release/platforms/android/app/build/outputs/bundle/release/app-release.aab "dist/release/midori-wallet-android-v${version}.aab"
-          cp artifacts/*build.json "dist/release/" 2>/dev/null || true
+          npm run build:android
+          node scripts/ci/android-signing.mjs verify
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          MIDORI_BUILD_PROFILE: release
+          MIDORI_SIGN_ARTIFACTS: 'true'
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: Remove signing files
+        if: always()
+        run: node scripts/ci/android-signing.mjs cleanup
+      - name: Collect verified release artifacts and manifest
+        run: node scripts/ci/artifacts.mjs android-release
       - uses: actions/upload-artifact@v4
         with:
           name: midori-android-release-${{ github.sha }}
-          path: dist/release
+          path: artifacts/android-release
           if-no-files-found: error
   ios:
     needs: checks
@@ -210,13 +182,9 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v5
+      - uses: ./.github/actions/setup-build
         with:
-          node-version-file: .nvmrc
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix packages/wallet-core ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
-      - run: npm --prefix phonegap ci --ignore-scripts --no-audit --no-fund
+          target: mobile
       - run: npm run build:ios
         env:
           SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
@@ -226,10 +194,9 @@ jobs:
           ios_bundle=$(find phonegap/build-native/debug/platforms/ios/build -type d -name '*.app' -print -quit)
           test -n "$ios_bundle"
           tar -czf artifacts/midori-ios-simulator.tar.gz -C "$(dirname "$ios_bundle")" "$(basename "$ios_bundle")"
+      - run: node scripts/ci/artifacts.mjs ios
       - uses: actions/upload-artifact@v4
         with:
           name: midori-ios-simulator-${{ github.sha }}
-          path: |
-            artifacts/midori-ios-simulator.tar.gz
-            artifacts/*build.json
+          path: artifacts/ios
           if-no-files-found: error

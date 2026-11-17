@@ -55,7 +55,7 @@ export default {
         {{ $t('Receive') }}
       </MwButton>
       <MwButton
-        v-if="$showRampsAndExchangeAndStaking"
+        v-if="$account.capabilities.exchange"
         type="circle"
         :disabled="disabled"
         @click="$router.push({ name: 'crypto.swap', params: { cryptoId: $wallet.crypto._id }})"
@@ -85,6 +85,7 @@ export default {
 
     &__group {
       max-width: 25rem;
+      grid-template-columns: repeat(auto-fit, minmax(min(4rem, 100%), 1fr));
     }
   }
 </style>

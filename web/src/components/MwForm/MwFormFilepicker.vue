@@ -1,15 +1,18 @@
 <script>
+import { fieldProps, useFormField } from './field.js';
 import { dataUrlSize } from '../../lib/helpers.js';
 
 import CloseIcon from '../../assets/svg/close.svg';
 import MwFormElement from './MwFormElement.vue';
 
 export default {
+  setup(props) { return useFormField(props); },
   components: {
     MwFormElement,
     CloseIcon,
   },
   props: {
+    ...fieldProps,
     modelValue: {
       type: Object,
       default: undefined,
@@ -176,6 +179,12 @@ export default {
     class="&"
     v-bind="$props"
     @click="click"
+    :controlId="controlId"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <div
       class="&__filename"
@@ -185,6 +194,7 @@ export default {
     </div>
 
     <input
+      v-bind="fieldAttrs"
       ref="input"
       type="file"
       class="&__input"
@@ -193,16 +203,17 @@ export default {
       :capture="internalCapture"
       @change="change"
     >
-    <div
+    <button
+      type="button"
       v-if="clear && modelValue"
       class="&__icon-after"
-      role="button"
+      :disabled="disabled"
       :title="$t('Clear')"
       :aria-label="$t('Clear')"
       @click.prevent="$emit('update:modelValue', undefined); filename = ''"
     >
-      <CloseIcon />
-    </div>
+      <CloseIcon aria-hidden="true" />
+    </button>
   </MwFormElement>
 </template>
 
@@ -219,8 +230,11 @@ export default {
 
     &__input {
       position: absolute;
-      width: 0;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       opacity: 0;
+      cursor: pointer;
     }
 
     &__icon-after {

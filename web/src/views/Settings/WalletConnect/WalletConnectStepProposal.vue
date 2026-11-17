@@ -27,8 +27,10 @@ export default {
       finally { this.isLoading = false; }
     },
     async reject() {
+      if (this.isLoading) return; this.isLoading = true;
       try { await (await this.$account.walletConnect()).rejectProposal(this.storage.proposal); }
-      finally { this.updateStorage({ proposal: undefined }); this.back(); }
+      catch { this.error = this.$t('Connection unavailable. Try again or use Help.'); }
+      finally { this.updateStorage({ proposal: undefined }); this.isLoading = false; this.back(); }
     },
   },
 };
@@ -36,6 +38,7 @@ export default {
 <template>
   <MainLayout :title="$t('Review connection')" :onBack="reject" allowReadFailure>
     <MwFormGroup v-if="review">
+      <p>{{ $t('Connecting does not send money or sign a message.') }}</p>
       <p>{{ $t('{name} wants to connect to your wallet.', { name: review.name }) }}</p>
       <MwFormTextareaReadonly :label="$t('URL')" :value="review.url" />
       <p v-if="!review.verified">{{ $t('This domain has not been verified. Check the address before connecting.') }}</p>

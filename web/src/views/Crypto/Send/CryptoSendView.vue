@@ -1,7 +1,12 @@
 <script>
+import { savePaymentDraft, takePaymentDraft } from '../../../lib/navigation.js';
+import MainLayout from '../../../layouts/MainLayout.vue';
+import MwButton from '../../../components/MwButton.vue';
+import MwLoader from '../../../components/MwLoader.vue';
+import { exchangeError } from '../../../lib/account/exchange-errors.js';
 import { Amount } from '../../../lib/account/domain.js';
 
-import MwPinStep from '../../../components/MwPinStep.vue';
+import CryptoSendStepPin from './CryptoSendStepPin.vue';
 import MwSteps from '../../../components/MwSteps.vue';
 
 import CryptoSendStepAddress from './CryptoSendStepAddress.vue';
@@ -17,12 +22,28 @@ import CryptoSendStepStatus from './CryptoSendStepStatus.vue';
 
 export default {
   components: {
-    MwSteps,
+    MwSteps, MainLayout, MwButton, MwLoader,
   },
   data() {
-    return {
-      storage: { temp: this.parseQuery(this.$route) },
-    };
+    const owner = this.$wallet.address;
+    const path = this.$route.fullPath;
+    const draft = this.$route.query.exchange ? null : takePaymentDraft(owner, path);
+    const temp = this.parseQuery(this.$route);
+    if (draft) {
+      temp.address = draft.address;
+      temp.amount = draft.amount === undefined ? undefined : Amount.fromString(draft.amount, this.$wallet.crypto.decimals);
+    }
+    return { owner, draftPath: path, storage: { temp }, ready: !this.$route.query.exchange, exchangeError: '', disposed: false };
+  },
+  mounted() { if (this.$route.query.exchange) this.loadExchange(); },
+  beforeUnmount() {
+    this.disposed = true;
+    const steps = this.$refs.steps;
+    const active = steps?.activeStep;
+    if (!steps || !this.$account.isCreated || ['confirmed','reverted','expired'].includes(steps.storage.intent?.status)) return;
+    const address = typeof active?.address === 'string' ? active.address : steps.storage.alias || steps.storage.address || steps.storage.temp?.address || '';
+    const amount = active && 'amountValue' in active ? active.amountValue : steps.storage.amount ?? steps.storage.temp?.amount;
+    savePaymentDraft(this.owner, this.draftPath, { address, amount: amount?.toString() });
   },
   steps: {
     index: CryptoSendStepAddress,
@@ -33,11 +54,25 @@ export default {
     confirm: CryptoSendStepConfirm,
     status: CryptoSendStepStatus,
     mecto: CryptoSendStepMecto,
-    pin: MwPinStep,
+    pin: CryptoSendStepPin,
     qr: CryptoSendStepQr,
     poor: CryptoSendStepPoor,
   },
   methods: {
+    async loadExchange() {
+      this.exchangeError = '';
+      try {
+        const order = await this.$wallet.exchangeOrder(this.$route.query.exchange);
+        if (this.disposed) return;
+        if (!order.depositAddress || order.quote.from.contract !== this.$wallet.crypto.address.toLowerCase()) throw { code: 'INVALID_REQUEST' };
+        this.storage = { exchangeOrderId: order.id, exchange: order, temp: { address: order.depositAddress, amount: Amount.fromString(order.quote.amountFrom, 6) } };
+        if (order.paymentIntentId) {
+          this.storage.intent = await this.$wallet.payment(order.paymentIntentId);
+          if (this.disposed) return;
+        }
+        this.ready = true;
+      } catch (error) { if (!this.disposed) this.exchangeError = exchangeError(error, this.$t); }
+    },
     parseQuery(route) {
       const temp = {};
       if (route.query.address) {
@@ -63,7 +98,11 @@ export default {
 
 <template>
   <MwSteps
+    v-if="ready"
+    ref="steps"
+    :step="storage.intent ? (storage.intent.status === 'quoted' ? 'confirm' : 'status') : 'index'"
     :steps="$options.steps"
     :initialStorage="storage"
   />
+  <MainLayout v-else :title="$t('Review deposit')" allowReadFailure><p v-if="exchangeError" role="alert">{{ exchangeError }}</p><MwButton v-if="exchangeError" type="secondary" @click="loadExchange">{{ $t('Refresh') }}</MwButton><MwLoader v-else /></MainLayout>
 </template>

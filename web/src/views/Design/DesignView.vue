@@ -1,5 +1,7 @@
 <template>
   <div class="&">
+    <router-link :to="{ name: 'design.system' }">Sistema de controles · UX-03</router-link>
+    <router-link :to="{ name: 'design.prototype' }">Prototipo de recorridos · UX-02</router-link>
     <router-link :to="{ name: 'design.buttons' }">
       Buttons
     </router-link>

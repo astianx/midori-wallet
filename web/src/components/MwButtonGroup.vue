@@ -28,11 +28,14 @@ export default {
 
     &--horizontal {
       flex-direction: row;
+      flex-wrap: wrap;
+      > * { min-width: 0; max-width: 100%; }
     }
 
     &--circle {
-      flex-direction: row;
-      justify-content: space-around;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(6rem, 100%), 1fr));
+      justify-items: center;
       gap: var(--spacing-2xs);
     }
   }

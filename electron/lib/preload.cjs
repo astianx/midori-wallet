@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electron', {
   registerNavigateHandler: (callback) => ipcRenderer.on('navigate', (event, path) => callback(path)),
   arch: process.arch,
+  receiptFiles: { save: value => ipcRenderer.invoke('receipt:save', value) },
   recoveryFiles: { save: text => ipcRenderer.invoke('recovery:save', text), read: () => ipcRenderer.invoke('recovery:read') },
   vault: { seal: value => ipcRenderer.invoke('vault:seal', value), open: value => ipcRenderer.invoke('vault:open', value) },
   onSuspend(callback) {

@@ -39,7 +39,7 @@ export default {
 
 <template>
   <MainLayout
-    :title="$t('Export private keys')"
+    :title="$t('Export private keys')" allowReadFailure
   >
     <div class="&__container">
       <div

@@ -456,6 +456,283 @@
         }
       }
     },
+    "/api/v1/market/{symbol}/chart": {
+      "get": {
+        "operationId": "Referencepricehistory",
+        "summary": "Reference price history",
+        "security": [],
+        "parameters": [
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "USDC",
+                "USDT"
+              ]
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "1D",
+                "7D",
+                "14D",
+                "1M",
+                "1Y"
+              ],
+              "default": "1D"
+            }
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "schema": {
+              "enum": [
+                "AED",
+                "ARS",
+                "AUD",
+                "BDT",
+                "BHD",
+                "BMD",
+                "BRL",
+                "CAD",
+                "CHF",
+                "CLP",
+                "CNY",
+                "CZK",
+                "DKK",
+                "EUR",
+                "GBP",
+                "HKD",
+                "HUF",
+                "IDR",
+                "ILS",
+                "INR",
+                "JPY",
+                "KRW",
+                "KWD",
+                "LKR",
+                "MMK",
+                "MXN",
+                "MYR",
+                "NGN",
+                "NOK",
+                "NZD",
+                "PHP",
+                "PKR",
+                "PLN",
+                "RUB",
+                "SAR",
+                "SEK",
+                "SGD",
+                "THB",
+                "TRY",
+                "TWD",
+                "UAH",
+                "USD",
+                "VEF",
+                "VND",
+                "ZAR"
+              ],
+              "default": "USD"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "symbol": {
+                      "enum": [
+                        "USDC",
+                        "USDT"
+                      ]
+                    },
+                    "currency": {
+                      "enum": [
+                        "AED",
+                        "ARS",
+                        "AUD",
+                        "BDT",
+                        "BHD",
+                        "BMD",
+                        "BRL",
+                        "CAD",
+                        "CHF",
+                        "CLP",
+                        "CNY",
+                        "CZK",
+                        "DKK",
+                        "EUR",
+                        "GBP",
+                        "HKD",
+                        "HUF",
+                        "IDR",
+                        "ILS",
+                        "INR",
+                        "JPY",
+                        "KRW",
+                        "KWD",
+                        "LKR",
+                        "MMK",
+                        "MXN",
+                        "MYR",
+                        "NGN",
+                        "NOK",
+                        "NZD",
+                        "PHP",
+                        "PKR",
+                        "PLN",
+                        "RUB",
+                        "SAR",
+                        "SEK",
+                        "SGD",
+                        "THB",
+                        "TRY",
+                        "TWD",
+                        "UAH",
+                        "USD",
+                        "VEF",
+                        "VND",
+                        "ZAR"
+                      ]
+                    },
+                    "period": {
+                      "enum": [
+                        "1D",
+                        "7D",
+                        "14D",
+                        "1M",
+                        "1Y"
+                      ]
+                    },
+                    "source": {
+                      "const": "CoinGecko"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "prices": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 10000,
+                      "items": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "description": "[Unix timestamp in milliseconds, reference price in the requested currency]"
+                      }
+                    }
+                  },
+                  "required": [
+                    "symbol",
+                    "currency",
+                    "period",
+                    "source",
+                    "updatedAt",
+                    "prices"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Market reference data unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/options": {
       "post": {
         "operationId": "registrationchallenge",
@@ -3213,8 +3490,8 @@
     },
     "/api/v1/tag/options": {
       "post": {
-        "operationId": "Challengetobindatagtotheownedaccount",
-        "summary": "Challenge to bind a tag to the owned account",
+        "operationId": "ValidateavailabilityandrequestonepermanenttagbindingTAGIMMUTABLEorTAGTAKENonconflict",
+        "summary": "Validate availability and request one permanent tag binding; TAG_IMMUTABLE or TAG_TAKEN on conflict",
         "security": [
           {
             "Session": [],
@@ -3323,7 +3600,9 @@
                 "type": "object",
                 "properties": {
                   "alias": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 65,
+                    "description": "Alias with optional $ prefix; legacy @ and unprefixed aliases remain accepted. Trimmed and normalized to lowercase."
                   },
                   "accountId": {
                     "type": "string",
@@ -3343,8 +3622,8 @@
     },
     "/api/v1/tag/verify": {
       "post": {
-        "operationId": "Registertagwithaccountownerproof",
-        "summary": "Register tag with account owner proof",
+        "operationId": "Registerapermanentuniquetagoncewithaccountownerproofconcurrentconflictsrejected",
+        "summary": "Register a permanent unique tag once with account owner proof; concurrent conflicts rejected",
         "security": [
           {
             "Session": [],
@@ -3584,7 +3863,9 @@
                 "type": "object",
                 "properties": {
                   "alias": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 65,
+                    "description": "Alias with optional $ prefix; legacy @ and unprefixed aliases remain accepted. Trimmed and normalized to lowercase."
                   },
                   "chainId": {
                     "const": 8453
@@ -3863,6 +4144,312 @@
                 "schema": {
                   "$ref": "#/components/schemas/Error"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/receipts": {
+      "post": {
+        "operationId": "PublishanownoperationreceiptsnapshotforareviewedPNGorPDF",
+        "summary": "Publish an own-operation receipt snapshot for a reviewed PNG or PDF",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "document": {
+                      "$ref": "#/components/schemas/ReceiptDocument"
+                    },
+                    "verificationUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "digest": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "document",
+                    "verificationUrl",
+                    "digest"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "enum": [
+                      "payment",
+                      "ramp"
+                    ]
+                  },
+                  "reference": {
+                    "type": "string",
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "source",
+                  "reference"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/receipts/verify": {
+      "post": {
+        "operationId": "VerifyareceiptbearertokenwithoutdisclosingthetokeninaURLpath",
+        "summary": "Verify a receipt bearer token without disclosing the token in a URL path",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "document": {
+                      "$ref": "#/components/schemas/ReceiptDocument"
+                    },
+                    "digest": {
+                      "type": "string"
+                    },
+                    "currentStatus": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "checkedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "document",
+                    "digest",
+                    "currentStatus",
+                    "checkedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{43}$"
+                  }
+                },
+                "required": [
+                  "token"
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -4506,6 +5093,699 @@
                 "properties": {},
                 "required": [],
                 "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/exchange/options": {
+      "get": {
+        "operationId": "DiscoverChangellysourcesonBaseandexternaldestinations",
+        "summary": "Discover Changelly sources on Base and external destinations",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "providers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "const": "changelly"
+                          },
+                          "name": {
+                            "const": "Changelly"
+                          },
+                          "sources": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/ExchangeCurrency"
+                            }
+                          },
+                          "destinations": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/ExchangeCurrency"
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "sources",
+                          "destinations"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "providers"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/exchange/quotes": {
+      "post": {
+        "operationId": "Estimateafloatingratecryptoconversionafterpayoutnetworkcost",
+        "summary": "Estimate a floating-rate crypto conversion after payout network cost",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeQuote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to",
+                  "amount"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/exchange/orders": {
+      "post": {
+        "operationId": "Createanexchangewithoutsendingfunds",
+        "summary": "Create an exchange without sending funds",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quoteId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "payoutAddress": {
+                    "type": "string"
+                  },
+                  "payoutExtraId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "quoteId",
+                  "idempotencyKey",
+                  "payoutAddress"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "Listowncryptoconversions",
+        "summary": "List own crypto conversions",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ExchangeOrder"
+                      }
+                    }
+                  },
+                  "required": [
+                    "orders"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exchange/orders/{id}": {
+      "get": {
+        "operationId": "RefreshanownChangellyconversion",
+        "summary": "Refresh an own Changelly conversion",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
@@ -6058,6 +7338,9 @@
               "ramp": {
                 "type": "boolean"
               },
+              "exchange": {
+                "type": "boolean"
+              },
               "tags": {
                 "const": true
               },
@@ -6079,6 +7362,7 @@
               "payments",
               "sponsorship",
               "ramp",
+              "exchange",
               "tags",
               "history",
               "signing",
@@ -6192,7 +7476,8 @@
         "properties": {
           "alias": {
             "type": "string",
-            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+            "description": "Canonical alias without a prefix; display as $alias."
           },
           "revision": {
             "type": "string",
@@ -6249,7 +7534,8 @@
           },
           "alias": {
             "type": "string",
-            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+            "description": "Canonical alias without a prefix; display as $alias."
           },
           "chainId": {
             "const": 8453
@@ -6278,7 +7564,8 @@
           },
           "alias": {
             "type": "string",
-            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"
+            "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+            "description": "Canonical alias without a prefix; display as $alias."
           },
           "chainId": {
             "const": 8453
@@ -6767,6 +8054,10 @@
             "type": "string",
             "pattern": "^(0|[1-9][0-9]{0,77})$",
             "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "exchangeOrderId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -6777,6 +8068,216 @@
           "feeMode",
           "feeToken",
           "maxFeeAtomic"
+        ],
+        "additionalProperties": false
+      },
+      "ReceiptAmount": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$"
+          },
+          "currency": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "currency"
+        ],
+        "additionalProperties": false
+      },
+      "ReceiptParty": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "tag": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "address",
+          "tag"
+        ],
+        "additionalProperties": false
+      },
+      "ReceiptDocument": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": 1
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "enum": [
+              "payment",
+              "ramp"
+            ]
+          },
+          "reference": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "send",
+              "receive",
+              "buy",
+              "sell"
+            ]
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "environment": {
+            "enum": [
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
+          "network": {
+            "type": "string"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paid": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "received": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "from": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptParty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "to": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptParty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptParty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "transactionHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "midoriFee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "networkCost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptAmount"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "sponsored": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "sponsored"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "id",
+          "source",
+          "reference",
+          "kind",
+          "symbol",
+          "status",
+          "environment",
+          "network",
+          "amount",
+          "paid",
+          "received",
+          "from",
+          "to",
+          "owner",
+          "date",
+          "issuedAt",
+          "transactionHash",
+          "midoriFee",
+          "networkCost"
         ],
         "additionalProperties": false
       },
@@ -7188,6 +8689,277 @@
           "network",
           "assets",
           "fiatCurrencies"
+        ],
+        "additionalProperties": false
+      },
+      "ExchangeCurrency": {
+        "type": "object",
+        "properties": {
+          "ticker": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "network": {
+            "type": "string"
+          },
+          "contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decimals": {
+            "type": "integer"
+          },
+          "buy": {
+            "type": "boolean"
+          },
+          "sell": {
+            "type": "boolean"
+          },
+          "extraIdName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notification": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "name",
+          "network",
+          "contract",
+          "decimals",
+          "buy",
+          "sell",
+          "extraIdName",
+          "notification"
+        ],
+        "additionalProperties": false
+      },
+      "ExchangeQuoteData": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "const": "changelly"
+          },
+          "from": {
+            "$ref": "#/components/schemas/ExchangeCurrency"
+          },
+          "to": {
+            "$ref": "#/components/schemas/ExchangeCurrency"
+          },
+          "amountFrom": {
+            "type": "string"
+          },
+          "amountTo": {
+            "type": "string"
+          },
+          "networkFee": {
+            "type": "string"
+          },
+          "fee": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "min": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "max": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "provider",
+          "from",
+          "to",
+          "amountFrom",
+          "amountTo",
+          "networkFee",
+          "fee",
+          "min",
+          "max"
+        ],
+        "additionalProperties": false
+      },
+      "ExchangeQuote": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "const": "changelly"
+          },
+          "from": {
+            "$ref": "#/components/schemas/ExchangeCurrency"
+          },
+          "to": {
+            "$ref": "#/components/schemas/ExchangeCurrency"
+          },
+          "amountFrom": {
+            "type": "string"
+          },
+          "amountTo": {
+            "type": "string"
+          },
+          "networkFee": {
+            "type": "string"
+          },
+          "fee": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "min": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "max": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "provider",
+          "from",
+          "to",
+          "amountFrom",
+          "amountTo",
+          "networkFee",
+          "fee",
+          "min",
+          "max",
+          "id",
+          "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "ExchangeOrder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "const": "changelly"
+          },
+          "status": {
+            "enum": [
+              "creating",
+              "uncertain",
+              "waiting",
+              "confirming",
+              "exchanging",
+              "sending",
+              "finished",
+              "failed",
+              "refunded",
+              "hold",
+              "expired",
+              "overdue"
+            ]
+          },
+          "quote": {
+            "$ref": "#/components/schemas/ExchangeQuoteData"
+          },
+          "payoutAddress": {
+            "type": "string"
+          },
+          "payoutExtraId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "paymentIntentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "depositAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "providerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "amountTo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payoutHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "status",
+          "quote",
+          "payoutAddress",
+          "payoutExtraId",
+          "paymentIntentId",
+          "depositAddress",
+          "providerId",
+          "amountTo",
+          "payoutHash",
+          "createdAt",
+          "updatedAt"
         ],
         "additionalProperties": false
       }

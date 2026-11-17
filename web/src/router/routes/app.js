@@ -1,6 +1,10 @@
 import AppLayout from '../../layouts/AppLayout.vue';
+import ReceiptVerifyView from '../../views/ReceiptVerifyView.vue';
 
 import HomeView from '../../views/HomeView.vue';
+import ActivityView from '../../views/ActivityView.vue';
+import ReceiveView from '../../views/ReceiveView.vue';
+import MoneyMovementView from '../../views/MoneyMovementView.vue';
 
 import CryptoViewBuy from '../../views/Crypto/CryptoViewBuy.vue';
 import CryptoViewInfo from '../../views/Crypto/CryptoViewInfo.vue';
@@ -8,7 +12,7 @@ import CryptoViewSell from '../../views/Crypto/CryptoViewSell.vue';
 
 import CryptoAddView from '../../views/Crypto/Add/CryptoAddView.vue';
 import CryptoDerivationView from '../../views/Crypto/Derivation/CryptoDerivationView.vue';
-import CryptoExchangeView from '../../views/Crypto/Exchange/CryptoExchangeView.vue';
+import CryptoExchangeView from '../../views/Crypto/Exchange/CryptoSwapView.vue';
 import CryptoExportView from '../../views/Crypto/Export/CryptoExportView.vue';
 import CryptoHistoryView from '../../views/Crypto/History/CryptoHistoryView.vue';
 import CryptoImportView from '../../views/Crypto/Import/CryptoImportView.vue';
@@ -21,6 +25,8 @@ import SettingsAccountView from '../../views/Settings/Account/SettingsAccountVie
 import SettingsHardwareView from '../../views/Settings/Hardware/SettingsHardwareView.vue';
 import SettingsPinView from '../../views/Settings/Pin/SettingsPinView.vue';
 import SettingsTorView from '../../views/Settings/Tor/SettingsTorView.vue';
+import SettingsAdvancedView from '../../views/Settings/SettingsAdvancedView.vue';
+import SettingsHelpView from '../../views/Settings/SettingsHelpView.vue';
 import SettingsView from '../../views/Settings/SettingsView.vue';
 import SettingsRecoveryView from '../../views/Settings/SettingsRecoveryView.vue';
 import SettingsWalletConnectView from '../../views/Settings/WalletConnect/WalletConnectView.vue';
@@ -36,6 +42,7 @@ import schemes from '../../lib/schemes.js';
 const CRYPTO_ID = ':cryptoId([A-Za-z0-9-_:]+@[a-z0-9-]+)';
 
 const app = [
+  { path: '/receipt', name: 'receipt.verify', component: ReceiptVerifyView },
   {
     path: '/',
     component: AppLayout,
@@ -44,7 +51,29 @@ const app = [
       name: 'home',
       component: HomeView,
     }, {
+      path: 'add-money',
+      name: 'add-money',
+      component: MoneyMovementView,
+      props: { direction: 'add' },
+      meta: { focusedFlow: true },
+    }, {
+      path: 'withdraw',
+      name: 'withdraw',
+      component: MoneyMovementView,
+      props: { direction: 'withdraw' },
+      meta: { focusedFlow: true },
+    }, {
+      path: 'activity',
+      name: 'activity',
+      component: ActivityView,
+      meta: { activityView: true },
+    }, {
+      path: 'receive',
+      name: 'receive',
+      component: ReceiveView,
+    }, {
       path: 'settings',
+      meta: { navigation: 'settings' },
       children: [{
         path: '',
         name: 'settings',
@@ -54,16 +83,20 @@ const app = [
         name: 'settings.account',
         component: SettingsAccountView,
       }, {
-        path: 'recovery',
+        path: 'advanced', name: 'settings.advanced', component: SettingsAdvancedView,
+      }, { path: 'help', name: 'settings.help', component: SettingsHelpView,
+      }, { path: 'recovery',
         name: 'settings.recovery',
         component: SettingsRecoveryView,
       }, {
         path: 'hardware',
         name: 'settings.hardware',
+        meta: { focusedFlow: true },
         component: SettingsHardwareView,
       }, {
         path: 'pin',
         name: 'settings.pin',
+        meta: { focusedFlow: true },
         component: SettingsPinView,
       }, {
         path: 'tor',
@@ -99,11 +132,13 @@ const app = [
         {
           path: 'buy',
           name: 'crypto.buy',
+          meta: { focusedFlow: true },
           component: CryptoViewBuy,
         },
         {
           path: 'sell',
           name: 'crypto.sell',
+          meta: { focusedFlow: true },
           component: CryptoViewSell,
         },
         {
@@ -119,6 +154,7 @@ const app = [
         {
           path: 'export',
           name: 'crypto.export',
+          meta: { focusedFlow: true },
           component: CryptoExportView,
         },
         {
@@ -134,6 +170,7 @@ const app = [
         {
           path: 'send',
           name: 'crypto.send',
+          meta: { focusedFlow: true },
           component: CryptoSendView,
         },
         {
@@ -144,11 +181,13 @@ const app = [
         {
           path: 'swap',
           name: 'crypto.swap',
+          meta: { focusedFlow: true },
           component: CryptoExchangeView,
         },
         {
           path: 'import',
           name: 'crypto.import',
+          meta: { focusedFlow: true },
           component: CryptoImportView,
         },
         {
@@ -163,7 +202,7 @@ const app = [
       redirect(to) {
         try {
           const parsed = parseCryptoURI(to.params.data);
-          const crypto = schemes.find((item) => item.scheme === parsed.scheme);
+          const crypto = parsed.scheme ? schemes.find((item) => item.scheme === parsed.scheme) : schemes[0];
           if (crypto) {
             return {
               name: 'crypto.send',
@@ -173,7 +212,7 @@ const app = [
                 destinationTag: BaseExchange.EXTRA_ID.includes(crypto._id) ? parsed.destinationTag : undefined,
               },
               params: {
-                cryptoId: parsed.token ? `${parsed.token}@base` : crypto._id,
+                cryptoId: parsed.token ? `${parsed.token}@base` : to.params.cryptoId || crypto._id,
               },
             };
           }
@@ -194,11 +233,7 @@ const app = [
   {
     path: '/wc',
     redirect(to) {
-      if (!to.query.uri) {
-        window.close();
-        return 'notfound';
-      }
-      return { name: 'settings.walletconnect', query: { uri: to.query.uri } };
+      return { name: 'settings.walletconnect', query: to.query };
     },
   },
   {

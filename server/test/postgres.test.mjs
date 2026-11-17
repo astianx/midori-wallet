@@ -13,7 +13,7 @@ import { transakClient } from '../lib/transak.js';
 import { createApp } from '../app.js';
 import { createDatabase } from '../lib/db.js';
 import { loadConfig } from '../lib/config.js';
-import { migrate } from '../lib/migrations.js';
+import { migrate, migrationFiles } from '../lib/migrations.js';
 import { requestMessage } from '../lib/crypto.js';
 import { deviceEnrollmentMessage } from '../lib/wallets.js';
 import { MidoriClient } from '../lib/client.js';
@@ -37,7 +37,7 @@ before(async () => {
   config = loadConfig({ DATABASE_URL: url.href, MIDORI_RATE_LIMIT: '10000', MIDORI_PUBLIC_ORIGIN: 'http://localhost:5173' });
   db = createDatabase(config);
   const initial = await migrate(db);
-  assert.equal(initial.length, 6);
+  assert.deepEqual(initial, (await migrationFiles()).map(file => file.version));
   assert.deepEqual(await migrate(db), []);
   if (process.env.MIDORI_TEST_RUNTIME_DATABASE_URL) {
     const runtimeUrl = new URL(process.env.MIDORI_TEST_RUNTIME_DATABASE_URL);
@@ -329,6 +329,62 @@ scenario('API instances and workers share one Transak token across concurrent ca
   await db.query('UPDATE transak_tokens SET expires_at=1');
   await Promise.all(clients.map(client => client.widgetSession({}, '127.0.0.1')));
   assert.equal(refreshes, 2);
+});
+
+scenario('Changelly discovers real network identities, binds quotes to owners and never recreates an uncertain order', async () => {
+  const { exchangeService } = await import('../lib/exchange.js');
+  const usdc = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
+  const source = { ticker: 'usdcbase', name: 'USD Coin Base', network: 'BASE', contract: usdc, decimals: 6, sell: true, buy: true, extraIdName: null, notification: null };
+  const destination = { ticker: 'usdt20', name: 'Tether Ethereum', network: 'ethereum', contract: '0x' + '34'.repeat(20), decimals: 6, sell: true, buy: true, extraIdName: null, notification: null };
+  let creates = 0, loseResponse = false, invalidAddress = false, wrongOrder = false;
+  const payout = '0x' + '56'.repeat(20), deposit = '0x' + '12'.repeat(20);
+  const provider = {
+    currencies: async () => [source, destination, { ...source, ticker: 'fake', contract: '0x' + 'ab'.repeat(20) }, { ...source, ticker: 'wrong-network', network: 'ethereum' }],
+    estimate: async () => ({ amountTo: '98.75', networkFee: '0.25', fee: '1', min: '20', max: '10000' }),
+    validate: async () => !invalidAddress,
+    create: async params => { creates++; if (loseResponse) throw Error('timeout'); assert.equal(params.refundAddress.toLowerCase(), alice.descriptor.address.toLowerCase()); return { id: 'changelly-' + creates, currencyFrom: params.from, currencyTo: params.to, payoutAddress: params.address, payinAddress: deposit }; },
+    transaction: async id => ({ id, currencyFrom: 'usdcbase', currencyTo: 'usdt20', status: 'finished', payinAddress: deposit, payoutAddress: wrongOrder ? 'foreign' : payout, amountTo: '98.73', payoutHash: 'a'.repeat(64) }),
+  };
+  const cfg = { ...config, changellyEnabled: true, paymentsEnabled: true };
+  const service = exchangeService(apiDb || db, cfg, provider), walletId = alice.session.walletId, accountId = alice.session.accountId;
+  const options = await service.options(walletId, accountId);
+  assert.deepEqual(options.providers[0].sources.map(item => item.ticker), ['usdcbase']);
+  const input = { from: 'usdcbase', to: 'usdt20', amount: '100' };
+  await assert.rejects(service.quote(walletId, bob.session.accountId, input), { status: 404 });
+  await assert.rejects(service.quote(walletId, accountId, { ...input, from: 'fake' }), { status: 400 });
+  await assert.rejects(service.quote(walletId, accountId, { ...input, amount: '100.0000001' }), { status: 400 });
+  const quote = await service.quote(walletId, accountId, input);
+  validateResponse('POST', `/api/v1/accounts/${accountId}/exchange/quotes`, 200, JSON.parse(JSON.stringify(quote)));
+  const request = { quoteId: quote.id, idempotencyKey: randomUUID(), payoutAddress: payout };
+  await assert.rejects(service.create({ wallet_id: bob.session.walletId }, bob.session.accountId, request), { code: 'EXCHANGE_QUOTE_EXPIRED' });
+  invalidAddress = true; await assert.rejects(service.create({ wallet_id: walletId }, accountId, request), { code: 'INVALID_REQUEST' }); assert.equal(creates, 0); invalidAddress = false;
+  const order = await service.create({ wallet_id: walletId }, accountId, request);
+  validateResponse('POST', `/api/v1/accounts/${accountId}/exchange/orders`, 200, JSON.parse(JSON.stringify(order)));
+  assert.equal(order.status, 'waiting'); assert.equal(order.depositAddress.toLowerCase(), deposit);
+  assert.equal((await service.create({ wallet_id: walletId }, accountId, request)).id, order.id); assert.equal(creates, 1);
+  await assert.rejects(service.create({ wallet_id: walletId }, accountId, { ...request, payoutAddress: 'changed' }), { code: 'IDEMPOTENCY_CONFLICT' });
+  await assert.rejects(service.get(bob.session.walletId, order.id), { status: 404 });
+  const { paymentService } = await import('../lib/payments.js');
+  const paymentConfig = { ...cfg, gasRecipients: [], maxGasFeeAtomic: '1000000' };
+  const payments = paymentService(apiDb || db, paymentConfig, { balances: async () => ({ assets: { [usdc]: 1000000000n }, blockNumber: '1' }), quote: async () => ({ maxFeeAtomic: '1000', estimatedFeeAtomic: '900' }) });
+  const principal = { wallet_id: walletId, device_id: alice.session.deviceId, session_id: alice.session.sessionId };
+  const depositRequest = { idempotencyKey: randomUUID(), exchangeOrderId: order.id, contract: usdc, amountAtomic: '100000000', recipient: { kind: 'address', address: deposit }, feeMode: 'token', feeToken: usdc, maxFeeAtomic: '1000000' };
+  await assert.rejects(payments.create(principal, accountId, { ...depositRequest, amountAtomic: '99000000' }), { code: 'INVALID_REQUEST' });
+  await assert.rejects(payments.create(principal, accountId, { ...depositRequest, recipient: { kind: 'address', address: payout } }), { code: 'INVALID_REQUEST' });
+  const payment = await payments.create(principal, accountId, depositRequest);
+  assert.equal(payment.status, 'quoted');
+  await assert.rejects(payments.create(principal, accountId, { ...depositRequest, idempotencyKey: randomUUID() }), error => error.code === 'PAYMENT_ALREADY_PENDING' && error.details.intentId === payment.id);
+  assert.equal((await service.list(walletId, accountId)).orders[0].paymentIntentId, payment.id);
+  wrongOrder = true; await assert.rejects(service.get(walletId, order.id), { code: 'EXCHANGE_PROVIDER_UNAVAILABLE' }); wrongOrder = false;
+  assert.equal((await service.get(walletId, order.id)).status, 'finished');
+  assert.equal((await service.get(walletId, order.id)).amountTo, '98.73');
+  const second = await service.quote(walletId, accountId, input); loseResponse = true;
+  const retry = { ...request, quoteId: second.id, idempotencyKey: randomUUID() };
+  assert.equal((await service.create({ wallet_id: walletId }, accountId, retry)).status, 'uncertain');
+  assert.equal((await service.create({ wallet_id: walletId }, accountId, retry)).status, 'uncertain'); assert.equal(creates, 2);
+  assert.equal((await service.list(walletId, accountId)).orders.length, 2);
+  const expired = await service.quote(walletId, accountId, input); await db.query("UPDATE exchange_quotes SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", [expired.id]);
+  await assert.rejects(service.create({ wallet_id: walletId }, accountId, { ...request, quoteId: expired.id, idempotencyKey: randomUUID() }), { code: 'EXCHANGE_QUOTE_EXPIRED' });
 });
 
 scenario('maintenance removes expired rows; client and API report unavailable PostgreSQL without claiming saved data', async () => {

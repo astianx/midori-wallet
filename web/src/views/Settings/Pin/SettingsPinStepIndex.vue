@@ -21,7 +21,7 @@ export default {
     return {
       isBiometryEnabled: this.$account.biometry.isEnabled,
       isHighSecurityEnabled: this.$account.settings.get('1faWallet'),
-      isLoading: false,
+      isLoading: false, error: '',
     };
   },
   computed: {
@@ -93,8 +93,8 @@ export default {
     async toggleHighSecurity() {
       this.isLoading = true;
       await this.walletSeed(async (walletSeed) => {
-        await this.$account.settings.set('1faWallet', !this.isHighSecurityEnabled, walletSeed);
-        this.isHighSecurityEnabled = this.$account.settings.get('1faWallet');
+        try { await this.$account.settings.set('1faWallet', !this.isHighSecurityEnabled, walletSeed); this.isHighSecurityEnabled = this.$account.settings.get('1faWallet'); }
+        catch { this.error = this.$t('Could not save changes. Try again.'); }
       }, { keepStep: true });
       this.isLoading = false;
     },
@@ -124,18 +124,19 @@ export default {
       </MwListItem>
       <MwListItem
         :title="$t('High security')"
-        :description="$t('Send coins, export private keys, remove account, security settings.')"
+        :description="$t('Extra PIN checks protect recovery tools and security settings.')"
         :arrow="false"
       >
         <template #after>
           <MwSwitch
             :checked="isHighSecurityEnabled"
             :isLoading="isLoading"
-            :aria-label="labels.biometry"
+            :aria-label="$t('High security')"
             @click="toggleHighSecurity"
           />
         </template>
       </MwListItem>
     </MwListItems>
+    <p v-if="error" role="alert">{{ error }}</p>
   </MainLayout>
 </template>

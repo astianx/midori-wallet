@@ -69,7 +69,7 @@ export default {
 </script>
 
 <template>
-  <MainLayout :title="$t('Derivation path')">
+  <MainLayout :title="$t('Derivation path')" allowReadFailure>
     <div class="&__note">
       {{ $t('Derivation path defines how to derive private keys from passphrase.') }}
       <template v-if="$wallet.isDerivationPathFixed"> {{ $t('This path is fixed for your account. Changing it would create a different address.') }}</template>

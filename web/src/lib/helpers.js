@@ -1,3 +1,4 @@
+import { isValidTagAlias } from './tags.js';
 import { prettyVersion } from './version.js';
 import stringify from 'fast-json-stable-stringify';
 import {
@@ -69,7 +70,7 @@ export function isValidEmail(email) {
 }
 
 export function isValidUsername(username) {
-  return typeof username === 'string' && /^@?[a-z0-9][a-z0-9-]{0,62}$/i.test(username.trim());
+  return isValidTagAlias(username);
 }
 
 export function registerProtocolHandler(crypto, account) {

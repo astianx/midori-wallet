@@ -1,3 +1,5 @@
+import { normalizeTag } from '../lib/tags.js';
+import { normalizeTagAlias, formatMidoriTag, isValidTagAlias, isTagRecipient } from '../../web/src/lib/tags.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac, generateKeyPairSync, sign } from 'node:crypto';
@@ -74,4 +76,24 @@ test('signed requests bind body, session, nonce, timestamp, method and target', 
   const signature = sign(null, Buffer.from(requestMessage(request)), keys.privateKey).toString('base64url');
   assert.equal(verifyEd25519(publicKey, requestMessage(request), signature), true);
   for (const [key, value] of Object.entries({ method: 'DELETE', target: '/api/v1/blobs/backup', timestamp: '1793664001', nonce: 'b'.repeat(32), token: 'u'.repeat(43), body: '{}' })) assert.equal(verifyEd25519(publicKey, requestMessage({ ...request, [key]: value }), signature), false);
+});
+
+
+test('cash tags and legacy handles share one canonical identity and reject malformed or reserved aliases', () => {
+  for (const value of ['Alice-2', '$alice-2', '@alice-2', ' $ALICE-2 ']) {
+    assert.equal(normalizeTag(value), 'alice-2');
+    assert.equal(normalizeTagAlias(value), 'alice-2');
+    assert.equal(formatMidoriTag(value), '$alice-2');
+    assert.equal(isValidTagAlias(value), true);
+  }
+  for (const value of ['$$alice', '@$alice', '$@alice', '$', '@', '$a.b', '$a b', '$-alice', '$alice\nbob', '$' + 'a'.repeat(64), null, 123]) {
+    assert.throws(() => normalizeTag(value));
+    assert.equal(isValidTagAlias(value), false);
+  }
+  for (const value of ['$ADMIN', '@support', 'midori']) assert.throws(() => normalizeTag(value));
+  assert.equal(isTagRecipient('$alice-2'), true);
+  assert.equal(isTagRecipient('@alice-2'), true);
+  assert.equal(isTagRecipient('alice-2'), false);
+  assert.equal(isTagRecipient('0x' + '1'.repeat(40)), false);
+  assert.equal(formatMidoriTag(''), '');
 });

@@ -1,13 +1,16 @@
 <script>
+import { fieldProps, useFormField } from './field.js';
 import MwFormElement from './MwFormElement.vue';
 import TrailingIcon from '../../assets/svg/trailing.svg';
 
 export default {
+  setup(props) { return useFormField(props); },
   components: {
     MwFormElement,
     TrailingIcon,
   },
   props: {
+    ...fieldProps,
     value: {
       type: String,
       default: '',
@@ -36,6 +39,12 @@ export default {
   <MwFormElement
     class="&"
     v-bind="$props"
+    :controlId="controlId"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <div
       v-if="$slots.before"
@@ -45,17 +54,17 @@ export default {
     </div>
     <div class="&__text">
       {{ value }}
-      <input
+      <button
+        type="button"
+        v-bind="fieldAttrs"
+        :disabled="disabled || !writable"
+        :aria-label="ariaLabel || `${label}: ${value}`"
+        aria-haspopup="dialog"
         class="&__input"
         :class="{
           '&__input--writable': writable,
         }"
-        type="text"
-        readonly
-        @keydown.enter.prevent="$event.target.click()"
-        @keydown.space.prevent
-        @keyup.space="$event.target.click()"
-      >
+      ><span class="mw-sr-only">{{ value }}</span></button>
     </div>
     <div
       v-if="writable"

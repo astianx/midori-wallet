@@ -50,10 +50,12 @@ export default {
       <p>{{ $t('Your wallet is connected to {name}.', { name: storage.session?.peer.metadata.name }) }}</p>
       <MwFormTextareaReadonly :value="storage.session?.peer.metadata.url" :label="$t('URL')" />
       <MwFormTextareaReadonly :value="$account.recoveryDescriptor.address" :label="$t('Wallet address')" />
+      <p>{{ $t('Connecting does not send money or sign a message.') }}</p>
+      <details><summary>{{ $t('Connection permissions') }}</summary><ul><li v-for="method in storage.session?.namespaces?.eip155?.methods || []" :key="method">{{ method }}</li></ul></details>
       <p>{{ $t('Keep Midori open to review requests from this app.') }}</p>
       <p>{{ $t('USDT and USDC transfers on Base are supported. Other contract calls are unavailable.') }}</p>
     </MwFormGroup>
     <p v-if="error" role="alert">{{ error }}</p>
-    <MwButton type="danger-light" :isLoading="isLoading" @click="disconnect">{{ $t('Disconnect') }}</MwButton>
+    <MwButton type="secondary" :isLoading="isLoading" @click="disconnect">{{ $t('Disconnect') }}</MwButton>
   </MainLayout>
 </template>

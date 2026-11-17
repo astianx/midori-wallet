@@ -36,6 +36,7 @@ export default {
         Theme ({{ theme }}):
         <MwSwitch
           :checked="theme === 'dark'"
+          :label="$t('Theme')"
           @click="switchTheme"
         />
       </div>

@@ -1,4 +1,6 @@
 <script>
+import { CHART_PERIODS } from '../../../../config/market.js';
+
 export default {
   props: {
     period: {
@@ -9,40 +11,36 @@ export default {
   emits: ['change'],
   data() {
     return {
-      periods: ['1D', '7D', '14D', '1M', '1Y'],
-      current: this.period || '7D',
+      periods: Object.keys(CHART_PERIODS),
     };
   },
 };
 </script>
 
 <template>
-  <div class="&">
-    <label
+  <div class="&" role="group" :aria-label="$t('Chart period')">
+    <div
       v-for="item of periods"
       :key="item"
       class="&__period"
     >
-      <input
-        v-model="current"
-        :value="item"
-        class="&__input"
-        type="radio"
-        @change="$emit('change', current)"
+      <button
+        type="button"
+        class="&__button"
+        :aria-pressed="period === item"
+        @click="$emit('change', item)"
       >
-      <div class="&__button">
         {{ item }}
-      </div>
-    </label>
+      </button>
+    </div>
   </div>
 </template>
 
 <style lang="scss">
   .#{ $filename } {
-    $self: &;
     position: relative;
     display: flex;
-    padding: 0 var(--spacing-xl);
+    gap: var(--spacing-2xs);
 
     @include breakpoint(lg) {
       max-width: 30rem;
@@ -51,29 +49,19 @@ export default {
     &__period {
       position: relative;
       flex-grow: 1;
-    }
-
-    &__input {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      opacity: 0;
-      pointer-events: none;
-      &:checked ~ #{ $self }__button {
-        background-color: var(--color-secondary-light);
-      }
+      min-width: 0;
     }
 
     &__button {
       @include text-sm;
       display: flex;
-      height: var(--spacing-2xl);
+      width: 100%;
+      min-height: 2.75rem;
       align-items: center;
       justify-content: center;
       border-radius: 0.5rem;
       cursor: pointer;
+      &[aria-pressed='true'] { background-color: var(--color-secondary-light); }
     }
   }
 </style>

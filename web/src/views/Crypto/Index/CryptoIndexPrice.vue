@@ -23,16 +23,17 @@ export default {
       type: Object,
       default: undefined,
     },
+    isLoading: { type: Boolean, default: false },
   },
   computed: {
     fiat() {
       const price = this.chartPoint ? this.chartPoint.price : this.price;
-      if (!price) return '';
-      return this.$fiatPrecise(price);
+      if (!price) return this.isLoading ? '…' : '—';
+      return this.$fiatPrecise(price, 'currency', { maximumFractionDigits: 6 });
     },
     changePercent() {
-      if (!this.change) return '';
-      return this.$n(this.change, 'percent');
+      if (!this.price) return '';
+      return this.$n(this.change, 'percent', { maximumFractionDigits: 4 });
     },
     positive() {
       return this.change > 0;
@@ -51,7 +52,7 @@ export default {
       :crypto="$wallet.crypto"
       :platform="$wallet.platform"
     />
-    <div v-if="$wallet.crypto.coingecko">
+    <div>
       <div
         class="&__price"
         :title="fiat"

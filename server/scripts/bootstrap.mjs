@@ -44,7 +44,7 @@ export async function provision({ adminUrl, database = 'midori_wallet', envPath,
   };
   const ownerUrl = makeUrl(owner, ownerPassword);
   const values = { ...previous, DATABASE_URL: makeUrl(runtime, appPassword), MIDORI_NETWORK: 'base', MIDORI_CHAIN_ID: '8453', MIDORI_PUBLIC_ORIGIN: previous.MIDORI_PUBLIC_ORIGIN || 'http://localhost:5173', MIDORI_API_HOST: '127.0.0.1', MIDORI_API_PORT: previous.MIDORI_API_PORT || '8080', MIDORI_TRANSACTIONS_ENABLED: 'false', MIDORI_SPONSORSHIP_ENABLED: 'false' };
-  for (const key of ['MIDORI_MIGRATION_DATABASE_URL', 'DB_CONNECT', 'DB_NAME', 'CHANGELLY_API_SECRET', 'CHANGENOW_API_KEY', 'API_KEY', 'USERNAME_SALT']) delete values[key];
+  for (const key of ['MIDORI_MIGRATION_DATABASE_URL', 'DB_CONNECT', 'DB_NAME', 'CHANGENOW_API_KEY', 'API_KEY', 'USERNAME_SALT']) delete values[key];
   const db = createDatabase(loadConfig({ ...values, DATABASE_URL: ownerUrl }));
   try {
     await db.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
@@ -68,7 +68,8 @@ export async function grantRuntime(db, runtime) {
   await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.chain_events,midori.event_participants,midori.index_cursors,midori.index_checkpoints,midori.wallet_tags,midori.tag_reservations,midori.tag_challenges,midori.tag_resolutions TO ${name}`);
   await db.query(`GRANT USAGE,SELECT ON SEQUENCE midori.chain_events_id_seq TO ${name}`);
   await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.tx_intents,midori.user_operations,midori.payment_outbox,midori.sponsor_budgets,midori.sponsor_reservations TO ${name}`);
-  await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.fiat_orders,midori.transak_tokens TO ${name}`);
+  await db.query(`GRANT SELECT,INSERT ON midori.receipt_shares TO ${name}`);
+  await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.fiat_orders,midori.transak_tokens,midori.exchange_quotes,midori.exchange_orders TO ${name}`);
   await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.devices,midori.authenticators,midori.auth_challenges,midori.auth_attempts,midori.sessions,midori.request_nonces,midori.encrypted_blobs TO ${name}`);
 }
 

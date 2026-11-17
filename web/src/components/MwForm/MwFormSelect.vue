@@ -1,14 +1,17 @@
 <script>
+import { fieldProps, useFormField } from './field.js';
 import MwFormElement from './MwFormElement.vue';
 
 import TrailingIcon from '../../assets/svg/trailing.svg';
 
 export default {
+  setup(props) { return useFormField(props); },
   components: {
     MwFormElement,
     TrailingIcon,
   },
   props: {
+    ...fieldProps,
     modelValue: {
       type: [String, Number],
       default: '',
@@ -50,6 +53,12 @@ export default {
   <MwFormElement
     class="&"
     v-bind="$props"
+    :controlId="controlId"
+    :errorId="errorId"
+    :disabled="disabled"
+    :isLoading="isLoading"
+    :success="success"
+    :hint="hint"
   >
     <div
       v-if="$slots.before"
@@ -61,6 +70,7 @@ export default {
       {{ value }}
     </div>
     <select
+      v-bind="fieldAttrs"
       class="&__select"
       :value="modelValue"
       @change="$emit('update:modelValue', $event.target.value)"

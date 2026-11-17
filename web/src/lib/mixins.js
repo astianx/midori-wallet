@@ -1,20 +1,19 @@
 import { captureWalletError } from './sentry.js';
+const shownComponents = new WeakSet();
+const show = component => {
+  if (shownComponents.has(component)) return;
+  shownComponents.add(component);
+  component.$options.onShow?.call(component);
+};
+const hide = component => {
+  if (!shownComponents.delete(component)) return;
+  component.$options.onHide?.call(component);
+};
 export const onShowOnHide = {
-  _isShown: false,
-  _show(component) {
-    if (this._isShown) return;
-    this._isShown = true;
-    if (this.onShow) this.onShow.call(component);
-  },
-  _hide(component) {
-    if (!this._isShown) return;
-    this._isShown = false;
-    if (this.onHide) this.onHide.call(component);
-  },
-  mounted() { this.$options._show(this); },
-  activated() { this.$options._show(this); },
-  beforeUnmount() { this.$options._hide(this); },
-  deactivated() { this.$options._hide(this); },
+  mounted() { show(this); },
+  activated() { show(this); },
+  beforeUnmount() { hide(this); },
+  deactivated() { hide(this); },
 };
 
 export const walletSeed = {
@@ -45,11 +44,7 @@ export const walletSeed = {
 export const redirectToApp = {
   methods: {
     redirectToApp() {
-      if (this.$route.redirectedFrom && this.$route.redirectedFrom.name !== 'home') {
-        this.$router.push(this.$route.redirectedFrom);
-      } else {
-        this.$router.replace({ name: 'home' });
-      }
+      this.$router.resumeDestination();
     },
   },
 };

@@ -50,7 +50,8 @@ export default {
       class="&__content"
       :class="{'&__content--centered': centered}"
     >
-      <div class="&__title">
+      <div class="&__title"
+        :title="title">
         {{ title }}
       </div>
       <div class="&__description">
@@ -73,15 +74,15 @@ export default {
 
     &__action {
       display: flex;
-      height: 100%;
-      flex-basis: var(--spacing-5xl);
+      min-height: var(--spacing-5xl);
+      flex-basis: auto;
       flex-shrink: 0;
       align-items: center;
       justify-content: center;
     }
 
     &__content {
-      min-width: 20%;
+      min-width: 0;
       flex-grow: 1;
       text-align: center;
       @include breakpoint(lg) {
@@ -98,12 +99,14 @@ export default {
     &__title {
       @include text-md;
       @include text-bold;
-      @include ellipsis;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     &__description {
       @include text-sm;
-      @include ellipsis;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
   }
 </style>

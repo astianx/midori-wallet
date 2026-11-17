@@ -55,7 +55,7 @@ export default {
         {{ $t('Receive') }}
       </MwButton>
       <MwButton
-        v-if="$showRampsAndExchangeAndStaking"
+        v-if="$account.capabilities.exchange"
         type="circle"
         :disabled="disabled"
         @click="$router.push({ name: 'crypto.swap', params: { cryptoId: $wallet.crypto._id }})"

@@ -36,7 +36,7 @@ export default {
         // Network cost is paid in the same token being sent: detect it from
         // the asset currently open ($wallet.crypto), instead of a fixed gas
         // token. The sender's own balance already covers amount + fee.
-        const payload = { contract: this.$wallet.crypto.address, amountAtomic: this.maximum ? 'max' : this.amountValue.value.toString(), recipient: recipient.kind === 'midori_tag' ? { kind: 'midori_tag', resolutionId: recipient.resolutionId } : { kind: 'address', address: recipient.address }, feeMode: this.feeMode, feeToken: this.feeMode === 'token' ? this.$wallet.crypto.address : null, maxFeeAtomic: this.feeMode === 'token' ? this.$account.paymentConfig.maxFeeAtomic : '0' };
+        const payload = { ...(this.storage.exchangeOrderId ? { exchangeOrderId: this.storage.exchangeOrderId } : {}), contract: this.$wallet.crypto.address, amountAtomic: this.maximum ? 'max' : this.amountValue.value.toString(), recipient: recipient.kind === 'midori_tag' ? { kind: 'midori_tag', resolutionId: recipient.resolutionId } : { kind: 'address', address: recipient.address }, feeMode: this.feeMode, feeToken: this.feeMode === 'token' ? this.$wallet.crypto.address : null, maxFeeAtomic: this.feeMode === 'token' ? this.$account.paymentConfig.maxFeeAtomic : '0' };
         const fingerprint = JSON.stringify(payload);
         if (this.request?.fingerprint !== fingerprint) this.request = { fingerprint, id: crypto.randomUUID() };
         const intent = await this.$wallet.reviewPayment({ ...payload, idempotencyKey: this.request.id });

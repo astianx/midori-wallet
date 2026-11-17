@@ -21,7 +21,8 @@
     "account:inspect": "node --env-file-if-exists=.env scripts/inspect-account.mjs",
     "server:transak-staging": "node --env-file=.env.transak-staging --import ./instrument.js server.js",
     "worker:transak-staging": "node --env-file=.env.transak-staging --import ./instrument.js worker.js",
-    "sentry:check": "node --env-file-if-exists=.env scripts/check-sentry.mjs"
+    "sentry:check": "node --env-file-if-exists=.env scripts/check-sentry.mjs",
+    "changelly:check": "node --env-file-if-exists=.env scripts/check-changelly.mjs"
   },
   "dependencies": {
     "@sentry/node": "11.12.0",

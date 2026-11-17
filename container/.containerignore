@@ -18,12 +18,17 @@ phonegap/*
 !phonegap/lib/**
 
 assets
+# Root assets/brand (3 SVG logos) IS needed: web/src/layouts/AuthStepLayout.vue
+# imports ../../../assets/brand/*.svg (added with the new-ui/ux redesign).
+!assets/brand/
+!assets/brand/**
 # Root config/ (environment.js, networks.json, targets.json) IS needed: web/vite.config.js
 # imports config/environment.js for the web build (see containerfile COPY config ./config).
 config
 !config/environment.js
 !config/networks.json
 !config/targets.json
+!config/market.js
 docs
 *.md
 LICENSE

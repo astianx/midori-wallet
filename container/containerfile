@@ -35,6 +35,15 @@ COPY electron/lib ./electron/lib
 # none of it sensitive (see .containerignore for the explicit allow-list).
 COPY config ./config
 
+# web/src/assets/styles/common.scss imports repo-root tokens.css (shared
+# design tokens added with the new-ui/ux redesign) via a relative path
+# that climbs out of web/src/assets/styles/ back to the monorepo root.
+COPY tokens.css ./tokens.css
+
+# web/src/layouts/AuthStepLayout.vue imports repo-root assets/brand/*.svg
+# (new-ui/ux redesign), same climb-to-monorepo-root pattern as tokens.css.
+COPY assets/brand ./assets/brand
+
 COPY web ./web
 # --ignore-scripts: misma politica que usa el propio repo (ver README y CI).
 # Vite emite a ../server/dist por defecto (ver web/vite.config.js, outDir()).
@@ -71,6 +80,12 @@ COPY --from=server-deps /app/node_modules ./node_modules
 
 # server/ sin test/ ni compat/ (legado no usado por server.js/worker.js; ver
 # server/test/compat.test.mjs, unico lugar que lo importa).
+# server/lib/market.js imports ../../config/market.js at RUNTIME (chart
+# periods/coins/currencies catalog, not just build time like
+# vite.config.js); config/ also has to land in the final runtime stage,
+# not only in web-builder (see .containerignore allow-list).
+COPY config ./config
+
 COPY server/ ./server/
 RUN rm -rf ./server/test ./server/compat ./server/.env.example \
     ./server/.env.migrations.example ./server/.dockerignore ./server/.spectral.yaml

@@ -1,3 +1,4 @@
+import { changellyCredentials } from './changelly.js';
 import { loadWdkIndexerConfig } from './wdk-indexer.js';
 
 function integer(value, fallback, min, max, name) {
@@ -70,6 +71,9 @@ export function loadConfig(env = process.env) {
   if (!['STAGING','PRODUCTION'].includes(transakEnvironment)) throw new Error('Invalid MIDORI_TRANSAK_ENVIRONMENT');
   const transakReferrerDomain = env.MIDORI_TRANSAK_REFERRER_DOMAIN || origin.hostname;
   if (transakEnabled && (!env.MIDORI_TRANSAK_API_KEY || !env.MIDORI_TRANSAK_API_SECRET)) throw new Error('Configure the Transak API key and secret before enabling buying or selling crypto');
+  if (env.CHANGELLY_ENABLED && !['true','false'].includes(env.CHANGELLY_ENABLED)) throw new Error('Invalid CHANGELLY_ENABLED');
+  const changellyEnabled = env.CHANGELLY_ENABLED === 'true';
+  if (changellyEnabled) changellyCredentials(env.CHANGELLY_API_SECRET, env.CHANGELLY_API_KEY);
   return Object.freeze({
     trustProxy: env.MIDORI_TRUST_PROXY === 'true',
     connectionString, publicOrigin, rpID, host, rpcUrl,
@@ -101,6 +105,7 @@ export function loadConfig(env = process.env) {
     indexAccountBatch: integer(env.MIDORI_INDEX_ACCOUNT_BATCH, 10, 1, 100, 'account batch'),
     indexConfirmations: integer(env.MIDORI_INDEX_CONFIRMATIONS, 12, 1, 10000, 'confirmations'),
     workerIntervalMs: integer(env.MIDORI_WORKER_INTERVAL_MS, 60000, 1000, 3600000, 'worker interval'),
+    changellyEnabled, changellyApiSecret: env.CHANGELLY_API_SECRET || null, changellyApiKey: env.CHANGELLY_API_KEY || null,
     transakEnabled, transakApiKey: env.MIDORI_TRANSAK_API_KEY || null, transakApiSecret: env.MIDORI_TRANSAK_API_SECRET || null,
     transakEnvironment, transakReferrerDomain,
   });

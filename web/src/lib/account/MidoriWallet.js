@@ -17,6 +17,11 @@ export default class MidoriWallet {
   payment(id) { return this.#session.payment(id); }
   cancelPayment(id) { return this.#session.cancelPayment(id); }
   reviewRamp(request) { return this.#session.reviewRamp({ ...request, cryptoCurrency: this.crypto.symbol }); }
+  exchangeOptions() { return this.#session.exchangeOptions(); }
+  exchangeQuote(body) { return this.#session.exchangeQuote(body); }
+  createExchange(body) { return this.#session.createExchange(body); }
+  exchangeOrders() { return this.#session.exchangeOrders(); }
+  exchangeOrder(id) { return this.#session.exchangeOrder(id); }
   rampOptions() { return this.#session.rampOptions(); }
   rampOrders() { return this.#session.rampOrders(); }
   issueReceipt(source, reference) { return this.#session.issueReceipt(source, reference); }

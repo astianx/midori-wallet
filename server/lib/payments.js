@@ -1,6 +1,6 @@
 import { captureServerError } from './sentry.js';
 import { randomUUID } from 'node:crypto';
-import { getAddress, ZeroAddress } from 'ethers';
+import { getAddress, ZeroAddress, parseUnits } from 'ethers';
 import { ApiError, exactKeys, requireValue, notFound } from './errors.js';
 import { canonical, sha256, uuidPattern } from './crypto.js';
 import { account, activePrincipal } from './repositories.js';
@@ -75,7 +75,8 @@ export function paymentService(db,config,provider=paymentProvider(config)) {
       return {intents:await Promise.all(rows.map(row=>present(db,row)))};
     },
     async create(principal,accountId,body) {
-      exactKeys(body,['idempotencyKey','contract','amountAtomic','recipient','feeMode','feeToken','maxFeeAtomic']);
+      exactKeys(body,['idempotencyKey','contract','amountAtomic','recipient','feeMode','feeToken','maxFeeAtomic'],['exchangeOrderId']);
+      requireValue(body.exchangeOrderId===undefined||uuidPattern.test(body.exchangeOrderId),'Invalid exchange ID');
       requireValue(uuidPattern.test(accountId)&&uuidPattern.test(body.idempotencyKey),'Invalid payment ID');
       requireValue(body.amountAtomic==='max'||(atomic(body.amountAtomic)&&BigInt(body.amountAtomic)>0n),'Invalid amount');
       requireValue(['token','sponsored'].includes(body.feeMode),'Invalid gas mode');enabled(body.feeMode);
@@ -97,6 +98,15 @@ export function paymentService(db,config,provider=paymentProvider(config)) {
         await activePrincipal(client,principal);await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,738194262))',[accountId]);
         const previous=await client.query('SELECT *,amount_atomic::text FROM tx_intents WHERE wallet_id=$1 AND idempotency_key=$2',[principal.wallet_id,body.idempotencyKey]);
         if(previous.rows.length) {if(previous.rows[0].fingerprint!==fingerprint)throw fail('IDEMPOTENCY_CONFLICT','This payment key was already used with different parameters');return previous.rows[0];}
+        if(body.exchangeOrderId) {
+          const {rows:exchanges}=await client.query('SELECT o.*,q.quote FROM exchange_orders o JOIN exchange_quotes q ON q.id=o.quote_id WHERE o.id=$1 AND o.wallet_id=$2 AND o.account_id=$3 FOR UPDATE OF o',[body.exchangeOrderId,principal.wallet_id,accountId]);
+          const exchange=exchanges[0];if(!exchange)throw notFound();
+          requireValue(exchange.status==='waiting'&&same(exchange.payin_address,request.recipient.address)&&same(exchange.quote.from.contract,contract)&&body.amountAtomic===parseUnits(exchange.quote.amountFrom,6).toString(),'Exchange deposit details changed');
+          if(exchange.payment_intent_id) {
+            const previousDeposit=await loadIntent(client,principal.wallet_id,exchange.payment_intent_id);
+            if(!['cancelled','expired','rejected'].includes(previousDeposit.status))throw new ApiError(409,'PAYMENT_ALREADY_PENDING','Review the existing exchange deposit',{intentId:previousDeposit.id});
+          }
+        }
         const saved=await account(client,principal.wallet_id,accountId);
         requireValue(saved.assets.some(asset=>same(asset.contract,contract)),'Unsupported payment token');
         const {rows:busy}=await client.query('SELECT id FROM tx_intents WHERE account_id=$1 AND status=ANY($2::text[])',[accountId,active]);
@@ -112,6 +122,7 @@ export function paymentService(db,config,provider=paymentProvider(config)) {
         fresh=true;const id=randomUUID();
         const inserted=await client.query(`INSERT INTO tx_intents(id,wallet_id,account_id,idempotency_key,fingerprint,chain_id,contract,amount_atomic,sender,recipient,recipient_kind,resolution_id,recipient_tag,tag_revision,fee_mode,fee_token,requested_fee_cap,expires_at)
           VALUES($1,$2,$3,$4,$5,8453,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,clock_timestamp()+make_interval(secs=>$17)) RETURNING *,amount_atomic::text`,[id,principal.wallet_id,accountId,body.idempotencyKey,fingerprint,contract,body.amountAtomic==='max'?'1':body.amountAtomic,saved.address.toLowerCase(),recipient,request.recipient.kind,resolutionId,tag,revision,body.feeMode,feeToken,body.maxFeeAtomic,config.paymentQuoteSeconds]);
+        if(body.exchangeOrderId)await client.query('UPDATE exchange_orders SET payment_intent_id=$2 WHERE id=$1',[body.exchangeOrderId,id]);
         return {...inserted.rows[0],descriptor:saved.descriptor};
       });
       if(!fresh)return present(db,row);

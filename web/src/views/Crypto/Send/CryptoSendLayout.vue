@@ -14,7 +14,7 @@ export default {
 </script>
 <template>
   <MainLayout class="&" :data-context="current >= 2 ? 'compact' : 'full'" :title="title" wide allowReadFailure :onBack="() => $emit('back')">
-    <MwFlowProgress :current="current" />
+    <MwFlowProgress :current="current" /><p v-if="storage.exchange" class="&__exchange">Changelly · {{ $t('Review deposit') }} · {{ storage.exchange.quote.to.name }} · {{ storage.exchange.quote.to.network }}</p>
     <div class="&__grid">
       <aside class="&__context" :aria-label="$t('Wallet')"><div class="&__asset"><MwCryptoLogo :crypto="$wallet.crypto" :platform="$wallet.platform" /><div><strong>{{ $wallet.crypto.symbol }}</strong><small>{{ $wallet.crypto.name }} · Base</small></div></div><div class="&__balance"><div><small>{{ $t('Balance') }}</small><span dir="ltr">{{ balance }} <small v-if="asset?.balance && !$isHiddenBalance">{{ $wallet.crypto.symbol }}</small></span><small v-if="asset?.readState !== 'fresh'">{{ $t(asset?.balance ? 'Last known balance' : 'Balance unavailable') }}</small></div><slot name="balance-action" /></div><div v-if="storage.address" class="&__recipient"><small>{{ $t('To') }}</small><strong>{{ storage.alias || storage.address }}</strong><details v-if="storage.alias"><summary>{{ $t('View wallet address') }}</summary><span dir="ltr">{{ storage.address }}</span></details></div></aside>
       <div class="&__body"><slot /><footer v-if="$slots.actions" class="&__actions"><slot name="actions" /></footer></div>

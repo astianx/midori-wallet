@@ -15,6 +15,7 @@ import { history } from './lib/history.js';
 import { paymentService } from './lib/payments.js';
 import { chainRpc } from './lib/chain-rpc.js';
 import { ownTag, tagOptions, registerTag, resolveTag, verifyTagRegistration, verifyTagSnapshot } from './lib/tags.js';
+import { exchangeService } from './lib/exchange.js';
 import { rampService } from './lib/ramp.js';
 import { receiptService } from './lib/receipts.js';
 import { marketService } from './lib/market.js';
@@ -23,11 +24,12 @@ const route = action => (req, res, next) => Promise.resolve(action(req, res)).ca
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
 const requestIp = req => (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
-export function createApp({ db, config, webApp, provider, rampProvider, marketProvider, reportError = captureServerError, logger = () => {} }) {
+export function createApp({ db, config, webApp, provider, rampProvider, exchangeProvider, marketProvider, reportError = captureServerError, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
   const webauthn = webauthnService(db, config);
   const payments = paymentService(db, config, provider);
+  const exchange = exchangeService(db, config, exchangeProvider);
   const ramp = rampService(db, config, rampProvider);
   const market = marketProvider || marketService({ apiKey: config.coingeckoApiKey });
   const receipts = receiptService({ ...config, receiptPath: webApp?.locals?.receiptPath || '/receipt' });
@@ -51,7 +53,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, marketPr
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'unavailable', database: ready ? 'ready' : 'unavailable' });
   }));
   app.get('/api/v1/openapi.json', (req, res) => res.sendFile(new URL('./openapi.json', import.meta.url).pathname));
-  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, ramp: config.transakEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, ramp: config.transakEnabled, exchange: config.changellyEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
   app.get('/api/v1/updates/:platform/:arch', route(async (req, res) => {
     requireValue(['win32','darwin','linux','android','ios','web'].includes(req.params.platform) && ['x64','arm64','any'].includes(req.params.arch));
     try { res.json({ enabled: githubUpdates.enabled, update: await githubUpdates.getUpdate(req.params.platform, req.params.arch) || null }); }
@@ -103,6 +105,11 @@ export function createApp({ db, config, webApp, provider, rampProvider, marketPr
   protectedRoute('get', '/api/v1/intents/:id', (req, client, principal) => { uuid(req.params.id); return payments.get(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/authorize', (req, client, principal) => { uuid(req.params.id); return payments.authorize(principal, req.params.id, req.body); }, 200, false);
   protectedRoute('post', '/api/v1/intents/:id/cancel', (req, client, principal) => { uuid(req.params.id); exactKeys(req.body, []); return payments.cancel(principal, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/accounts/:id/exchange/options', (req, client, principal) => { uuid(req.params.id); return exchange.options(principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('post', '/api/v1/accounts/:id/exchange/quotes', (req, client, principal) => { uuid(req.params.id); return exchange.quote(principal.wallet_id, req.params.id, req.body); }, 200, false);
+  protectedRoute('post', '/api/v1/accounts/:id/exchange/orders', (req, client, principal) => { uuid(req.params.id); return exchange.create(principal, req.params.id, req.body); }, 200, false);
+  protectedRoute('get', '/api/v1/accounts/:id/exchange/orders', (req, client, principal) => { uuid(req.params.id); return exchange.list(principal.wallet_id, req.params.id); }, 200, false);
+  protectedRoute('get', '/api/v1/exchange/orders/:id', (req, client, principal) => { uuid(req.params.id); return exchange.get(principal.wallet_id, req.params.id); }, 200, false);
   protectedRoute('get', '/api/v1/ramp/options', () => ramp.options(), 200, false);
   protectedRoute('post', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.create(principal, req.params.id, req.body, requestIp(req)); }, 200, false);
   protectedRoute('get', '/api/v1/accounts/:id/ramp/orders', (req, client, principal) => { uuid(req.params.id); return ramp.list(principal.wallet_id, req.params.id); }, 200, false);

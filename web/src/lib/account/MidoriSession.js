@@ -270,6 +270,12 @@ export default class MidoriSession {
     } finally { seed.fill(0); this.#adapter.lock(); }
   }
 
+  async exchangeOptions() { return this.client.request('GET', `/api/v1/accounts/${this.account.id}/exchange/options`); }
+  async exchangeQuote(body) { return this.client.request('POST', `/api/v1/accounts/${this.account.id}/exchange/quotes`, body); }
+  async createExchange(body) { return this.client.request('POST', `/api/v1/accounts/${this.account.id}/exchange/orders`, body); }
+  async exchangeOrders() { return this.client.request('GET', `/api/v1/accounts/${this.account.id}/exchange/orders`); }
+  async exchangeOrder(id) { return this.client.request('GET', `/api/v1/exchange/orders/${id}`); }
+
   async rampOptions() { return this.client.request('GET', '/api/v1/ramp/options'); }
   async reviewRamp(request) {
     if (!this.session || !this.account?.id) throw Object.assign(new Error(), { code: 'NETWORK_UNCONFIRMED' });

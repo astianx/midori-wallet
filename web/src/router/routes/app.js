@@ -12,7 +12,7 @@ import CryptoViewSell from '../../views/Crypto/CryptoViewSell.vue';
 
 import CryptoAddView from '../../views/Crypto/Add/CryptoAddView.vue';
 import CryptoDerivationView from '../../views/Crypto/Derivation/CryptoDerivationView.vue';
-import CryptoExchangeView from '../../views/Crypto/Exchange/CryptoExchangeView.vue';
+import CryptoExchangeView from '../../views/Crypto/Exchange/CryptoSwapView.vue';
 import CryptoExportView from '../../views/Crypto/Export/CryptoExportView.vue';
 import CryptoHistoryView from '../../views/Crypto/History/CryptoHistoryView.vue';
 import CryptoImportView from '../../views/Crypto/Import/CryptoImportView.vue';

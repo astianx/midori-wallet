@@ -25,6 +25,8 @@ The workflow and manual input must first be present on the default branch. Re-ru
 
 Both native Android jobs use `.github/actions/setup-android`: JDK 17, Android SDK 36, Build Tools 36.0.0, and Gradle 8.14.2. Every build uses `.github/actions/setup-build`, Node from `.nvmrc`, the committed npm lockfiles, and an empty user npm configuration. Install scripts are disabled; Electron's binary installation is explicit.
 
+Generate and validate dependency lockfiles with the CI toolchain: Node 22.22.2 and its bundled npm 10.9.7. Run `npm ci --ignore-scripts --no-audit --no-fund` in `packages/wallet-core` from an empty `node_modules` directory before committing dependency changes. A development installation can hide missing optional peer dependencies; `npm ci` checks the complete lockfile even when those peers are not used at runtime.
+
 New pushes cancel obsolete validation runs on feature branches. A running workflow on `main` is not automatically cancelled by a newer push, so signing and cleanup can finish.
 
 ## Signing checks
@@ -41,6 +43,8 @@ The preflight validates the secrets and alias before compilation. The build requ
 ## Artifacts and diagnosis
 
 Each uploaded artifact contains `manifest.json`: target, profile, version, commit, workflow run and attempt, completeness, file sizes and SHA-256 hashes. The Android release manifest also records the verified signing certificate. APK/AAB hashes must still match their signature-verification result when collected.
+
+macOS builds use `macos-15-intel` to avoid the unavailable ARM runner pool. Desktop packaging sets `MIDORI_DESKTOP_ARCH=arm64` explicitly, preserving the Apple Silicon ZIP and DMG target regardless of the build host. iOS validation produces a simulator bundle on the Intel host. Runner labels: [GitHub reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners); target architecture: [Electron Forge CLI](https://www.electronforge.io/cli).
 
 macOS produces ZIP and DMG. DMGs use APFS, are verified with `hdiutil verify`, and retry only `Resource busy`, at most three attempts. Invalid partial images are removed. If DMG creation still fails, the job remains failed and its completed ZIP is preserved with an incomplete manifest. A partial artifact set is not a successful release.
 

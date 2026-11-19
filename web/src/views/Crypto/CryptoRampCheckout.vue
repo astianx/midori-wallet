@@ -9,7 +9,7 @@ export default {
   props: { order: { type: Object, required: true }, title: { type: String, required: true } },
   emits: ['close', 'update', 'error'],
   data() { return { ready: false, failure: '', loadTimeout: null, previousFocus: null, previousBack: null, nativeBack: null, viewportHeight: 0 }; },
-  computed: { network() { return rampNetwork(this.order.environment); } },
+  computed: { network() { return rampNetwork(this.order.environment, this.order.network); } },
   mounted() {
     this.previousFocus = document.activeElement; this.$refs.dialog.showModal(); this.$refs.close.focus({ preventScroll: true });
     window.addEventListener('message', this.onMessage); window.addEventListener('offline', this.offline);

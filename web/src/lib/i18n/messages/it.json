@@ -719,5 +719,10 @@
   "The deposit network cost is reviewed separately before you sign.": "The deposit network cost is reviewed separately before you sign.",
   "Recent conversions": "Recent conversions",
   "You send": "You send",
-  "Needs review": "Needs review"
+  "Needs review": "Needs review",
+  "Send only {symbol} using the Bitcoin network.": "Invia solo {symbol} utilizzando la rete Bitcoin.",
+  "Crypto assets": "Criptoattività",
+  "Region": "Regione",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "I depositi Bitcoin vengono accreditati su Spark dopo la conferma e la verifica delle commissioni.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly utilizza la rete Bitcoin. I costi di conversione Spark vengono verificati separatamente."
 }

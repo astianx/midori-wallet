@@ -27,3 +27,9 @@ export function resolveBuildUrls(env, { native = false, release = false } = {}) 
   }
   return { siteUrl: site.href, apiOrigin: apiOrigin ? new URL(apiOrigin).origin : '' };
 }
+
+export function desktopArchitecture(platform, hostArchitecture, requestedArchitecture = hostArchitecture) {
+  if (!['x64', 'arm64'].includes(requestedArchitecture)) throw new Error('Unsupported desktop architecture');
+  if (platform !== 'darwin' && requestedArchitecture !== hostArchitecture) throw new Error('Cross-architecture desktop packaging requires macOS');
+  return requestedArchitecture;
+}

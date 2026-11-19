@@ -36,7 +36,7 @@ test('history preserves stablecoin precision, isolates currency/period and share
 
 test('unsupported requests never reach the upstream', async () => {
   const market = marketService({ fetchImpl: () => { throw new Error('Must not fetch'); } });
-  for (const [symbol, query] of [['BTC', {}], ['__proto__', {}], ['USDC', { period: 'max' }], ['USDC', { period: ['1D'] }], ['USDC', { currency: 'XXX' }], ['USDT', { currency: ['USD', 'EUR'] }], ['USDT', { url: 'https://example.com' }]]) {
+  for (const [symbol, query] of [['ETH', {}], ['__proto__', {}], ['USDC', { period: 'max' }], ['USDC', { period: ['1D'] }], ['USDC', { currency: 'XXX' }], ['USDT', { currency: ['USD', 'EUR'] }], ['USDT', { url: 'https://example.com' }]]) {
     await assert.rejects(market.chart(symbol, query), { status: 400, code: 'INVALID_REQUEST' });
   }
 });
@@ -65,7 +65,9 @@ test('account history uses the public Midori client and maps exact registry asse
   const assets = validateAssets(BASE_ASSETS);
   for (const asset of assets) assert.deepEqual(await client.getChartData(asset._id, '7D', 'EUR'), { prices });
   assert.deepEqual(calls, assets.map(asset => ['GET', `/api/v1/market/${asset.symbol}/chart?period=7D&currency=EUR`]));
-  await assert.rejects(client.getChartData('bitcoin@bitcoin', '1D', 'USD'));
+  assert.deepEqual(await client.getChartData('bitcoin@bitcoin', '1D', 'USD'), { prices });
+  assert.equal(calls.at(-1)[1], '/api/v1/market/BTC/chart?period=1D&currency=USD');
+  await assert.rejects(client.getChartData('ethereum@ethereum', '1D', 'USD'));
   assert.equal(await client.getMarket(assets[0]._id, 'USD'), undefined);
 });
 
@@ -81,7 +83,7 @@ test('public API returns chart data without identity or database access and pres
     const response = await fetch(`${origin}/api/v1/market/USDC/chart?period=7D&currency=EUR`);
     assert.equal(response.status, 200);
     assert.deepEqual((await response.json()).prices, prices);
-    assert.equal((await fetch(`${origin}/api/v1/market/BTC/chart`)).status, 400);
+    assert.equal((await fetch(`${origin}/api/v1/market/ETH/chart`)).status, 400);
     assert.equal((await fetch(`${origin}/api/v1/market/USDT/chart`, { headers: { Origin: 'https://untrusted.example' } })).status, 403);
   } finally {
     await new Promise(resolve => server.close(resolve));

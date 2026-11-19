@@ -99,7 +99,7 @@ export function transakClient(config, fetchImpl = fetch, db) {
   const coverage = async sdk => {
     try {
       const [assets, currencies] = await Promise.all([sdk.getSupportedCryptoAssets(), sdk.getSupportedFiatCurrencies()]);
-      return { assets: assets.filter(asset => asset.networkCode === 'base' && ['USDT', 'USDC'].includes(asset.code)), currencies };
+      return { assets: assets.filter(asset => (asset.networkCode === 'base' && ['USDT', 'USDC'].includes(asset.code)) || (asset.code === 'BTC' && asset.networkCode === 'mainnet' && asset.decimals === 8)), currencies };
     } catch { throw unavailable(); }
   };
   return {
@@ -108,7 +108,7 @@ export function transakClient(config, fetchImpl = fetch, db) {
       const [{ assets, currencies }, enabledProducts] = await Promise.all([coverage(coverageProtocol), products()]);
       return {
         environment: config.transakEnvironment, network: 'base', products: enabledProducts,
-        assets: assets.map(asset => ({ symbol: asset.code, decimals: asset.decimals, roundOff: asset.metadata.roundOff, chainId: String(asset.metadata.network.chainId || ''), buy: enabledProducts.includes('BUY') && asset.metadata.isAllowed === true, sell: enabledProducts.includes('SELL') && asset.metadata.isPayInAllowed === true })),
+        assets: assets.map(asset => ({ symbol: asset.code, network: asset.code === 'BTC' ? 'bitcoin' : 'base', decimals: asset.decimals, roundOff: asset.metadata.roundOff, chainId: String(asset.metadata.network.chainId || ''), buy: enabledProducts.includes('BUY') && asset.metadata.isAllowed === true, sell: enabledProducts.includes('SELL') && asset.metadata.isPayInAllowed === true })),
         fiatCurrencies: currencies.map(fiat => ({ code: fiat.code, decimals: fiat.decimals, buy: enabledProducts.includes('BUY') && fiat.metadata.isAllowed === true, sell: enabledProducts.includes('SELL') && fiat.metadata.isPayOutAllowed === true })),
       };
     },
@@ -121,13 +121,14 @@ export function transakClient(config, fetchImpl = fetch, db) {
       const fiat = currencies.find(item => item.code === order.fiat_currency);
       requireValue(asset && fiat, 'Unsupported currency or network');
       requireValue(order.kind === 'buy' ? asset.metadata.isAllowed === true && fiat.metadata.isAllowed === true : asset.metadata.isPayInAllowed === true && fiat.metadata.isPayOutAllowed === true, 'This buy/sell pair is unavailable');
-      if (config.transakEnvironment === 'PRODUCTION') requireValue(String(asset.metadata.network.chainId) === '8453' && asset.decimals === 6, 'Unsupported asset network');
+      if (asset.code === 'BTC') requireValue(asset.networkCode === 'mainnet' && asset.decimals === 8, 'Unsupported Bitcoin network');
+      else if (config.transakEnvironment === 'PRODUCTION') requireValue(String(asset.metadata.network.chainId) === '8453' && asset.decimals === 6, 'Unsupported asset network');
       const options = {
         cryptoAsset: asset.code, fiatCurrency: fiat.code,
         ...(order.fiat_amount != null ? { fiatAmount: atomic(order.fiat_amount, fiat.decimals) } : { cryptoAmount: atomic(order.crypto_amount, asset.decimals) }),
         ...(order.kind === 'buy' ? { recipient: order.wallet_address } : {}),
         config: {
-          network: 'base', referrerDomain: config.transakReferrerDomain, partnerOrderId: order.id,
+          network: asset.networkCode, referrerDomain: config.transakReferrerDomain, partnerOrderId: order.id,
           ...(order.kind === 'buy' ? { disableWalletAddressForm: true } : {}),
           ...(order.payment_method ? { paymentMethod: order.payment_method } : {}),
         },

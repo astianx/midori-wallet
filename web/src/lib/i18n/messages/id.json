@@ -719,5 +719,10 @@
   "The deposit network cost is reviewed separately before you sign.": "The deposit network cost is reviewed separately before you sign.",
   "Recent conversions": "Recent conversions",
   "You send": "You send",
-  "Needs review": "Needs review"
+  "Needs review": "Needs review",
+  "Send only {symbol} using the Bitcoin network.": "Kirim hanya {symbol} menggunakan jaringan Bitcoin.",
+  "Crypto assets": "Aset kripto",
+  "Region": "Wilayah",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Setoran Bitcoin dikreditkan ke Spark setelah konfirmasi dan peninjauan biaya.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly menggunakan jaringan Bitcoin. Biaya konversi Spark ditinjau secara terpisah."
 }

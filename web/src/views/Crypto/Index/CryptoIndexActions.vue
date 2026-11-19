@@ -36,7 +36,7 @@ export default {
     >
       <MwButton
         type="circle"
-        :disabled="!$account.capabilities.payments"
+        :disabled="!['bitcoin','spark'].includes($wallet.crypto.platform) && !$account.capabilities.payments"
         @click="$router.push({ name: 'crypto.send', params: { cryptoId: $wallet.crypto._id }})"
       >
         <template #circle>

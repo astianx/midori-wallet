@@ -15,6 +15,9 @@ import { history } from './lib/history.js';
 import { paymentService } from './lib/payments.js';
 import { chainRpc } from './lib/chain-rpc.js';
 import { ownTag, tagOptions, registerTag, resolveTag, verifyTagRegistration, verifyTagSnapshot } from './lib/tags.js';
+import { bitcoinGateway, registerBitcoin, broadcastBitcoin } from './lib/bitcoin.js';
+import { registerSpark } from './lib/spark.js';
+import { changellyFiatService } from './lib/changelly-fiat-service.js';
 import { exchangeService } from './lib/exchange.js';
 import { rampService } from './lib/ramp.js';
 import { receiptService } from './lib/receipts.js';
@@ -24,11 +27,13 @@ const route = action => (req, res, next) => Promise.resolve(action(req, res)).ca
 const uuid = value => requireValue(uuidPattern.test(value), 'Invalid resource ID');
 const requestIp = req => (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 
-export function createApp({ db, config, webApp, provider, rampProvider, exchangeProvider, marketProvider, reportError = captureServerError, logger = () => {} }) {
+export function createApp({ db, config, webApp, provider, rampProvider, exchangeProvider, fiatProvider, marketProvider, reportError = captureServerError, logger = () => {} }) {
   const app = express();
   const wallets = walletService(db, config);
+  const bitcoin = bitcoinGateway();
   const webauthn = webauthnService(db, config);
   const payments = paymentService(db, config, provider);
+  const fiat = changellyFiatService(db, config, fiatProvider);
   const exchange = exchangeService(db, config, exchangeProvider);
   const ramp = rampService(db, config, rampProvider);
   const market = marketProvider || marketService({ apiKey: config.coingeckoApiKey });
@@ -53,7 +58,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, exchange
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'unavailable', database: ready ? 'ready' : 'unavailable' });
   }));
   app.get('/api/v1/openapi.json', (req, res) => res.sendFile(new URL('./openapi.json', import.meta.url).pathname));
-  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, ramp: config.transakEnabled, exchange: config.changellyEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, rampProvider: config.rampProvider || 'transak', ramp: config.rampProvider === 'changelly' ? config.changellyFiatEnabled : config.transakEnabled, exchange: config.changellyEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
   app.get('/api/v1/updates/:platform/:arch', route(async (req, res) => {
     requireValue(['win32','darwin','linux','android','ios','web'].includes(req.params.platform) && ['x64','arm64','any'].includes(req.params.arch));
     try { res.json({ enabled: githubUpdates.enabled, update: await githubUpdates.getUpdate(req.params.platform, req.params.arch) || null }); }
@@ -61,6 +66,8 @@ export function createApp({ db, config, webApp, provider, rampProvider, exchange
   }));
   app.get('/api/v1/assets', route(async (req, res) => res.json({ assets: await catalog(db) })));
   app.get('/api/v1/market/:symbol/chart', route(async (req, res) => res.json(await market.chart(req.params.symbol, req.query))));
+
+  app.get('/api/v1/bitcoin/*', route(async (req, res) => { await limitUnauthenticated(db, config, req); res.json(await bitcoin(req.params[0])); }));
 
   const publicPost = (path, action, status = 200) => app.post(path, route(async (req, res) => { await limitUnauthenticated(db, config, req); res.status(status).json(await action(req.body)); }));
   publicPost('/api/v1/receipts/verify', body => receipts.verify(db, body));
@@ -91,6 +98,15 @@ export function createApp({ db, config, webApp, provider, rampProvider, exchange
     const value = transaction ? await db.transaction(async client => { await activePrincipal(client, principal); return action(req, client, principal); }) : await action(req, db, principal);
     res.status(status).json(value);
   }));
+  protectedRoute('post', '/api/v1/accounts/:id/changelly-fiat/options', (req, client, principal) => { uuid(req.params.id); return fiat.options(principal.wallet_id,req.params.id,req.body); },200,false);
+  protectedRoute('post', '/api/v1/accounts/:id/changelly-fiat/quotes', (req, client, principal) => { uuid(req.params.id); return fiat.quote(principal.wallet_id,req.params.id,req.body,req.ip); },200,false);
+  protectedRoute('post', '/api/v1/accounts/:id/changelly-fiat/orders', (req, client, principal) => { uuid(req.params.id); return fiat.create(principal.wallet_id,req.params.id,req.body,req.ip); },200,false);
+  protectedRoute('get', '/api/v1/accounts/:id/changelly-fiat/orders', (req, client, principal) => { uuid(req.params.id); return fiat.list(principal.wallet_id,req.params.id); },200,false);
+  protectedRoute('get', '/api/v1/changelly-fiat/orders/:id', (req, client, principal) => { uuid(req.params.id); return fiat.get(principal.wallet_id,req.params.id); },200,false);
+  protectedRoute('put', '/api/v1/accounts/:id/spark', (req, client, principal) => { uuid(req.params.id); return registerSpark(db, principal, req.params.id, req.body); }, 200, false);
+  protectedRoute('post', '/api/v1/exchange/orders/:id/spark-deposit', (req, client, principal) => { uuid(req.params.id); return exchange.reserveSpark(principal.wallet_id, req.params.id, req.body); }, 200, false);
+  protectedRoute('put', '/api/v1/accounts/:id/bitcoin', (req, client, principal) => { uuid(req.params.id); return registerBitcoin(client, principal, req.params.id, req.body); });
+  protectedRoute('post', '/api/v1/bitcoin/tx', async (req, client, principal) => { await limitAttempts(client, `bitcoin:${principal.wallet_id}`, 10); return broadcastBitcoin(db, principal, req.body, bitcoin); }, 200, false);
   protectedRoute('get', '/api/v1/me', async (req, client, principal) => {
     const { rows } = await client.query('SELECT id FROM chain_accounts WHERE wallet_id=$1 ORDER BY account_index', [principal.wallet_id]);
     return { walletId: principal.wallet_id, deviceId: principal.device_id, accounts: await Promise.all(rows.map(row => account(client, principal.wallet_id, row.id))) };

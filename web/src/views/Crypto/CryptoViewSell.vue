@@ -1,10 +1,11 @@
 <script>
+import ChangellyFiatPanel from './ChangellyFiatPanel.vue';
 import CryptoRampPanel from './CryptoRampPanel.vue';
 import MainLayout from '../../layouts/MainLayout.vue';
 
 export default {
   components: {
-    CryptoRampPanel,
+    CryptoRampPanel, ChangellyFiatPanel,
     MainLayout,
   },
   methods: {
@@ -25,6 +26,7 @@ export default {
     wide
     allowReadFailure
   >
-    <CryptoRampPanel kind="sell" />
+    <ChangellyFiatPanel v-if="$account.capabilities.rampProvider === 'changelly'" kind="sell" />
+    <CryptoRampPanel v-else kind="sell" />
   </MainLayout>
 </template>

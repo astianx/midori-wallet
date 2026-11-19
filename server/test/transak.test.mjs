@@ -6,13 +6,13 @@ import { transakClient } from '../lib/transak.js';
 const config = { transakEnvironment: 'STAGING', transakApiKey: 'test-key', transakApiSecret: 'test-secret', transakReferrerDomain: 'localhost' };
 const order = { id: 'partner-order', kind: 'buy', crypto_currency: 'USDC', fiat_currency: 'USD', fiat_amount: '100.0000', crypto_amount: null, wallet_address: '0x' + '12'.repeat(20) };
 const response = body => ({ ok: true, json: async () => body });
-function provider(t, { widgetUrl = 'https://global-stg.transak.com/?sessionId=test', roundOff = 2, products = ['BUY','SELL'] } = {}) {
+function provider(t, { widgetUrl = 'https://global-stg.transak.com/?sessionId=test', roundOff = 2, products = ['BUY','SELL'], extraAssets = [] } = {}) {
   const requests = [];
   t.mock.method(globalThis, 'fetch', async (url, init = {}) => {
     url = new URL(url); requests.push({ url, init });
     assert.ok(['api-stg.transak.com','api-gateway-stg.transak.com'].includes(url.hostname));
     if (url.pathname.endsWith('/partners/api/v2/test-key')) return response({ response: { productsAvailed: products } });
-    if (url.pathname.includes('crypto-currencies')) return response({ response: [{ symbol: 'USDC', decimals: 18, roundOff, name: 'USD Coin', network: { name: 'base', chainId: '84532' }, isAllowed: true, isPayInAllowed: true }] });
+    if (url.pathname.includes('crypto-currencies')) return response({ response: [{ symbol: 'USDC', decimals: 18, roundOff, name: 'USD Coin', network: { name: 'base', chainId: '84532' }, isAllowed: true, isPayInAllowed: true }, ...extraAssets] });
     if (url.pathname.includes('fiat-currencies')) return response({ response: [{ symbol: 'USD', roundOff: 2, name: 'US Dollar', isAllowed: true, isPayOutAllowed: true }, { symbol: 'JPY', roundOff: 0, name: 'Yen', isAllowed: true, isPayOutAllowed: false }, { symbol: 'KWD', roundOff: 3, name: 'Dinar', isAllowed: true, isPayOutAllowed: true }] });
     if (url.pathname.endsWith('refresh-token')) return response({ data: { accessToken: 'shared-token', expiresAt: Math.floor(Date.now() / 1000) + 3600 } });
     if (url.pathname.endsWith('auth/session')) return response({ data: { widgetUrl } });
@@ -91,4 +91,16 @@ test('partner product permissions disable selling even when asset coverage allow
   assert.ok(options.fiatCurrencies.every(fiat => fiat.sell === false));
   await assert.rejects(client.createWidget({ ...order, kind: 'sell', fiat_amount: null, crypto_amount: '25' }, '203.0.113.1'), { code: 'INVALID_REQUEST' });
   assert.equal(requests.filter(item => item.url.pathname.endsWith('auth/session')).length, 0);
+});
+
+test('WDK Bitcoin buy and sell use native mainnet, eight decimals and the owned address', async t => {
+  const { client, requests } = provider(t, { extraAssets: [{ symbol: 'BTC', name: 'Bitcoin', decimals: 8, roundOff: 8, network: { name: 'mainnet' }, isAllowed: true, isPayInAllowed: true }] });
+  const asset = (await client.options()).assets.find(item => item.symbol === 'BTC');
+  assert.equal(asset.network, 'bitcoin'); assert.equal(asset.decimals, 8); assert.ok(asset.buy && asset.sell);
+  const bitcoin = { ...order, crypto_currency: 'BTC', network: 'bitcoin', wallet_address: 'bc1qr6ddtxn4k8jmg75ejgqg525wwzmtur7zy0nnr0' };
+  await client.createWidget(bitcoin, '203.0.113.1');
+  await client.createWidget({ ...bitcoin, kind: 'sell', fiat_amount: null, crypto_amount: '0.00012345' }, '203.0.113.1');
+  const sessions = requests.filter(item => item.url.pathname.endsWith('auth/session')).map(item => JSON.parse(item.init.body).widgetParams);
+  assert.equal(sessions[0].network, 'mainnet'); assert.equal(sessions[0].walletAddress, bitcoin.wallet_address); assert.equal(sessions[0].disableWalletAddressForm, true);
+  assert.equal(sessions[1].cryptoAmount, 0.00012345); assert.equal(sessions[1].network, 'mainnet');
 });

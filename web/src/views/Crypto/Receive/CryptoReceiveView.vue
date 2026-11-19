@@ -1,4 +1,5 @@
 <script>
+import SparkReceiveView from './SparkReceiveView.vue';
 import MwPinStep from '../../../components/MwPinStep.vue';
 import MwSteps from '../../../components/MwSteps.vue';
 
@@ -9,7 +10,7 @@ import CryptoReceiveStepMoneroStatus from './CryptoReceiveStepMoneroStatus.vue';
 
 export default {
   components: {
-    MwSteps,
+    MwSteps, SparkReceiveView,
   },
   steps: {
     index: CryptoReceiveStepIndex,
@@ -22,7 +23,9 @@ export default {
 </script>
 
 <template>
+  <SparkReceiveView v-if="$wallet.crypto.platform === 'spark'" />
   <MwSteps
+    v-else
     ref="steps"
     :steps="$options.steps"
   />

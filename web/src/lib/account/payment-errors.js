@@ -1,5 +1,6 @@
 export function paymentError(error,t,{ symbol = 'USDT' } = {}) {
   const messages={
+    INVALID_INVOICE:'Check the payment details.',INVOICE_EXPIRED:'This quote expired. Review the payment again.',
     PAYMENT_TRACKING_REQUIRED:'This payment is already authorized. Keep checking its status.',
     TAG_ACCOUNT_CONTROL_FAILED:'This tag must be verified again by its owner.',
     INVALID_RECIPIENT:'Enter a valid wallet address or Midori tag.',INVALID_REQUEST:'Check the payment details.',NOT_FOUND:'This tag was not found. Check the spelling.',TAG_RECONFIRM_REQUIRED:'This tag changed or expired. Choose the recipient again.',

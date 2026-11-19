@@ -719,5 +719,10 @@
   "The deposit network cost is reviewed separately before you sign.": "The deposit network cost is reviewed separately before you sign.",
   "Recent conversions": "Recent conversions",
   "You send": "You send",
-  "Needs review": "Needs review"
+  "Needs review": "Needs review",
+  "Send only {symbol} using the Bitcoin network.": "Bitcoin ネットワークを使用して {symbol} のみを送信します。",
+  "Crypto assets": "暗号資産",
+  "Region": "地域",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Bitcoinの入金は、承認と手数料の確認後にSparkへ反映されます。",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "ChangellyはBitcoinネットワークを使用します。Sparkへの変換コストは別途確認します。"
 }

@@ -37,12 +37,12 @@ async function sourceRecord(db, config, walletId, accountId, source, reference) 
   return publicOrder(rows[0]);
 }
 export async function receiptDocument(db, source, item, saved, id = randomUUID(), now = new Date()) {
-  const owner = await party(db, saved.address);
+  const owner = source === 'ramp' && item.network === 'bitcoin' ? { address: item.walletAddress, tag: null } : await party(db, saved.address);
   if (source === 'ramp') {
     const fiat = item.fiatAmount == null ? null : { value: decimal(item.fiatAmount), currency: item.fiatCurrency };
     const crypto = item.cryptoAmount == null ? null : { value: decimal(item.cryptoAmount), currency: item.cryptoCurrency };
     return { version: 1, id, source, reference: item.id, kind: item.kind, symbol: item.cryptoCurrency, status: item.status,
-      environment: item.environment, network: item.environment === 'STAGING' ? 'Base Sepolia' : 'Base',
+      environment: item.environment, network: item.network === 'bitcoin' ? 'Bitcoin' : item.environment === 'STAGING' ? 'Base Sepolia' : 'Base',
       amount: item.kind === 'buy' ? fiat : crypto, paid: item.kind === 'buy' ? fiat : crypto, received: item.kind === 'buy' ? crypto : fiat,
       from: item.kind === 'sell' ? owner : null, to: item.kind === 'buy' ? owner : null, owner,
       date: date(item.createdAt), issuedAt: date(now), transactionHash: item.transactionHash || null, midoriFee: null, networkCost: null };

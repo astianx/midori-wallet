@@ -335,27 +335,29 @@ scenario('Changelly discovers real network identities, binds quotes to owners an
   const { exchangeService } = await import('../lib/exchange.js');
   const usdc = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
   const source = { ticker: 'usdcbase', name: 'USD Coin Base', network: 'BASE', contract: usdc, decimals: 6, sell: true, buy: true, extraIdName: null, notification: null };
-  const destination = { ticker: 'usdt20', name: 'Tether Ethereum', network: 'ethereum', contract: '0x' + '34'.repeat(20), decimals: 6, sell: true, buy: true, extraIdName: null, notification: null };
+  const destination = { ticker: 'usdtbase', name: 'Tether Base', network: 'base', contract: '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2', decimals: 6, sell: true, buy: true, extraIdName: null, notification: null };
   let creates = 0, loseResponse = false, invalidAddress = false, wrongOrder = false;
-  const payout = '0x' + '56'.repeat(20), deposit = '0x' + '12'.repeat(20);
+  const payout = alice.descriptor.address, deposit = '0x' + '12'.repeat(20);
   const provider = {
     currencies: async () => [source, destination, { ...source, ticker: 'fake', contract: '0x' + 'ab'.repeat(20) }, { ...source, ticker: 'wrong-network', network: 'ethereum' }],
     estimate: async () => ({ amountTo: '98.75', networkFee: '0.25', fee: '1', min: '20', max: '10000' }),
     validate: async () => !invalidAddress,
     create: async params => { creates++; if (loseResponse) throw Error('timeout'); assert.equal(params.refundAddress.toLowerCase(), alice.descriptor.address.toLowerCase()); return { id: 'changelly-' + creates, currencyFrom: params.from, currencyTo: params.to, payoutAddress: params.address, payinAddress: deposit }; },
-    transaction: async id => ({ id, currencyFrom: 'usdcbase', currencyTo: 'usdt20', status: 'finished', payinAddress: deposit, payoutAddress: wrongOrder ? 'foreign' : payout, amountTo: '98.73', payoutHash: 'a'.repeat(64) }),
+    transaction: async id => ({ id, currencyFrom: 'usdcbase', currencyTo: 'usdtbase', status: 'finished', payinAddress: deposit, payoutAddress: wrongOrder ? 'foreign' : payout, amountTo: '98.73', payoutHash: 'a'.repeat(64) }),
   };
   const cfg = { ...config, changellyEnabled: true, paymentsEnabled: true };
   const service = exchangeService(apiDb || db, cfg, provider), walletId = alice.session.walletId, accountId = alice.session.accountId;
   const options = await service.options(walletId, accountId);
-  assert.deepEqual(options.providers[0].sources.map(item => item.ticker), ['usdcbase']);
-  const input = { from: 'usdcbase', to: 'usdt20', amount: '100' };
+  assert.deepEqual(options.providers[0].sources.map(item => item.ticker), ['usdcbase','usdtbase']);
+  const input = { from: 'usdcbase', to: 'usdtbase', amount: '100' };
   await assert.rejects(service.quote(walletId, bob.session.accountId, input), { status: 404 });
   await assert.rejects(service.quote(walletId, accountId, { ...input, from: 'fake' }), { status: 400 });
   await assert.rejects(service.quote(walletId, accountId, { ...input, amount: '100.0000001' }), { status: 400 });
   const quote = await service.quote(walletId, accountId, input);
   validateResponse('POST', `/api/v1/accounts/${accountId}/exchange/quotes`, 200, JSON.parse(JSON.stringify(quote)));
   const request = { quoteId: quote.id, idempotencyKey: randomUUID(), payoutAddress: payout };
+  await assert.rejects(service.create({ wallet_id: walletId }, accountId, { ...request, payoutAddress: '0x' + '56'.repeat(20) }), { code: 'INVALID_REQUEST' });
+  await assert.rejects(service.quote(walletId, accountId, { ...input, to: 'wrong-network' }), { code: 'INVALID_REQUEST' });
   await assert.rejects(service.create({ wallet_id: bob.session.walletId }, bob.session.accountId, request), { code: 'EXCHANGE_QUOTE_EXPIRED' });
   invalidAddress = true; await assert.rejects(service.create({ wallet_id: walletId }, accountId, request), { code: 'INVALID_REQUEST' }); assert.equal(creates, 0); invalidAddress = false;
   const order = await service.create({ wallet_id: walletId }, accountId, request);
@@ -385,6 +387,66 @@ scenario('Changelly discovers real network identities, binds quotes to owners an
   assert.equal((await service.list(walletId, accountId)).orders.length, 2);
   const expired = await service.quote(walletId, accountId, input); await db.query("UPDATE exchange_quotes SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", [expired.id]);
   await assert.rejects(service.create({ wallet_id: walletId }, accountId, { ...request, quoteId: expired.id, idempotencyKey: randomUUID() }), { code: 'EXCHANGE_QUOTE_EXPIRED' });
+});
+
+scenario('native Bitcoin binding and swaps enforce ownership, precision and internal payouts', async () => {
+  const { withBitcoinAccount, bitcoinBindingMessage } = await import('../../packages/wallet-core/src/index.js');
+  const { exchangeService } = await import('../lib/exchange.js');
+  const user = await identity(), client = user.client, walletId = user.session.walletId, accountId = user.session.accountId;
+  const offline = { async connect() {}, async close() {} };
+  const address = await withBitcoinAccount(user.owner.mnemonic.phrase, offline, account => account.getAddress());
+  const message = bitcoinBindingMessage(walletId, accountId, user.descriptor.address, address);
+  const proof = { address, signature: await withBitcoinAccount(user.owner.mnemonic.phrase, offline, account => account.sign(message)), ownerSignature: await user.owner.signMessage(message) };
+  assert.equal((await client.request('PUT', `/api/v1/accounts/${accountId}/bitcoin`, proof)).address, address);
+  assert.equal((await client.request('PUT', `/api/v1/accounts/${accountId}/bitcoin`, proof)).address, address);
+  await assert.rejects(client.request('PUT', `/api/v1/accounts/${bob.session.accountId}/bitcoin`, proof), { status: 404 });
+  await assert.rejects(client.request('PUT', `/api/v1/accounts/${accountId}/bitcoin`, { ...proof, signature: 'invalid' }), { status: 400 });
+  const deposit = await withBitcoinAccount(new Uint8Array(64).fill(2), offline, account => account.getAddress());
+  const btc = { ticker: 'btc', name: 'Bitcoin', network: 'bitcoin', contract: null, decimals: 8, buy: true, sell: true, extraIdName: null, notification: null };
+  const usdc = { ticker: 'usdcbase', name: 'USD Coin', network: 'base', contract: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', decimals: 6, buy: true, sell: true, extraIdName: null, notification: null };
+  const provider = { currencies: async () => [btc, usdc], estimate: async () => ({ amountTo: '80', networkFee: '1', fee: null, min: null, max: null }), validate: async () => true,
+    create: async params => { assert.equal(params.refundAddress, address); return { id: 'bitcoin-proof', currencyFrom: 'btc', currencyTo: 'usdcbase', payoutAddress: params.address, payinAddress: deposit }; } };
+  const exchange = exchangeService(apiDb || db, { ...config, changellyEnabled: true, paymentsEnabled: false }, provider);
+  const quote = await exchange.quote(walletId, accountId, { from: 'btc', to: 'usdcbase', amount: '0.00123456' });
+  assert.equal(quote.amountFrom, '0.00123456');
+  await assert.rejects(exchange.quote(walletId, accountId, { from: 'btc', to: 'usdcbase', amount: '0.001234567' }), { status: 400 });
+  const request = { quoteId: quote.id, idempotencyKey: randomUUID(), payoutAddress: user.descriptor.address };
+  await assert.rejects(exchange.create({ wallet_id: walletId }, accountId, { ...request, payoutAddress: bob.descriptor.address }), { status: 400 });
+  const order = await exchange.create({ wallet_id: walletId }, accountId, request);
+  assert.equal(order.status, 'waiting'); assert.equal(order.depositAddress, deposit); assert.equal(order.payoutAddress, user.descriptor.address);
+  assert.equal((await exchange.create({ wallet_id: walletId }, accountId, request)).id, order.id);
+});
+
+scenario('Changelly Fiat persists owned destinations, exact sell amounts, retries and uncertain recovery', async () => {
+  const { changellyFiatService } = await import('../lib/changelly-fiat-service.js');
+  const user = await identity(), walletId=user.session.walletId, accountId=user.session.accountId;
+  const address='bc1qr6ddtxn4k8jmg75ejgqg525wwzmtur7zy0nnr0';
+  await db.query('INSERT INTO bitcoin_accounts(wallet_id,account_id,address) VALUES($1,$2,$3)',[walletId,accountId,address]);
+  const support=[{providerCode:'moonpay',supportedFlows:['buy','sell']}], records=new Map(); let creates=0,loseResponse=false;
+  const provider={countries:async()=>[{code:'CO',name:'Colombia',providers:support}],currencies:async()=>[{type:'crypto',ticker:'BTC',network:'bitcoin',precision:'8',providers:support},{type:'fiat',ticker:'USD',precision:'2',providers:support}],offers:async()=>[{providerCode:'moonpay',paymentMethodOffer:[{method:'card',amountExpectedTo:'0.001',fee:'2'}]}],create:async(kind,value)=>{creates++;const payload=JSON.parse(JSON.stringify(value));if(kind==='buy')assert.equal(payload.walletAddress,address);else{assert.equal(payload.refundAddress,address);assert.equal(payload.amountFrom,0.00123456);}const response={...payload,amountFrom:String(payload.amountFrom),type:kind,orderId:randomUUID(),redirectUrl:'https://buy.moonpay.com/changelly?order='+payload.externalOrderId};records.set(payload.externalOrderId,response);if(loseResponse)throw Error('response lost');return response;},orders:async id=>({orders:records.has(id)?[{...records.get(id),status:'complete',payoutAmount:'0.001'}]:[]})};
+  const cfg={...config,changellyFiatEnabled:true,changellyFiatEnvironment:'PRODUCTION'},service=changellyFiatService(db,cfg,provider);
+  const body={kind:'buy',cryptoCurrency:'BTC',network:'bitcoin',fiatCurrency:'USD',country:'CO',amount:'100.00'};
+  await assert.rejects(service.quote(walletId,accountId,{...body,walletAddress:bob.descriptor.address},'127.0.0.1'),{status:400});
+  await assert.rejects(service.options(bob.session.walletId,accountId,{kind:'buy',cryptoCurrency:'BTC',network:'bitcoin'}),{status:404});
+  const quote=(await service.quote(walletId,accountId,body,'127.0.0.1')).quotes[0];assert.equal(quote.walletAddress,address);
+  const request={quoteId:quote.id,idempotencyKey:randomUUID()},order=await service.create(walletId,accountId,request,'127.0.0.1');assert.equal(order.status,'awaiting_payment');assert.equal(order.provider,'changelly');
+  assert.equal((await service.create(walletId,accountId,request,'127.0.0.1')).id,order.id);assert.equal(creates,1);assert.equal((await service.get(walletId,order.id)).status,'completed');
+  const sell=(await service.quote(walletId,accountId,{...body,kind:'sell',amount:'0.00123456'},'127.0.0.1')).quotes[0];loseResponse=true;
+  const unknown=await service.create(walletId,accountId,{quoteId:sell.id,idempotencyKey:randomUUID()},'127.0.0.1');assert.equal(unknown.status,'ambiguous');
+  await assert.rejects(service.create(walletId,accountId,{quoteId:sell.id,idempotencyKey:randomUUID()},'127.0.0.1'),{code:'IDEMPOTENCY_CONFLICT'});assert.equal(creates,2);
+  assert.equal((await service.get(walletId,unknown.id)).status,'completed');assert.equal(creates,2);
+  const other=changellyFiatService(db,{...cfg,changellyFiatEnabled:false},provider);assert.equal((await other.list(walletId,accountId)).orders.length,2);await assert.rejects(other.quote(walletId,accountId,body,'127.0.0.1'),{code:'RAMP_UNAVAILABLE'});
+});
+
+scenario('Spark swaps use native BTC provider tickers and reserve a single withdrawal',async()=>{
+  const {exchangeService}=await import('../lib/exchange.js');const user=await identity(),walletId=user.session.walletId,accountId=user.session.accountId;
+  const spark='spark1pgssyp5hy794jwrc8gz3eavz5ucaangm3w26ewwv7dtyw68mf2vgptgkt5uc3g',deposit='bc1pms2y66vsjyexsx963nme4rf6hqfc2hnnhvr2r0pqknvln4m5tqkquyg09k';
+  await db.query('INSERT INTO spark_accounts(wallet_id,account_id,address,deposit_address) VALUES($1,$2,$3,$4)',[walletId,accountId,spark,deposit]);
+  const btc={ticker:'btc',name:'Bitcoin',network:'bitcoin',contract:null,decimals:8,buy:true,sell:true,extraIdName:null,notification:null},usdc={...btc,ticker:'usdcbase',network:'base',contract:'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',decimals:6};let params;
+  const provider={currencies:async()=>[btc,usdc],estimate:async(from,to)=>{assert.equal(from,'btc');assert.equal(to,'usdcbase');return{amountTo:'80',networkFee:'1'};},validate:async()=>true,create:async value=>{params=value;return{id:'spark-bridge',currencyFrom:'btc',currencyTo:'usdcbase',payoutAddress:value.address,payinAddress:'bc1qr6ddtxn4k8jmg75ejgqg525wwzmtur7zy0nnr0'};}};
+  const service=exchangeService(db,{...config,changellyEnabled:true,paymentsEnabled:false},provider),options=await service.options(walletId,accountId);assert.equal(options.providers[0].destinations.find(item=>item.ticker==='btc:spark').address,deposit);
+  const q=await service.quote(walletId,accountId,{from:'btc:spark',to:'usdcbase',amount:'0.00123456'}),o=await service.create({wallet_id:walletId},accountId,{quoteId:q.id,idempotencyKey:randomUUID(),payoutAddress:user.descriptor.address});assert.equal(o.status,'waiting');assert.equal(params.from,'btc');assert.equal(params.refundAddress,deposit);
+  const operationId=randomUUID();assert.equal((await service.reserveSpark(walletId,o.id,{operationId})).depositReference,operationId);await assert.rejects(service.reserveSpark(walletId,o.id,{operationId:randomUUID()}),{status:400});await assert.rejects(service.reserveSpark(bob.session.walletId,o.id,{operationId}),{status:400});
 });
 
 scenario('maintenance removes expired rows; client and API report unavailable PostgreSQL without claiming saved data', async () => {

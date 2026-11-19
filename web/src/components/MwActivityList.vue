@@ -8,15 +8,15 @@ import MwActivityReceipt from './MwActivityReceipt.vue';
 export default {
   components: { MwAppIcon, MwButton, MwActivityReceipt },
   emits: ['summary'],
-  props: { compact: Boolean, symbol: { type: String, default: '' }, filters: Boolean },
+  props: { walletId: { type: String, default: '' }, compact: Boolean, symbol: { type: String, default: '' }, filters: Boolean },
   data() { const reader = activityReader(this.$account); return { reader: markRaw(reader), feed: reader.state, selected: null, detailLoading: false, detailError: '', selectionGeneration: 0, disposed: false, timer: null, openedHere: false, returnFocus: null }; },
   computed: {
     loading() { return this.feed.loading; },
     loaded() { return this.feed.loaded; },
-    allRecords() { return this.reader.records(); },
+    allRecords() { return this.reader.records().filter(item => !this.walletId || item.walletId === this.walletId); },
     chosenFilters() {
       const query = this.$route.query;
-      return { symbol: this.symbol || (['USDC', 'USDT'].includes(query.asset) ? query.asset : ''), kind: ['send', 'receive', 'buy', 'sell'].includes(query.type) ? query.type : '', state: ['pending', 'checking', 'completed', 'failed', 'refunded'].includes(query.status) ? query.status : '' };
+      return { symbol: this.symbol || (['USDC', 'USDT', 'BTC'].includes(query.asset) ? query.asset : ''), kind: ['send', 'receive', 'buy', 'sell'].includes(query.type) ? query.type : '', state: ['pending', 'checking', 'completed', 'failed', 'refunded'].includes(query.status) ? query.status : '' };
     },
     records() { const result = this.compact ? this.allRecords : filterActivity(this.allRecords, this.chosenFilters); return this.compact ? result.slice(0, 5) : result; },
     pending() { return this.allRecords.find(item => ['pending', 'checking'].includes(activityGroup(item))); },
@@ -77,7 +77,7 @@ export default {
 <template>
   <div class="&" :class="{ '&--full': !compact }" :aria-busy="loading">
     <div v-if="filters" class="&__filters">
-      <label>{{ $t('Stablecoins') }}<select :value="chosenFilters.symbol" @change="changeFilter('asset', $event.target.value)"><option value="">{{ $t('All') }}</option><option>USDC</option><option>USDT</option></select></label>
+      <label>{{ $t('Crypto assets') }}<select :value="chosenFilters.symbol" @change="changeFilter('asset', $event.target.value)"><option value="">{{ $t('All') }}</option><option>USDC</option><option>USDT</option><option v-if="$cryptos.some(item => item.crypto.symbol === 'BTC')">BTC</option></select></label>
       <label>{{ $t('Type') }}<select :value="chosenFilters.kind" @change="changeFilter('type', $event.target.value)"><option value="">{{ $t('All') }}</option><option value="send">{{ $t('Sent') }}</option><option value="receive">{{ $t('Received') }}</option><option value="buy">{{ $t('Buy') }}</option><option value="sell">{{ $t('Sell') }}</option></select></label>
       <label>{{ $t('Status') }}<select :value="chosenFilters.state" @change="changeFilter('status', $event.target.value)"><option value="">{{ $t('All') }}</option><option value="pending">{{ $t('Pending') }}</option><option value="checking">{{ $t('Checking') }}</option><option value="completed">{{ $t('Completed') }}</option><option value="failed">{{ $t('Not completed') }}</option><option value="refunded">{{ $t('Refunded') }}</option></select></label>
     </div>

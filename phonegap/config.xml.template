@@ -2,7 +2,7 @@
 <widget id="{{id}}" version="{{version}}" android-versionCode="100060" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
   <name>{{name}}</name><description>USDT and USDC on Base</description>
   <author href="https://github.com/astianx/midori-wallet">Midori Wallet</author>
-  <content src="index.html"/><access origin="{{api}}"/><access origin="https://mainnet.base.org"/>
+  <content src="index.html"/><access origin="{{api}}"/><access origin="https://mainnet.base.org"/><access origin="https://api.lightspark.com"/><access origin="https://mempool.space"/><access origin="https://0.spark.lightspark.com"/><access origin="https://spark-operator.breez.technology"/><access origin="https://2.spark.flashnet.xyz"/>
   <allow-intent href="https://*/*"/><allow-intent href="mailto:*"/>
   <preference name="scheme" value="https"/><preference name="hostname" value="localhost"/>
   <preference name="AutoHideSplashScreen" value="true"/>

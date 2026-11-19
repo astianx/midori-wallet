@@ -1,3 +1,4 @@
+import { desktopArchitecture } from '../../../config/environment.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -130,4 +131,13 @@ test('release artifacts cannot be collected after the verified APK is changed', 
   assert.equal(manifest.complete, true); assert.equal(manifest.signing.apkVerified, true); assert.equal(manifest.signing.aabVerified, true);
   f.write(output + '/apk/release/app-release.apk', 'changed apk');
   await assert.rejects(collectArtifacts('android-release', { root: f.root, env: {} }), /differ from the verified/);
+});
+
+test('desktop target architecture preserves Apple Silicon artifacts on Intel macOS runners', () => {
+  assert.equal(desktopArchitecture('darwin', 'x64', 'arm64'), 'arm64');
+  assert.equal(desktopArchitecture('darwin', 'arm64'), 'arm64');
+  assert.equal(desktopArchitecture('linux', 'x64'), 'x64');
+  assert.equal(desktopArchitecture('win32', 'x64'), 'x64');
+  assert.throws(() => desktopArchitecture('darwin', 'x64', 'invalid'), /Unsupported desktop architecture/);
+  assert.throws(() => desktopArchitecture('linux', 'x64', 'arm64'), /requires macOS/);
 });

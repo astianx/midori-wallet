@@ -267,6 +267,13 @@ export default {
       }
     }
 
+    &__list .mw-crypto-list__title {
+      overflow: visible;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      text-overflow: clip;
+    }
+
     &__message {
       @include text-md;
     }

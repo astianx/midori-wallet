@@ -217,7 +217,6 @@ export default {
 </template>
 
 <style lang="scss">
-/* Hallmark · component-scope · design-system: design.md · pre-emit critique: P4 H5 E4 S5 R5 V4 */
   .#{ $filename } {
     display: flex;
     width: 100%;
@@ -231,12 +230,10 @@ export default {
       display: flex;
       flex: 1;
       min-height: 0;
-      min-width: 0;
       flex-direction: column;
       align-items: center;
       overflow-y: auto;
       overscroll-behavior-y: contain;
-      scroll-padding-block: var(--space-md);
       scrollbar-width: thin;
 
       &--pulling {
@@ -248,17 +245,23 @@ export default {
       display: flex;
       width: 100%;
       flex: 1 0 auto;
-      min-height: 100%;
-      max-width: 68rem;
       flex-direction: column;
-      padding: var(--space-lg) var(--space-md) max(var(--space-lg), env(safe-area-inset-bottom));
-      gap: var(--space-lg);
-      > * { flex-shrink: 0; min-width: 0; }
-      .mw-form-element__box--extra { flex-shrink: 0; }
-      @media (min-width: 40rem) { padding-inline: var(--space-xl); gap: var(--space-xl); }
+      padding:
+        var(--spacing-3xl)
+        var(--spacing-xl)
+        max(var(--spacing-3xl), env(safe-area-inset-bottom))
+        var(--spacing-xl);
+      gap: var(--spacing-3xl);
+      @include breakpoint(lg) {
+        // ~ max-height limited by 720px
+        flex-basis: 45rem;
+        padding: var(--spacing-3xl) var(--spacing-xl);
+      }
 
       &--narrow {
-        max-width: 34rem;
+        @include breakpoint(lg) {
+          width: min(100%, 25rem);
+        }
       }
 
       &--transition {

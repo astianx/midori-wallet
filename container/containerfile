@@ -102,6 +102,14 @@ COPY --from=web-builder /src/server/dist ./server/dist
 # (que a su vez pide @tetherto/wdk*) — ese script de mantenimiento manual
 # queda fuera del alcance de esta imagen minima; ver notas de despliegue.
 COPY packages/wallet-core/src ./packages/wallet-core/src
+# server/lib/bitcoin.js (Bitcoin/Spark, merge 2026-11-19) importa parseTokenAmount
+# desde el barrel index.js en vez de bitcoin.js (parseTokenAmount solo vive en
+# index.js); ese index.js ya importaba @tetherto/wdk*/wdk-wallet-evm* a nivel de
+# modulo (antes solo lo tocaba create-account.mjs, fuera del alcance de esta
+# imagen). Sin node_modules de wallet-core el arranque falla con
+# ERR_MODULE_NOT_FOUND. Se copia el que ya instalo la etapa web-builder (mismos
+# paquetes que usa la SPA) en vez de reinstalar aparte.
+COPY --from=web-builder /src/packages/wallet-core/node_modules ./packages/wallet-core/node_modules
 COPY packages/update-core ./packages/update-core
 # server/lib/sentry.js y server/scripts/check-sentry.mjs importan esto en
 # runtime (no solo en build), por eso va tambien en la etapa final.

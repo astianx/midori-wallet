@@ -22,6 +22,11 @@ export default class MidoriWallet {
   createExchange(body) { return this.#session.createExchange(body); }
   exchangeOrders() { return this.#session.exchangeOrders(); }
   exchangeOrder(id) { return this.#session.exchangeOrder(id); }
+  fiatOptions(kind) { return this.#session.fiatRequest('options', { kind, cryptoCurrency: this.crypto.symbol, network: this.crypto.platform }); }
+  fiatQuote(body) { return this.#session.fiatRequest('quotes', { ...body, cryptoCurrency: this.crypto.symbol, network: this.crypto.platform }); }
+  fiatCreate(body) { return this.#session.fiatRequest('orders', body); }
+  fiatOrders() { return this.#session.fiatOrders(); }
+  fiatOrder(id) { return this.#session.fiatOrder(id); }
   rampOptions() { return this.#session.rampOptions(); }
   rampOrders() { return this.#session.rampOrders(); }
   issueReceipt(source, reference) { return this.#session.issueReceipt(source, reference); }

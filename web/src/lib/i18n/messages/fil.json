@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "Magpadala lamang ng {symbol} gamit ang Bitcoin network.",
-  "Crypto assets": "Mga crypto asset"
+  "Crypto assets": "Mga crypto asset",
+  "Region": "Rehiyon",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Ikinakarga sa Spark ang mga deposito ng Bitcoin pagkatapos ng kumpirmasyon at pagsusuri ng bayarin.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Ginagamit ng Changelly ang Bitcoin network. Hiwalay na sinusuri ang gastos sa pag-convert sa Spark."
 }

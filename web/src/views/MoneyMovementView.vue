@@ -4,7 +4,7 @@ import MwAppIcon from '../components/MwAppIcon.vue';
 import MwCryptoLogo from '../components/MwCryptoLogo.vue';
 import MwButton from '../components/MwButton.vue';
 import MwLoader from '../components/MwLoader.vue';
-import { rampAssetSupported, rampNetwork } from '../lib/account/ramp-presentation.js';
+import { rampAssetSupported } from '../lib/account/ramp-presentation.js';
 import { rampError } from '../lib/account/ramp-errors.js';
 
 export default {
@@ -16,16 +16,17 @@ export default {
     title() { return this.$t(this.adding ? 'Add money' : 'Withdraw'); },
     methods() {
       return this.adding
-        ? [{ id: 'receive', label: this.$t('From another wallet'), description: this.$t('USDT and USDC on Base share your account address.'), icon: 'receive', enabled: this.$cryptos.length > 0 }, { id: 'buy', label: this.$t('Local currency'), description: this.$t('Buy with local currency'), icon: 'plus', enabled: this.canUseRamp('buy') }]
-        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Send and receive USDC and USDT with your own wallet.'), icon: 'send', enabled: !!this.$account.capabilities.payments && this.$cryptos.length > 0 }, { id: 'sell', label: this.$t('Local currency'), description: this.$t('Convert to local currency'), icon: 'refresh', enabled: this.canUseRamp('sell') }];
+        ? [{ id: 'receive', label: this.$t('From another wallet'), description: this.$t('Crypto assets'), icon: 'receive', enabled: this.$cryptos.length > 0 }, { id: 'buy', label: this.$t('Local currency'), description: this.$t('Buy with local currency'), icon: 'plus', enabled: this.canUseRamp('buy') }]
+        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Crypto assets'), icon: 'send', enabled: this.$cryptos.some(item => ['bitcoin','spark'].includes(item.crypto.platform) || this.$account.capabilities.payments) }, { id: 'sell', label: this.$t('Local currency'), description: this.$t('Convert to local currency'), icon: 'refresh', enabled: this.canUseRamp('sell') }];
     },
     selected() { return this.methods.find(method => method.id === this.$route.query.method); },
-    assetNetwork() { return this.isRamp ? rampNetwork(this.options?.environment) : 'Base'; },
+    assetNetwork() { return this.isRamp && this.options?.environment === 'STAGING' ? this.$t('Test mode. Do not use real money.') : this.$t('Crypto assets'); },
     isRamp() { return ['buy', 'sell'].includes(this.selected?.id); },
     assets() {
       if (!this.selected?.enabled) return [];
-      if (!this.isRamp) return this.$cryptos;
+      if (!this.isRamp) return this.selected.id === 'send' ? this.$cryptos.filter(item => ['bitcoin','spark'].includes(item.crypto.platform) || this.$account.capabilities.payments) : this.$cryptos;
       const kind = this.selected.id;
+      if (this.$account.capabilities.rampProvider === 'changelly') return this.$cryptos;
       if (!this.options?.products.includes(kind.toUpperCase()) || !this.options.fiatCurrencies.some(item => item[kind])) return [];
       return this.$cryptos.filter(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && rampAssetSupported(this.options, asset, kind)));
     },
@@ -34,6 +35,7 @@ export default {
   beforeUnmount() { this.disposed = true; },
   methods: {
     canUseRamp(kind) {
+      if (this.$account.capabilities.rampProvider === 'changelly') return !!this.$account.capabilities.ramp;
       return !!this.$account.capabilities.ramp && !!this.options?.products.includes(kind.toUpperCase())
         && this.options.fiatCurrencies.some(item => item[kind])
         && this.$cryptos.some(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && rampAssetSupported(this.options, asset, kind)));
@@ -53,6 +55,7 @@ export default {
       else this.$router.replace({ name: this.$route.name, query: { ...this.$route.query, method: undefined } });
     },
     async loadOptions() {
+      if (this.$account.capabilities.rampProvider === 'changelly') return;
       if (this.loading || !this.$account.capabilities.ramp || !this.$cryptos.length) return;
       this.loading = true; this.error = ''; this.options = null;
       try {
@@ -67,8 +70,8 @@ export default {
 <template>
   <MainLayout class="&" :title="title" wide allowReadFailure :onBack="back">
     <div class="&__composition">
-      <header class="&__intro"><span class="&__intro-icon"><MwAppIcon :name="selected?.icon || (adding ? 'plus' : 'send')" /></span><h1>{{ selected?.label || title }}</h1><p>{{ selected ? (isRamp ? assetNetwork : $t('Only Base is supported')) : $t('Choose a method') }}</p></header>
-      <section class="&__choices" :aria-label="selected ? $t('Stablecoins') : $t('Choose a method')">
+      <header class="&__intro"><span class="&__intro-icon"><MwAppIcon :name="selected?.icon || (adding ? 'plus' : 'send')" /></span><h1>{{ selected?.label || title }}</h1><p>{{ selected ? assetNetwork : $t('Choose a method') }}</p></header>
+      <section class="&__choices" :aria-label="selected ? $t('Crypto assets') : $t('Choose a method')">
         <template v-if="!selected">
           <div v-for="method in methods" :key="method.id" class="&__method"><button type="button" class="&__row" :disabled="!method.enabled" :aria-describedby="`${direction}-${method.id}-description`" @click="choose(method)"><span class="&__icon"><MwAppIcon :name="method.icon" /></span><span class="&__label"><strong>{{ method.label }}</strong><small :id="`${direction}-${method.id}-description`">{{ method.description }}</small></span><MwAppIcon v-if="method.enabled" name="arrow" /></button><p v-if="!method.enabled" class="&__notice" role="status">{{ limitation(method) }}</p></div>
           <MwButton v-if="error" type="secondary" @click="loadOptions">{{ $t('Refresh') }}</MwButton>
@@ -80,7 +83,7 @@ export default {
           <template v-else>
             <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Test mode. Do not use real money.') }}</p>
             <p v-if="!assets.length" class="&__notice" role="status">{{ $t(isRamp ? 'The selected asset or currency is unavailable.' : 'Balance unavailable') }}</p>
-            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · {{ assetNetwork }}</small></span><MwAppIcon name="arrow" /></RouterLink>
+            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · {{ item.crypto.platform === 'bitcoin' ? 'Bitcoin' : item.crypto.platform === 'spark' ? 'Spark / Lightning' : isRamp && options?.environment === 'STAGING' ? 'Base Sepolia' : 'Base' }}</small></span><MwAppIcon name="arrow" /></RouterLink>
           </template>
         </template>
       </section>

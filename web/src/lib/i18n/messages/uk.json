@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "Надсилайте лише {symbol} за допомогою мережі Bitcoin.",
-  "Crypto assets": "Криптоактиви"
+  "Crypto assets": "Криптоактиви",
+  "Region": "Регіон",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Депозити Bitcoin зараховуються в Spark після підтвердження та перевірки комісій.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly використовує мережу Bitcoin. Вартість конвертації Spark перевіряється окремо."
 }

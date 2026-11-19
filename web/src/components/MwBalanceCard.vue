@@ -1,16 +1,16 @@
 <script>
+import { portfolioReferenceValue } from '../lib/account/portfolio.js';
 import MwAppIcon from './MwAppIcon.vue';
 export default {
   components: { MwAppIcon },
   computed: {
-    available() { return this.$cryptos.length > 0 && this.$cryptos.every(item => item.balance?.value !== undefined); },
+    bitcoin() { return this.$cryptos.some(item => item.crypto.symbol === 'BTC'); },
+    total() { return portfolioReferenceValue(this.$cryptos); },
+    available() { return this.total !== null; },
     value() {
       if (this.$isHiddenBalance) return '••••';
       if (!this.available) return '—';
-      const sum = this.$cryptos.reduce((total, item) => total + item.balance.value, 0n);
-      const whole = new Intl.NumberFormat(this.$i18n.locale, { maximumFractionDigits: 0, numberingSystem: 'latn' }).format(sum / 1000000n);
-      const separator = new Intl.NumberFormat(this.$i18n.locale, { numberingSystem: 'latn' }).formatToParts(1.1).find(part => part.type === 'decimal')?.value || '.';
-      return `$${whole}${separator}${(sum % 1000000n).toString().padStart(6, '0').slice(0, 2)}`;
+      return new Intl.NumberFormat(this.$i18n.locale, { style: 'currency', currency: 'USD', numberingSystem: 'latn' }).format(Number(this.total));
     },
     fresh() { return this.available && this.$cryptos.every(item => item.readState === 'fresh'); },
   },
@@ -18,11 +18,11 @@ export default {
 </script>
 <template>
   <section class="&" :aria-label="$t('Balance')">
-    <div class="&__top"><span>{{ $t('Balance') }}</span><button type="button" :aria-label="$t($isHiddenBalance ? 'Show balance' : 'Hide balance')" :aria-pressed="$isHiddenBalance" @click="$account.toggleHiddenBalance()"><MwAppIcon :name="$isHiddenBalance ? 'hide' : 'eye'" /></button></div>
+    <div class="&__top"><span>{{ $t(bitcoin ? 'Approximate USD value' : 'Balance') }}</span><button type="button" :aria-label="$t($isHiddenBalance ? 'Show balance' : 'Hide balance')" :aria-pressed="$isHiddenBalance" @click="$account.toggleHiddenBalance()"><MwAppIcon :name="$isHiddenBalance ? 'hide' : 'eye'" /></button></div>
     <div class="&__value" dir="ltr">{{ value }}<span v-if="available && !$isHiddenBalance">USD</span></div>
-    <div class="&__status"><span :class="{ '&__dot': fresh }" />{{ fresh ? 'USDC + USDT · Base' : $t(available ? 'Last known balance' : 'Balance unavailable') }}</div>
+    <div class="&__status"><span :class="{ '&__dot': fresh }" />{{ fresh ? (bitcoin ? 'BTC · USDC · USDT' : 'USDC + USDT · Base') : $t(available ? 'Last known balance' : 'Balance unavailable') }}</div>
     <div class="&__actions"><RouterLink :to="{ name: 'add-money' }" class="&__action &__action--primary"><MwAppIcon name="plus" />{{ $t('Add') }}</RouterLink><RouterLink :to="{ name: 'withdraw' }" class="&__action"><MwAppIcon name="send" />{{ $t('Withdraw') }}</RouterLink></div>
-    <p class="&__reference">{{ $t('Reference: USD 1 per token. Live prices unavailable.') }}</p>
+    <p class="&__reference">{{ $t(bitcoin ? 'Market reference. Buy and sell quotes may differ.' : 'Reference: USD 1 per token. Live prices unavailable.') }}</p>
   </section>
 </template>
 <style lang="scss">

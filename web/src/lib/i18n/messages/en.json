@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "Send only {symbol} using the Bitcoin network.",
-  "Crypto assets": "Crypto assets"
+  "Crypto assets": "Crypto assets",
+  "Region": "Region",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Bitcoin deposits are credited to Spark after confirmation and fee review.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately."
 }

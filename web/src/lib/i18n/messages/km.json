@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "ផ្ញើតែ {symbol} ដោយប្រើបណ្តាញ Bitcoin។",
-  "Crypto assets": "ទ្រព្យសកម្មគ្រីបតូ"
+  "Crypto assets": "ទ្រព្យសកម្មគ្រីបតូ",
+  "Region": "តំបន់",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "ប្រាក់បញ្ញើ Bitcoin ត្រូវបានបញ្ចូលទៅ Spark បន្ទាប់ពីការបញ្ជាក់ និងការពិនិត្យថ្លៃសេវា។",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly ប្រើបណ្តាញ Bitcoin។ ថ្លៃបម្លែង Spark ត្រូវបានពិនិត្យដោយឡែក។"
 }

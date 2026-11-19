@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "ส่งเฉพาะ {symbol} โดยใช้เครือข่าย Bitcoin",
-  "Crypto assets": "สินทรัพย์คริปโต"
+  "Crypto assets": "สินทรัพย์คริปโต",
+  "Region": "ภูมิภาค",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "เงินฝาก Bitcoin จะเข้าบัญชี Spark หลังจากการยืนยันและตรวจสอบค่าธรรมเนียม",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly ใช้เครือข่าย Bitcoin โดยจะตรวจสอบค่าใช้จ่ายในการแปลง Spark แยกต่างหาก"
 }

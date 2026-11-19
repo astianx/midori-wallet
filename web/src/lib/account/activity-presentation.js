@@ -56,7 +56,7 @@ export function activityRows(item, t, date) {
     // A ceiling remains a ceiling; never present it as the cost actually charged.
     else if (item.maxNetworkFee != null) rows.push({ label: t('Network cost'), value: t('Maximum network cost: {amount} {symbol}', { amount: String(item.maxNetworkFee), symbol: item.symbol }), financial: true });
   }
-  rows.push({ label: t('Network'), value: item.source === 'ramp' ? rampNetwork(item.environment) : 'Base', technical: true }, { label: t('Reference'), value: item.reference });
+  rows.push({ label: t('Network'), value: item.source === 'ramp' ? rampNetwork(item.environment, item.network) : item.network || 'Base', technical: true }, { label: t('Reference'), value: item.reference });
   return rows;
 }
 export function activityQuery(item) {

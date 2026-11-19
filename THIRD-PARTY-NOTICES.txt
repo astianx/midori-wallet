@@ -57,3 +57,8 @@ The complete upstream license is included with the installed module.
 Bitcoin transaction encoding: bitcoinjs-lib 7.0.2, MIT License.
 Source: https://github.com/bitcoinjs/bitcoinjs-lib
 The complete upstream license is included with the installed module.
+
+Spark and Lightning wallet module: @tetherto/wdk-wallet-spark 1.0.0-beta.32, Apache License 2.0.
+WDK invoice utilities: @tetherto/wdk-utils 1.0.0-beta.16, Apache License 2.0.
+Spark SDK: @buildonspark/spark-sdk 0.15.0, Apache License 2.0.
+The complete Apache license and Spark upstream third-party notices are included in web/public/licenses/spark-apache-2.0.txt and spark-third-party-notices.txt (licenses/ in built clients).

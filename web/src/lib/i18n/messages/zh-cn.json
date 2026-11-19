@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "使用 Bitcoin 网络仅发送 {symbol}。",
-  "Crypto assets": "加密资产"
+  "Crypto assets": "加密资产",
+  "Region": "地区",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Bitcoin 存款将在确认并审核费用后计入 Spark。",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly 使用 Bitcoin 网络。Spark 转换费用将单独审核。"
 }

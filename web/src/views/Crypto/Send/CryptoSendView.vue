@@ -1,4 +1,6 @@
 <script>
+import SparkSendView from './SparkSendView.vue';
+import BitcoinSendView from './BitcoinSendView.vue';
 import { savePaymentDraft, takePaymentDraft } from '../../../lib/navigation.js';
 import MainLayout from '../../../layouts/MainLayout.vue';
 import MwButton from '../../../components/MwButton.vue';
@@ -22,7 +24,7 @@ import CryptoSendStepStatus from './CryptoSendStepStatus.vue';
 
 export default {
   components: {
-    MwSteps, MainLayout, MwButton, MwLoader,
+    MwSteps, MainLayout, MwButton, MwLoader, BitcoinSendView, SparkSendView,
   },
   data() {
     const owner = this.$wallet.address;
@@ -35,7 +37,7 @@ export default {
     }
     return { owner, draftPath: path, storage: { temp }, ready: !this.$route.query.exchange, exchangeError: '', disposed: false };
   },
-  mounted() { if (this.$route.query.exchange) this.loadExchange(); },
+  mounted() { if (!['bitcoin','spark'].includes(this.$wallet.crypto.platform) && this.$route.query.exchange) this.loadExchange(); },
   beforeUnmount() {
     this.disposed = true;
     const steps = this.$refs.steps;
@@ -97,8 +99,10 @@ export default {
 </script>
 
 <template>
+  <SparkSendView v-if="$wallet.crypto.platform === 'spark'" />
+  <BitcoinSendView v-else-if="$wallet.crypto.platform === 'bitcoin'" />
   <MwSteps
-    v-if="ready"
+    v-else-if="ready"
     ref="steps"
     :step="storage.intent ? (storage.intent.status === 'quoted' ? 'confirm' : 'status') : 'index'"
     :steps="$options.steps"

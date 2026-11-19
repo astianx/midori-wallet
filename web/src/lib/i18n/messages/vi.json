@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "Chỉ gửi {symbol} bằng mạng Bitcoin.",
-  "Crypto assets": "Tài sản mã hóa"
+  "Crypto assets": "Tài sản mã hóa",
+  "Region": "Khu vực",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Khoản nạp Bitcoin được ghi có vào Spark sau khi xác nhận và xem xét phí.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly sử dụng mạng Bitcoin. Chi phí chuyển đổi Spark được xem xét riêng."
 }

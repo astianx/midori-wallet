@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "Skicka endast {symbol} med Bitcoin-nätverket.",
-  "Crypto assets": "Kryptotillgångar"
+  "Crypto assets": "Kryptotillgångar",
+  "Region": "Region",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Bitcoin-insättningar tillgodoräknas Spark efter bekräftelse och granskning av avgifterna.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly använder Bitcoin-nätverket. Kostnader för Spark-konvertering granskas separat."
 }

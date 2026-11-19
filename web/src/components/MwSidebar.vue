@@ -15,7 +15,7 @@ export default {
   <aside class="&">
     <RouterLink :to="{ name: 'home' }" class="&__brand" aria-label="Midori Wallet"><LogoIcon /></RouterLink>
     <nav class="&__nav" :aria-label="$t('Wallet')"><RouterLink v-for="item in items" :key="item.name" :to="{ name: item.name }" class="&__link" :class="{ '&__link--active': current === item.name }" :aria-current="current === item.name ? 'page' : undefined"><MwAppIcon :name="item.icon" /><span>{{ item.label }}</span></RouterLink></nav>
-    <div class="&__network"><span class="&__network-dot" /><div>Base<small>USDC · USDT</small></div></div>
+    <div class="&__network"><span class="&__network-dot" /><div>{{ [$cryptos.some(item => item.crypto.platform === 'bitcoin') ? 'Bitcoin' : null, $cryptos.some(item => item.crypto.platform === 'spark') ? 'Spark / Lightning' : null, 'Base'].filter(Boolean).join(' · ') }}<small>{{ $cryptos.some(item => item.crypto.symbol === 'BTC') ? 'BTC · USDC · USDT' : 'USDC · USDT' }}</small></div></div>
     <RouterLink :to="{ name: 'settings' }" class="&__profile"><span class="&__avatar"><MwAppIcon name="user" /></span><span>{{ $user.username ? formatMidoriTag($account.tag?.alias || $user.username) : $t('Your wallet') }}<small>{{ $t('Account') }}</small></span><MwAppIcon name="arrow" /></RouterLink>
   </aside>
 </template>

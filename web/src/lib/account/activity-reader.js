@@ -22,6 +22,7 @@ export function activityReader(account) {
     async load(refresh = true) {
       if (account.isLocked) return;
       if (request) return request;
+      state.sources = account.wallets().map(wallet => state.sources.find(source => source.id === wallet.crypto._id) || { id: wallet.crypto._id, cursor: undefined, hasMore: true, paged: false, records: [], error: false, indexing: null });
       const current = generation;
       state.loading = true;
       request = (async () => {
@@ -74,11 +75,11 @@ export function activityReader(account) {
         const wallet = account.wallet(state.sources[0]?.id);
         if (!wallet) throw Error('Unavailable');
         record = orderRecord(await wallet.rampOrder(reference));
-      } else if (source === 'payment' && /^(?:e[1-9][0-9]*|p[0-9a-f-]{36})$/.test(reference)) {
+      } else if (source === 'payment' && /^(?:e[1-9][0-9]*|p[0-9a-f-]{36}|[a-f0-9]{64}|[0-9a-f-]{36})$/.test(reference)) {
         const wallet = account.wallet(walletId);
         if (!wallet) throw Error('Invalid asset');
         const transaction = await wallet.loadTransaction(reference);
-        if (transaction.contract?.toLowerCase() !== wallet.crypto.address.toLowerCase()) throw Error('Different asset');
+        if (!['bitcoin','spark'].includes(wallet.crypto.platform) && transaction.contract?.toLowerCase() !== wallet.crypto.address.toLowerCase()) throw Error('Different asset');
         record = await presentPayment(transaction, wallet);
       } else throw Error('Invalid reference');
       if (!valid(current)) throw Error('Locked');

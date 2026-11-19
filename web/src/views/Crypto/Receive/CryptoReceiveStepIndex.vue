@@ -16,7 +16,9 @@ export default {
   extends: MwStep, mixins: [onShowOnHide],
   data() { return { tag: '', tagKnown: false, tagsEnabled: false, paymentsEnabled: false, online: true, active: false, generation: 0, isCopying: false, isCopied: false, copyError: false, selected: false, isSharing: false, shareError: false, showShare: false, shareText: '', timer: null }; },
   computed: {
-    midori() { return this.$route.query.source === 'midori'; },
+    bitcoin() { return this.$wallet.crypto.platform === 'bitcoin'; },
+    network() { return this.bitcoin ? 'Bitcoin' : 'Base'; },
+    midori() { return !this.bitcoin && this.$route.query.source === 'midori'; },
     receiveValue() { return this.midori ? this.tag : this.$wallet.address || ''; },
     qr() { return this.receiveValue ? new QRCode({ content: this.receiveValue, join: true, padding: 4, container: 'svg-viewbox' }).svg() : ''; },
     balanceFailed() { return ['unavailable','stale'].includes(this.$cryptos.find(item => item.crypto._id === this.$wallet.crypto._id)?.readState); },
@@ -39,7 +41,7 @@ export default {
     async share() {
       if (!this.canUseValue || this.isSharing) return;
       const generation = this.generation;
-      this.shareText = this.midori ? `${this.$t('Receive with Midori Wallet')}\n${this.receiveValue}\n${this.$wallet.crypto.symbol} · Base` : `${this.$wallet.crypto.symbol} · Base\n${this.receiveValue}`;
+      this.shareText = this.midori ? `${this.$t('Receive with Midori Wallet')}\n${this.receiveValue}\n${this.$wallet.crypto.symbol} · ${this.network}` : `${this.$wallet.crypto.symbol} · ${this.network}\n${this.receiveValue}`;
       this.isSharing = true; this.shareError = false; this.copyError = false; this.selected = false; this.isCopied = false;
       try { const result = await shareReceivingText(this.shareText, this.$t('Receive'), this.env.VITE_BUILD_TYPE); if (this.active && generation === this.generation && result === 'fallback') this.showShare = true; }
       catch { if (this.active && generation === this.generation) { this.shareError = true; this.showShare = true; } }
@@ -50,11 +52,11 @@ export default {
 </script>
 <template>
   <MainLayout class="&" :title="$t('Receive {symbol}', { symbol: $wallet.crypto.symbol })" wide allowReadFailure>
-    <div class="&__origin" role="group" :aria-label="$t('Receive')"><button type="button" :aria-pressed="midori" @click="choose('midori')"><MwAppIcon name="user" /><span>{{ $t('From Midori Wallet') }}</span></button><button type="button" :aria-pressed="!midori" @click="choose('external')"><MwAppIcon name="receive" /><span>{{ $t('From another wallet or service') }}</span></button></div>
+    <div v-if="!bitcoin" class="&__origin" role="group" :aria-label="$t('Receive')"><button type="button" :aria-pressed="midori" @click="choose('midori')"><MwAppIcon name="user" /><span>{{ $t('From Midori Wallet') }}</span></button><button type="button" :aria-pressed="!midori" @click="choose('external')"><MwAppIcon name="receive" /><span>{{ $t('From another wallet or service') }}</span></button></div>
     <div class="&__grid">
-      <section class="&__instructions"><div class="&__asset"><MwCryptoLogo :crypto="$wallet.crypto" :platform="$wallet.platform" /><div><h1>{{ $wallet.crypto.symbol }}</h1><span>{{ $wallet.crypto.name }} · Base</span></div></div>
-        <p class="&__lead">{{ $t(midori ? tag ? 'Share your tag with the person sending you money.' : 'Choose a tag to receive from another Midori user.' : 'Send only {symbol} using the Base network.', { symbol: $wallet.crypto.symbol }) }}</p>
-        <p v-if="!midori" class="&__note">{{ $t('USDT and USDC on Base share your account address.') }}</p>
+      <section class="&__instructions"><div class="&__asset"><MwCryptoLogo :crypto="$wallet.crypto" :platform="$wallet.platform" /><div><h1>{{ $wallet.crypto.symbol }}</h1><span>{{ $wallet.crypto.name }} · {{ network }}</span></div></div>
+        <p class="&__lead">{{ $t(midori ? tag ? 'Share your tag with the person sending you money.' : 'Choose a tag to receive from another Midori user.' : bitcoin ? 'Send only {symbol} using the Bitcoin network.' : 'Send only {symbol} using the Base network.', { symbol: $wallet.crypto.symbol }) }}</p>
+        <p v-if="!midori && !bitcoin" class="&__note">{{ $t('USDT and USDC on Base share your account address.') }}</p>
         <p v-if="!online || balanceFailed" class="&__notice" role="status">{{ $t('Receiving details remain available. Check Activity when connected.') }}</p>
         <p v-if="midori && online && !tagsEnabled" class="&__notice" role="status">{{ $t('Tags are unavailable. Use your Base address.') }}</p>
         <p v-else-if="midori && !paymentsEnabled && tagsEnabled" class="&__notice" role="status">{{ $t('Tag payments will be available when sending is enabled. You can receive now using your Base address.') }}</p>
@@ -62,7 +64,7 @@ export default {
         <MwButton v-if="midori && (!canUseValue || !online || !paymentsEnabled)" type="primary-link" @click="choose('external')">{{ $t('From another wallet or service') }}</MwButton>
 
       </section>
-      <section v-if="receiveValue" class="&__identity" :aria-label="valueLabel"><div class="&__qr-heading"><strong>{{ valueLabel }}</strong><small>{{ midori ? $t('Midori Wallet') : `${$wallet.crypto.symbol} · Base` }}</small></div><div class="&__qr" role="img" :aria-label="`${valueLabel}: ${receiveValue}`"><!-- eslint-disable-next-line vue/no-v-html --><div v-html="qr" /></div><MwFormTextareaReadonly ref="value" :value="receiveValue" :label="valueLabel" />
+      <section v-if="receiveValue" class="&__identity" :aria-label="valueLabel"><div class="&__qr-heading"><strong>{{ valueLabel }}</strong><small>{{ midori ? $t('Midori Wallet') : `${$wallet.crypto.symbol} · ${network}` }}</small></div><div class="&__qr" role="img" :aria-label="`${valueLabel}: ${receiveValue}`"><!-- eslint-disable-next-line vue/no-v-html --><div v-html="qr" /></div><MwFormTextareaReadonly ref="value" :value="receiveValue" :label="valueLabel" />
         <div class="&__actions"><MwButton type="primary" :disabled="!canUseValue" :isLoading="isCopying" @click="copy()"><MwAppIcon v-if="isCopied" name="check" /><CopyIcon v-else />{{ $t(isCopied ? 'Copied!' : 'Copy') }}</MwButton><MwButton type="secondary" :disabled="!canUseValue" :isLoading="isSharing" @click="share">{{ $t('Share') }}</MwButton></div><MwButton class="&__select" type="primary-link" small @click="select()">{{ $t('Select text') }}</MwButton>
       </section>
       <aside class="&__more">        <RouterLink class="&__activity" :to="{ name: 'activity' }">{{ $t('Activity') }}<MwAppIcon name="arrow" /></RouterLink></aside>

@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "Bitcoin 네트워크를 사용하여 {symbol}만 보냅니다.",
-  "Crypto assets": "암호화폐 자산"
+  "Crypto assets": "암호화폐 자산",
+  "Region": "지역",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "Bitcoin 입금은 승인 및 수수료 검토 후 Spark에 반영됩니다.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly는 Bitcoin 네트워크를 사용합니다. Spark 전환 비용은 별도로 검토합니다."
 }

@@ -721,5 +721,8 @@
   "You send": "You send",
   "Needs review": "Needs review",
   "Send only {symbol} using the Bitcoin network.": "فقط {symbol} را با استفاده از شبکه Bitcoin ارسال کنید.",
-  "Crypto assets": "دارایی‌های رمزارزی"
+  "Crypto assets": "دارایی‌های رمزارزی",
+  "Region": "منطقه",
+  "Bitcoin deposits are credited to Spark after confirmation and fee review.": "واریزهای Bitcoin پس از تأیید و بررسی کارمزد به Spark افزوده می‌شوند.",
+  "Changelly uses the Bitcoin network. Spark conversion costs are reviewed separately.": "Changelly از شبکه Bitcoin استفاده می‌کند. هزینه‌های تبدیل Spark جداگانه بررسی می‌شوند."
 }

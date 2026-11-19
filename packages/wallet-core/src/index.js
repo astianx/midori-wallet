@@ -149,3 +149,8 @@ export function reconcileTransferEvents(existing, incoming, { canonicalBlockHash
 }
 
 export * from './payment.js';
+export * from './bitcoin.js';
+
+export async function sparkTools() { return import('./spark.js'); }
+
+export async function createSparkSession(seed, options) { const { openSparkSession } = await import('./spark.js'); return openSparkSession(seed, options); }

@@ -1,14 +1,10 @@
 <script>
 import MwNavbar from '../components/MwNavbar.vue';
-import LogoIcon from '../../../assets/brand/logo.svg';
-import LogoOnDark from '../../../assets/brand/logo-on-dark.svg';
 import { onShowOnHide } from '../lib/mixins.js';
 
 export default {
   components: {
     MwNavbar,
-    LogoIcon,
-    LogoOnDark,
   },
   mixins: [onShowOnHide],
   props: {
@@ -76,17 +72,8 @@ export default {
       ['&--faded']: faded,
     }"
   >
-    <div class="&__frame" :data-runtime="env.VITE_BUILD_TYPE">
-      <aside class="&__guide">
-        <LogoOnDark class="&__logo" role="img" aria-label="Midori Wallet" />
-        <div class="&__message">
-          <h1>{{ $t('Your wallet') }}</h1>
-          <p>{{ $t('Send and receive USDC and USDT with your own wallet.') }}</p>
-        </div>
-        <p class="&__ownership">{{ $t('Your keys. Your control.') }}</p>
-      </aside>
+    <div class="&__frame">
       <div class="&__container">
-        <div class="&__brand"><component :is="$resolvedTheme === 'dark' ? 'LogoOnDark' : 'LogoIcon'" class="&__logo" role="img" aria-label="Midori Wallet" /></div>
         <MwNavbar
           :title="title"
           :description="description"
@@ -99,7 +86,7 @@ export default {
           class="&__content"
           data-transition
         >
-          <div v-if="stepNumber" class="&__progress" role="status"><span>{{ $t('Step {current} of {total}', { current: stepNumber, total: stepCount }) }}</span><progress :value="stepNumber" :max="stepCount" :aria-label="$t('Next step')" /></div>
+          <div v-if="stepNumber" class="&__progress" role="status">{{ $t('Step {current} of {total}', { current: stepNumber, total: stepCount }) }}</div>
           <slot />
         </div>
       </div>
@@ -108,98 +95,87 @@ export default {
 </template>
 
 <style lang="scss">
-/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app
- * pre-emit critique: P5 H5 E5 S5 R5 V4 · centered access, compact PIN, existing brand assets */
-body .#{ $filename } {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 0;
-  padding: 0;
-  overflow-y: auto;
-  background: var(--color-paper);
-  color: var(--color-ink);
-
-  .#{ $filename }__frame {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    flex: none;
-    width: 100%;
+  .#{ $filename } {
+    display: flex;
     height: 100%;
-    min-height: 0;
-    max-width: none;
-    margin: auto;
-    border: 0;
-    border-radius: 0;
-    overflow: clip;
-    box-shadow: none;
-  }
-
-  .#{ $filename }__guide { display: none; }
-  .#{ $filename }__logo { display: block; width: 8rem; max-width: 100%; height: auto; flex: none; }
-  .#{ $filename }__brand { display: flex; justify-content: center; padding: var(--space-lg) var(--space-lg) var(--space-xs); }
-  .#{ $filename }__container {
-    display: flex;
     flex-direction: column;
-    width: 100%;
-    min-width: 0;
-    min-height: 0;
-    max-width: none;
-    padding: env(safe-area-inset-top) 0 0;
-    background: var(--color-surface);
-  }
-  .#{ $filename }__container > .mw-navbar { flex: none; padding-inline: var(--space-lg); }
-  .#{ $filename }__content {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    gap: var(--space-lg);
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    padding: var(--space-lg) max(var(--space-lg), env(safe-area-inset-right)) max(var(--space-lg), env(safe-area-inset-bottom)) max(var(--space-lg), env(safe-area-inset-left));
-  }
-  .#{ $filename }__content:has(> .mw-pin__keyboard) { justify-content: safe center; }
-  .#{ $filename }__content .mw-pin__dots { flex: none; min-height: 3rem; }
-  .#{ $filename }__content .mw-pin__keyboard { width: min(100%, 18rem); }
-  .#{ $filename }__content .mw-pin__keyboard .mw-pin__key { width: min(3.5rem, 100%); }
-  .#{ $filename }__progress { display: grid; gap: var(--space-xs); color: var(--color-muted); font-size: var(--text-label); }
-  progress { width: 100%; height: .25rem; accent-color: var(--color-accent); }
+    align-items: center;
+    padding:
+      env(safe-area-inset-top)
+      env(safe-area-inset-right)
+      0
+      env(safe-area-inset-left);
 
-  @media (min-width: 48rem) {
-    padding: var(--space-lg);
-    .#{ $filename }__frame:not([data-runtime='phonegap']) {
-      max-width: 36rem;
-      height: min(44rem, 100%);
-      border: 1px solid var(--color-rule);
-      border-radius: var(--radius-hero);
-      box-shadow: var(--shadow-panel);
-    }
-  }
-  @media (min-width: 64rem) {
-    padding: var(--space-xl);
-    .#{ $filename }__frame:not([data-runtime='phonegap']) { grid-template-columns: minmax(0, .85fr) minmax(0, 1fr); max-width: 60rem; }
-    .#{ $filename }__frame:not([data-runtime='phonegap']) .#{ $filename }__guide {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-xl);
-      min-width: 0;
-      min-height: 0;
+    @include breakpoint(lg) {
+      padding:
+        max(var(--spacing-md), env(safe-area-inset-top))
+        max(var(--spacing-md), env(safe-area-inset-right))
+        max(var(--spacing-md), env(safe-area-inset-bottom))
+        max(var(--spacing-md), env(safe-area-inset-left));
       overflow-y: auto;
-      padding: var(--space-2xl);
-      background: var(--color-brand-panel);
-      color: var(--color-brand-panel-ink);
     }
-    .#{ $filename }__message { margin-block: auto; }
-    .#{ $filename }__message h1 { margin: 0 0 var(--space-lg); font-size: 2.5rem; font-weight: 550; line-height: 1.15; letter-spacing: -.04em; }
-    .#{ $filename }__message p { max-width: 30ch; margin: 0; line-height: 1.7; color: var(--color-brand-panel-muted); }
-    .#{ $filename }__ownership { margin: 0; font-size: var(--text-label); color: var(--color-brand-panel-muted); }
-    .#{ $filename }__frame:not([data-runtime='phonegap']) .#{ $filename }__brand { display: none; }
-    .#{ $filename }__content { padding: var(--space-xl); }
+
+    &__frame {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      flex-grow: 1;
+      align-items: center;
+      background-color: var(--color-background);
+
+      @include breakpoint(lg) {
+        max-width: var(--desktop-max-width);
+        height: auto;
+        padding-top: var(--spacing-6xl);
+        border-radius: 0.625rem;
+      }
+    }
+
+    &--faded {
+      &.slide-left-enter-active {
+        transition: opacity 0.1s ease-in 0.1s;
+      }
+
+      &.slide-right-leave-active {
+        transition: opacity 0.1s ease-out;
+      }
+
+      &.slide-left-enter-from,
+      &.slide-right-leave-to {
+        opacity: 0;
+      }
+    }
+
+    &__progress { color: var(--color-secondary); font-size: 0.875rem; }
+
+    &__container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      @include breakpoint(lg) {
+        width: 25rem;
+        max-height: 45rem;
+      }
+    }
+
+    &__content {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+      padding:
+        var(--spacing-3xl)
+        var(--spacing-xl)
+        max(var(--spacing-3xl), env(safe-area-inset-bottom))
+        var(--spacing-xl);
+      gap: var(--spacing-3xl);
+      overflow-y: auto;
+
+      @include breakpoint(lg) {
+        padding: var(--spacing-3xl) var(--spacing-xl);
+      }
+    }
   }
-  &:has(> [data-runtime='phonegap']) { padding: 0; }
-}
 </style>

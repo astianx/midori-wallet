@@ -719,5 +719,7 @@
   "The deposit network cost is reviewed separately before you sign.": "The deposit network cost is reviewed separately before you sign.",
   "Recent conversions": "Recent conversions",
   "You send": "You send",
-  "Needs review": "Needs review"
+  "Needs review": "Needs review",
+  "Send only {symbol} using the Bitcoin network.": "שלח רק {symbol} באמצעות רשת Bitcoin.",
+  "Crypto assets": "נכסי קריפטו"
 }

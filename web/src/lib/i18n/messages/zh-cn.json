@@ -719,5 +719,7 @@
   "The deposit network cost is reviewed separately before you sign.": "The deposit network cost is reviewed separately before you sign.",
   "Recent conversions": "Recent conversions",
   "You send": "You send",
-  "Needs review": "Needs review"
+  "Needs review": "Needs review",
+  "Send only {symbol} using the Bitcoin network.": "使用 Bitcoin 网络仅发送 {symbol}。",
+  "Crypto assets": "加密资产"
 }

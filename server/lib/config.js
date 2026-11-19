@@ -1,3 +1,4 @@
+import { fiatCredentials } from './changelly-fiat.js';
 import { changellyCredentials } from './changelly.js';
 import { loadWdkIndexerConfig } from './wdk-indexer.js';
 
@@ -74,7 +75,15 @@ export function loadConfig(env = process.env) {
   if (env.CHANGELLY_ENABLED && !['true','false'].includes(env.CHANGELLY_ENABLED)) throw new Error('Invalid CHANGELLY_ENABLED');
   const changellyEnabled = env.CHANGELLY_ENABLED === 'true';
   if (changellyEnabled) changellyCredentials(env.CHANGELLY_API_SECRET, env.CHANGELLY_API_KEY);
+  const rampProvider = env.MIDORI_RAMP_PROVIDER || 'transak';
+  if (!['changelly','transak'].includes(rampProvider)) throw new Error('Invalid MIDORI_RAMP_PROVIDER');
+  if (env.CHANGELLY_FIAT_ENABLED && !['true','false'].includes(env.CHANGELLY_FIAT_ENABLED)) throw new Error('Invalid CHANGELLY_FIAT_ENABLED');
+  const changellyFiatEnabled = env.CHANGELLY_FIAT_ENABLED === 'true';
+  const changellyFiatEnvironment = env.CHANGELLY_FIAT_ENVIRONMENT || 'STAGING';
+  if (!['STAGING','PRODUCTION'].includes(changellyFiatEnvironment)) throw new Error('Invalid CHANGELLY_FIAT_ENVIRONMENT');
+  if (changellyFiatEnabled) fiatCredentials(env.CHANGELLY_FIAT_API_SECRET, env.CHANGELLY_FIAT_API_KEY);
   return Object.freeze({
+    rampProvider, changellyFiatEnabled, changellyFiatEnvironment, changellyFiatApiKey: env.CHANGELLY_FIAT_API_KEY || null, changellyFiatApiSecret: env.CHANGELLY_FIAT_API_SECRET || null,
     trustProxy: env.MIDORI_TRUST_PROXY === 'true',
     connectionString, publicOrigin, rpID, host, rpcUrl,
     wdkIndexer: loadWdkIndexerConfig(env),

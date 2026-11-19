@@ -41,6 +41,7 @@ export default defineConfig(({ mode, command }) => {
     base,
     define: Object.fromEntries(Object.entries(env).map(([key, value]) => [`import.meta.env.${key}`, JSON.stringify(value)])),
     plugins: [
+      { name: "midori-polyfill-shims", resolveId(id) { const name = /^vite-plugin-node-polyfills\/shims\/(buffer|global|process)$/.exec(id)?.[1]; return name ? path.resolve(directory, `node_modules/vite-plugin-node-polyfills/shims/${name}/dist/index.js`) : null; } },
       nodePolyfills({ include: ['buffer','events','process','stream','util'] }),
 
       vue({

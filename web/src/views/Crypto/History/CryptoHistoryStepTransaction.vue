@@ -229,7 +229,7 @@ export default {
       <MwFormTextareaReadonly v-if="transaction.feeMode === 'token'" :label="$t('Network cost')" :value="transaction.networkFee !== undefined ? `${transaction.networkFee} ${transaction.symbol}` : $t('Up to {amount} {symbol}', { amount: transaction.maxNetworkFee, symbol: transaction.symbol })" />
       <MwFormTextareaReadonly v-if="transaction.feeMode === 'sponsored'" :label="$t('Network cost')" :value="$t('Sponsored by Midori')" />
       <p v-if="transaction.accountingState === 'review'" role="status">{{ $t('The payment was processed. Its network cost is being checked.') }}</p>
-      <MwFormTextareaReadonly v-if="transaction.chainId" :label="$t('Network')" value="Base" />
+      <MwFormTextareaReadonly v-if="transaction.chainId" :label="$t('Network')" :value="$wallet.crypto.platform === 'bitcoin' ? 'Bitcoin' : 'Base'" />
       <MwFormTextareaReadonly v-if="transaction.origin" :label="$t('Payment origin')" :value="transaction.origin === 'midori' ? 'Midori Wallet' : $t('External or unverified')" />
       <template v-if="exchange && !transaction.incoming">
         <MwFormTextareaReadonly

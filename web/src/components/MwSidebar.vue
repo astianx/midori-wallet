@@ -1,42 +1,243 @@
 <script>
-import { formatMidoriTag } from '../lib/tags.js';
-import LogoIcon from '../assets/svg/logo.svg';
-import MwAppIcon from './MwAppIcon.vue';
+import { portfolioReferenceValue } from '../lib/account/portfolio.js';
+import { measureText } from '../lib/helpers.js';
+
+import MwAvatar from './MwAvatar.vue';
+import MwButton from '../components/MwButton.vue';
+import MwCryptoList from '../components/MwCryptoList.vue';
+
+import BankCardIcon from '../assets/svg/bankCard.svg';
+import PlusIcon from '../assets/svg/plus.svg';
+
+const CHANGE_PERIODS = ['1D', '7D', '14D', '1M', '1Y'];
+
 export default {
-  methods: { formatMidoriTag },
-  components: { LogoIcon, MwAppIcon },
+  components: {
+    BankCardIcon,
+    MwAvatar,
+    MwButton,
+    MwCryptoList,
+    PlusIcon,
+  },
+  props: {
+    active: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  data() {
+    return {
+      changePeriodIndex: 0,
+    };
+  },
   computed: {
-    items() { return [{ name: 'home', icon: 'home', label: this.$t('Overview') }, { name: 'activity', icon: 'activity', label: this.$t('Activity') }, { name: 'receive', icon: 'receive', label: this.$t('Receive') }, { name: 'settings', icon: 'user', label: this.$t('Account') }]; },
-    current() { const name = this.$route.name || ''; if (name.includes('receive')) return 'receive'; if (name.includes('history') || name === 'activity') return 'activity'; if (name.startsWith('settings')) return 'settings'; return 'home'; },
+    portfolioTotal() {
+      const total = portfolioReferenceValue(this.$cryptos);
+      if (total === null) return '—';
+      return `≈ ${new Intl.NumberFormat(this.$i18n.locale, { style: 'currency', currency: 'USD', numberingSystem: 'latn' }).format(total)}`;
+    },
+    readingState() {
+      if (portfolioReferenceValue(this.$cryptos) === null) return this.$t('Balance unavailable');
+      return this.$cryptos.some(item => item.readState !== 'fresh') ? this.$t('Last known balance') : this.$t('Approximate USD value');
+    },
+    portfolioBalanceSize() {
+      if (this.$isHiddenBalance) return 'normal';
+      const str = this.portfolioTotal;
+      const { width } = measureText(str);
+      if (width < 120) return 'normal';
+      if (width < 200) return 'large';
+      return '';
+    },
+    changePeriod() {
+      return CHANGE_PERIODS[this.changePeriodIndex];
+    },
+
+  },
+  methods: {
+    nextChangePeriod() {
+      if (this.$isHiddenBalance) return this.$account.toggleHiddenBalance();
+      this.changePeriodIndex = (this.changePeriodIndex + 1) % CHANGE_PERIODS.length;
+    },
   },
 };
 </script>
+
 <template>
-  <aside class="&">
-    <RouterLink :to="{ name: 'home' }" class="&__brand" aria-label="Midori Wallet"><LogoIcon /></RouterLink>
-    <nav class="&__nav" :aria-label="$t('Wallet')"><RouterLink v-for="item in items" :key="item.name" :to="{ name: item.name }" class="&__link" :class="{ '&__link--active': current === item.name }" :aria-current="current === item.name ? 'page' : undefined"><MwAppIcon :name="item.icon" /><span>{{ item.label }}</span></RouterLink></nav>
-    <div class="&__network"><span class="&__network-dot" /><div>Base<small>USDC · USDT</small></div></div>
-    <RouterLink :to="{ name: 'settings' }" class="&__profile"><span class="&__avatar"><MwAppIcon name="user" /></span><span>{{ $user.username ? formatMidoriTag($account.tag?.alias || $user.username) : $t('Your wallet') }}<small>{{ $t('Account') }}</small></span><MwAppIcon name="arrow" /></RouterLink>
+  <aside
+    class="&"
+    :class="{ '&--active': active }"
+  >
+    <div class="&__navbar">
+      <div class="&__row">
+        <MwButton
+          @click="$router.push({ name: 'settings' })"
+        >
+          <MwAvatar
+            class="&__avatar"
+            :avatar="$user.avatar"
+            own
+            :size="48"
+            :alt="$t('Settings')"
+          />
+        </MwButton>
+        <MwButton
+          v-if="$account.cards.isEnabled"
+          class="&__cards"
+          type="circle"
+          @click="$router.push({ name: 'cards', force: true })"
+        >
+          <template #circle>
+            <BankCardIcon />
+          </template>
+        </MwButton>
+      </div>
+      <button
+        type="button"
+        dir="ltr"
+        class="&__portfolio-amount"
+        :class="`&__portfolio-amount--${portfolioBalanceSize}`"
+        :aria-label="$t($isHiddenBalance ? 'Show balance' : 'Hide balance')"
+        :aria-pressed="$isHiddenBalance"
+        @click="$account.toggleHiddenBalance()"
+      >
+        {{ $isHiddenBalance ? '*****' : portfolioTotal }}
+      </button>
+      <div class="&__portfolio-label">{{ $t('Portfolio value') }}</div>
+      <div class="&__portfolio-change">{{ $isHiddenBalance ? '*****' : readingState }}</div>
+    </div>
+
+    <div class="&__content">
+      <MwCryptoList
+        class="&__content-list"
+        :header="$t('Wallet')"
+        :items="$cryptos"
+        :selected="$route.params.cryptoId"
+        :changePeriod="changePeriod"
+        @select="(id) => $router.push({ name: 'crypto', params: { cryptoId: id }})"
+      />
+      <div class="&__add-crypto">
+        <MwButton
+          type="primary-link"
+          @click="$router.push({ name: 'crypto.add', force: true })"
+        >
+          <PlusIcon />
+          {{ $t('Add crypto') }}
+        </MwButton>
+      </div>
+    </div>
   </aside>
 </template>
+
 <style lang="scss">
-/* Hallmark · genre: modern-minimal · macrostructure: Workbench · design-system: design.md · designed-as-app */
-.#{ $filename } {
-  display: none; min-width: 0; flex-direction: column; background: var(--color-surface); color: var(--color-ink); border-inline-end: 1px solid var(--color-rule); padding: var(--space-xl) var(--space-md); gap: var(--space-xl);
-  &__brand { display: block; padding: var(--space-xs) var(--space-md); }
-  &__brand svg { width: 8.5rem; height: auto; }
-  &__nav { display: flex; flex-direction: column; gap: var(--space-xs); }
-  &__link { display: flex; align-items: center; gap: var(--space-sm); min-height: 3rem; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-control); color: var(--color-muted); font-size: 0.875rem; white-space: normal; }
-  &__link svg { width: 1.25rem; height: 1.25rem; flex: none; }
-  &__link:hover, &__link--active { background: var(--color-surface-tint); color: var(--color-accent); }
-  &__link--active { font-weight: 600; }
-  &__network { display: flex; gap: var(--space-sm); align-items: center; margin-top: auto; padding: var(--space-md); font-size: var(--text-label); color: var(--color-muted); }
-  &__network-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--color-accent); }
-  &__network small, &__profile small { display: block; font-size: 0.6875rem; color: var(--color-muted); margin-top: var(--space-2xs); }
-  &__profile { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-md) var(--space-xs); border-top: 1px solid var(--color-rule); color: var(--color-ink); font-size: var(--text-label); }
-  &__profile > span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-  &__profile svg { width: 1.125rem; height: 1.125rem; }
-  &__avatar { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: var(--radius-control); background: var(--color-surface-subtle); color: var(--color-muted); }
-  @include breakpoint(lg) { display: flex; width: 13.5rem; flex: 0 0 13.5rem; }
-}
+  .#{ $filename } {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: var(--color-background);
+    overflow-y: auto;
+
+    @include breakpoint(lg) {
+      display: flex;
+      width: min(22.5rem, 35vw);
+      flex-shrink: 0;
+      border-radius: 0.625rem;
+    }
+
+    &--active {
+      display: flex;
+    }
+
+    &__navbar {
+      padding:
+        var(--spacing-3xl)
+        var(--spacing-xl)
+        var(--spacing-xl)
+        var(--spacing-xl);
+    }
+
+    &__avatar {
+      width: var(--spacing-4xl);
+      height: var(--spacing-4xl);
+    }
+
+    &__row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-3xl);
+    }
+
+    &__cards {
+      flex: 0 0 var(--spacing-4xl);
+
+      .mw-button__circle {
+        width: var(--spacing-4xl);
+        height: var(--spacing-4xl);
+      }
+
+      svg {
+        width: var(--spacing-lg);
+        height: var(--spacing-lg);
+      }
+    }
+
+    &__portfolio-amount {
+      width: 100%;
+      overflow-wrap: anywhere;
+      margin-bottom: var(--spacing-2xs);
+      cursor: pointer;
+      text-align: center;
+      &--large { @include text-lg; }
+      &--normal { @include text-3xl; }
+    }
+
+    &__portfolio-label {
+      @include text-sm;
+      margin-bottom: var(--spacing-2xs);
+      color: var(--color-secondary);
+      text-align: center;
+    }
+
+    &__portfolio-change {
+      @include text-sm;
+      cursor: pointer;
+      overflow-wrap: break-word;
+      text-align: center;
+
+      &--positive {
+        color: var(--color-primary);
+      }
+
+      &--negative {
+        color: var(--color-danger);
+      }
+    }
+
+    &__content {
+      display: flex;
+      flex: 1 1 100%;
+      flex-direction: column;
+      padding:
+        var(--spacing-xl)
+        var(--spacing-xl)
+        max(var(--spacing-3xl), env(safe-area-inset-bottom))
+        var(--spacing-xl);
+      gap: var(--spacing-2xs);
+      @include breakpoint(lg) {
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+    }
+
+    &__content-list {
+      flex-grow: 1;
+    }
+
+    &__add-crypto {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: flex-end;
+    }
+  }
 </style>

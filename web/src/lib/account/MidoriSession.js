@@ -1,11 +1,13 @@
+import SparkController from './SparkController.js';
 import { normalizeTagAlias, formatMidoriTag, isTagRecipient } from '../tags.js';
 import { captureWalletError } from '../sentry.js';
 import { ed25519 } from '@noble/curves/ed25519';
 import { hmac } from '@noble/hashes/hmac';
 import { sha256 } from '@noble/hashes/sha256';
 import { hex } from '@scure/base';
+import { BitcoinClient, bitcoinReader, withBitcoinAccount, bitcoinBindingMessage, validateBitcoinAddress, bitcoinTransactionId, formatTokenAmount } from '@midori/wallet-core';
 import { AccountAdapter } from './AccountAdapter.js';
-import { BASE_ASSETS, basePlatform, validateAssets } from './AssetCatalog.js';
+import { BASE_ASSETS, basePlatform, bitcoinAsset, sparkAsset, validateAssets } from './AssetCatalog.js';
 import { isUnavailable } from './domain.js';
 import { MidoriClient, EncryptedBlobSync } from '../api/MidoriClient.js';
 import { LocalVault, encode, decode } from './LocalVault.js';
@@ -19,6 +21,8 @@ const platform = basePlatform;
 export default class MidoriSession {
   #payload; #deviceSeed; #walletSeed; #detailsKey;
   #generation = 0;
+  #bitcoinDescriptor; #bitcoinRegistration;
+  spark;
   #adapter = new AccountAdapter();
   constructor({ localStorage, clientStorage }) {
     this.storage = localStorage;
@@ -27,6 +31,27 @@ export default class MidoriSession {
     this.origin = import.meta.env.VITE_API_ORIGIN || window.location.origin;
     this.publicClient = new MidoriClient({ reportError: captureWalletError, origin: this.origin });
     this.client = this.publicClient;
+    this.bitcoinClient = new BitcoinClient((path, raw) => this.bitcoinRequest(path, raw));
+    this.spark = new SparkController({
+      unlocked: () => !!this.#walletSeed,
+      online: () => navigator.onLine !== false,
+      cachedDescriptor: () => this.clientStorage.hasPublicKey('spark') ? this.clientStorage.getPublicKey('spark', this.#deviceSeed) : null,
+      seed: async pinHash => {
+        if (!this.#walletSeed) throw Object.assign(new Error(), { code: 'ACCOUNT_LOCKED' });
+        if (pinHash === undefined) return new Uint8Array(this.#walletSeed);
+        const generation = this.#generation, payload = await this.vault.open(pinHash);
+        if (generation !== this.#generation || payload.descriptor.address !== this.descriptor.address) throw Object.assign(new Error(), { code: 'PAYMENT_CHANGED' });
+        return decode(payload.walletSeed);
+      },
+      readLocal: key => { if (!this.#detailsKey) throw new Error('Account is locked'); const data = this.storage.getItem(key); return data ? JSON.parse(decrypt(data, hex.encode(this.#detailsKey))) : null; },
+      writeLocal: (key, value) => { if (!this.#detailsKey) throw new Error('Account is locked'); this.storage.setItem(key, encrypt(JSON.stringify(value), hex.encode(this.#detailsKey))); },
+      owner: () => ({ walletId: this.session?.walletId, accountId: this.account?.id }),
+      signOwner: async message => {
+        const adapter = new AccountAdapter(), generation = this.#generation;
+        try { await adapter.restore(this.#walletSeed, this.descriptor); const signature = await adapter.signMessage(message); if (generation !== this.#generation) throw new Error('Account is locked'); return signature; } finally { adapter.lock(); }
+      },
+      request: (...args) => this.client.request(...args), bitcoin: path => this.bitcoinRequest(path), exchangeOrder: id => this.exchangeOrder(id),
+    });
   }
 
   async initialize(payload) {
@@ -270,12 +295,20 @@ export default class MidoriSession {
     } finally { seed.fill(0); this.#adapter.lock(); }
   }
 
-  async exchangeOptions() { return this.client.request('GET', `/api/v1/accounts/${this.account.id}/exchange/options`); }
+  async exchangeOptions() { await this.ensureBitcoinRegistration(); if (this.hasSparkWallet) await this.spark.register(); return this.client.request('GET', `/api/v1/accounts/${this.account.id}/exchange/options`); }
   async exchangeQuote(body) { return this.client.request('POST', `/api/v1/accounts/${this.account.id}/exchange/quotes`, body); }
   async createExchange(body) { return this.client.request('POST', `/api/v1/accounts/${this.account.id}/exchange/orders`, body); }
   async exchangeOrders() { return this.client.request('GET', `/api/v1/accounts/${this.account.id}/exchange/orders`); }
   async exchangeOrder(id) { return this.client.request('GET', `/api/v1/exchange/orders/${id}`); }
 
+  async fiatRequest(action, body) {
+    if (!this.session || !this.account?.id) throw Object.assign(new Error(), { code: 'NETWORK_UNCONFIRMED' });
+    if (body.network === 'bitcoin') await this.ensureBitcoinRegistration();
+    if (body.network === 'spark') await this.spark.register();
+    return this.client.request('POST', `/api/v1/accounts/${this.account.id}/changelly-fiat/${action}`, body);
+  }
+  async fiatOrders() { return this.client.request('GET', `/api/v1/accounts/${this.account.id}/changelly-fiat/orders`); }
+  async fiatOrder(id) { return this.client.request('GET', `/api/v1/changelly-fiat/orders/${id}`); }
   async rampOptions() { return this.client.request('GET', '/api/v1/ramp/options'); }
   async reviewRamp(request) {
     if (!this.session || !this.account?.id) throw Object.assign(new Error(), { code: 'NETWORK_UNCONFIRMED' });
@@ -283,10 +316,12 @@ export default class MidoriSession {
   }
   async rampOrders() {
     if (!this.session || !this.account?.id) return { orders: [] };
-    return this.client.request('GET', `/api/v1/accounts/${this.account.id}/ramp/orders`);
+    const legacy = await this.client.request('GET', `/api/v1/accounts/${this.account.id}/ramp/orders`);
+    if (this.config.capabilities.rampProvider !== 'changelly') return legacy;
+    const current = await this.fiatOrders(); return { orders: [...legacy.orders,...current.orders].sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)) };
   }
   async issueReceipt(source, reference) { return this.client.request('POST', `/api/v1/accounts/${this.account.id}/receipts`, { source, reference }); }
-  async rampOrder(id) { return this.client.request('GET', `/api/v1/ramp/orders/${id}`); }
+  async rampOrder(id) { if (this.config.capabilities.rampProvider === 'changelly') { try { return await this.fiatOrder(id); } catch (error) { if (error.status !== 404) throw error; } } return this.client.request('GET', `/api/v1/ramp/orders/${id}`); }
 
   async signDappRequest(method, data, pinHash, stillApproved = () => true) {
     if (!this.#payload || !stillApproved()) throw new Error('Wallet is locked');
@@ -357,6 +392,81 @@ export default class MidoriSession {
     return this.client.request('GET', `/api/v1/accounts/${this.account.id}/history?${query}`);
   }
 
+  async bitcoinRequest(path, raw, exchangeOrderId) {
+    if (raw !== undefined) return this.client.request('POST', '/api/v1/bitcoin/tx', { raw, ...(exchangeOrderId ? { exchangeOrderId } : {}) });
+    return this.publicClient.request('GET', `/api/v1/bitcoin/${path}`);
+  }
+  async bitcoinDescriptor() {
+    if (!this.#walletSeed) throw new Error('Account is locked');
+    const generation = this.#generation;
+    if (!this.#bitcoinDescriptor) this.#bitcoinDescriptor = withBitcoinAccount(this.#walletSeed, this.bitcoinClient, async account => ({ address: await account.getAddress(), derivationPath: account.path }));
+    const descriptor = await this.#bitcoinDescriptor;
+    if (generation !== this.#generation) throw new Error('Account is locked');
+    return descriptor;
+  }
+  async ensureBitcoinRegistration() {
+    if (!this.account?.id || !this.session) throw Object.assign(new Error('Midori is offline'), { code: 'NETWORK_UNCONFIRMED' });
+    if (!this.#bitcoinRegistration) {
+      const generation = this.#generation;
+      this.#bitcoinRegistration = (async () => {
+        const descriptor = await this.bitcoinDescriptor();
+        const message = bitcoinBindingMessage(this.session.walletId, this.account.id, this.descriptor.address, descriptor.address);
+        const adapter = new AccountAdapter();
+        try {
+          await adapter.restore(this.#walletSeed, this.descriptor);
+          const ownerSignature = await adapter.signMessage(message);
+          const signature = await withBitcoinAccount(this.#walletSeed, this.bitcoinClient, account => account.sign(message));
+          if (generation !== this.#generation) throw new Error('Account is locked');
+          const result = await this.client.request('PUT', `/api/v1/accounts/${this.account.id}/bitcoin`, { address: descriptor.address, signature, ownerSignature });
+          if (result.address !== descriptor.address || generation !== this.#generation) throw new Error('Bitcoin account changed');
+          return result;
+        } finally { adapter.lock(); }
+      })().catch(error => { if (generation === this.#generation) this.#bitcoinRegistration = null; throw error; });
+    }
+    return this.#bitcoinRegistration;
+  }
+  async pendingBitcoin() {
+    const descriptor = await this.bitcoinDescriptor();
+    const key = `_midori_bitcoin_pending_${descriptor.address}`;
+    const hash = this.storage.getItem(key);
+    if (!hash || !/^[a-f0-9]{64}$/.test(hash)) return null;
+    try { const transaction = await this.bitcoinRequest(`tx/${hash}`); if (transaction.status?.confirmed) { this.storage.removeItem(key); return null; } } catch { /* An unconfirmed broadcast must not be repeated. */ }
+    return { hash, status: 'ambiguous' };
+  }
+  async quoteBitcoin({ to, amountAtomic, exchangeOrderId }) {
+    const descriptor = await this.bitcoinDescriptor();
+    if (!validateBitcoinAddress(to) || to === descriptor.address || !/^[0-9]+$/.test(amountAtomic) || BigInt(amountAtomic) <= 0n) throw Object.assign(new Error('Invalid Bitcoin payment'), { code: 'INVALID_REQUEST' });
+    if (exchangeOrderId) {
+      const order = await this.exchangeOrder(exchangeOrderId);
+      if (order.status !== 'waiting' || order.quote.from.network.toLowerCase() !== 'bitcoin' || order.depositAddress !== to || order.quote.amountFrom !== formatTokenAmount(amountAtomic, 8)) throw new Error('Exchange changed');
+    }
+    const feeRate = BigInt(Math.ceil(await this.bitcoinClient.estimateFee(2) * 100000));
+    const quote = await bitcoinReader(descriptor.address, this.bitcoinClient).quoteSendTransaction({ to, value: BigInt(amountAtomic), feeRate });
+    return { from: descriptor.address, to, amountAtomic, feeRate: String(feeRate), maxFeeAtomic: String(quote.fee), expiresAt: new Date(Date.now() + 60000).toISOString(), ...(exchangeOrderId ? { exchangeOrderId } : {}) };
+  }
+  async authorizeBitcoin(quote, pinHash, stillApproved = () => true) {
+    const generation = this.#generation; const descriptor = await this.bitcoinDescriptor();
+    const check = () => { if (generation !== this.#generation || !stillApproved() || Date.parse(quote.expiresAt) <= Date.now() || quote.from !== descriptor.address || !validateBitcoinAddress(quote.to)) throw Object.assign(new Error('Bitcoin payment changed'), { code: 'PAYMENT_CHANGED' }); };
+    check();
+    if (await this.pendingBitcoin()) throw Object.assign(new Error('Bitcoin payment is still being confirmed'), { code: 'PAYMENT_ALREADY_PENDING' });
+    const payload = await this.vault.open(pinHash); const seed = decode(payload.walletSeed);
+    try {
+      check();
+      if (quote.exchangeOrderId) {
+        const order = await this.exchangeOrder(quote.exchangeOrderId);
+        if (order.status !== 'waiting' || order.depositAddress !== quote.to) throw new Error('Exchange changed');
+      }
+      const raw = await withBitcoinAccount(seed, this.bitcoinClient, async account => {
+        if (await account.getAddress() !== descriptor.address) throw new Error('Bitcoin recovery mismatch');
+        return account.signTransaction({ to: quote.to, value: BigInt(quote.amountAtomic), feeRate: BigInt(quote.feeRate) });
+      }, quote.maxFeeAtomic);
+      check(); const hash = bitcoinTransactionId(raw);
+      this.storage.setItem(`_midori_bitcoin_pending_${descriptor.address}`, hash);
+      try { const result = await this.bitcoinRequest('tx', raw, quote.exchangeOrderId); if (result !== hash) throw new Error('Unconfirmed broadcast'); return { hash, status: 'submitted' }; }
+      catch { return { hash, status: 'ambiguous' }; }
+    } finally { seed.fill(0); }
+  }
+
   async request(config) {
     const target = new URL(config.url, this.origin);
     if (target.origin !== new URL(this.origin).origin || config.baseURL && new URL(config.baseURL, this.origin).origin !== new URL(this.origin).origin) throw Object.assign(new Error('External API is not enabled'), { code: 'CAPABILITY_UNAVAILABLE' });
@@ -364,7 +474,7 @@ export default class MidoriSession {
     const method = (config.method || 'get').toLowerCase();
     if (path === '/local/token/device/pin' || path === '/local/token/wallet/pin') return this.unlock(config.data.pinHash);
     if (path === '/local/token/wallet' && this.#payload) return { walletToken: hex.encode(decode(this.#payload.walletToken)) };
-    if (path === '/api/v1/cryptos') return [...this.assets, platform].map(asset => ({ ...asset, meta: { ...asset.meta } }));
+    if (path === '/api/v1/cryptos') return [...this.assets, bitcoinAsset, sparkAsset, platform].map(asset => ({ ...asset, meta: { ...asset.meta } }));
     if (path === '/local/settings') {
       const settings = await this.readData('settings') || { '1faWallet': true };
       if (method !== 'get') Object.assign(settings, config.data);
@@ -383,8 +493,9 @@ export default class MidoriSession {
   }
 
   lock() {
+    this.spark.lock(); this.hasSparkWallet = false;
     this.#deviceSeed?.fill(0); this.#walletSeed?.fill(0); this.#detailsKey?.fill(0);
-    this.#generation++; this.#adapter.lock();
+    this.#generation++; this.#adapter.lock(); this.#bitcoinDescriptor = null; this.#bitcoinRegistration = null;
     this.#payload = null; this.session = null; this.blobs = null; this.balanceRequest = null;
     this.#deviceSeed = null; this.#walletSeed = null; this.#detailsKey = null;
     this.client = this.publicClient; this.account = null; this.descriptor = null; this.tag = null;

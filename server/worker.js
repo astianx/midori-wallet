@@ -5,6 +5,7 @@ import { loadConfig } from './lib/config.js';
 import { createDatabase } from './lib/db.js';
 import { expireQuotes, deliverPayments, reconcilePayments } from './lib/payments.js';
 import { synchronizeHistory } from './lib/indexer.js';
+import { changellyFiatService } from './lib/changelly-fiat-service.js';
 import { rampService } from './lib/ramp.js';
 
 export async function maintainExpirations(db) {
@@ -23,6 +24,7 @@ export async function runWorker(config = loadConfig()) {
   const controller = new AbortController();
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => controller.abort());
   const provider = config.paymentsEnabled ? (await import('./lib/payment-provider.js')).paymentProvider(config) : undefined;
+  const fiat = config.changellyFiatEnabled ? changellyFiatService(db, config) : undefined;
   const ramp = config.transakEnabled ? rampService(db, config) : undefined;
   const once = process.argv.includes('--once');
   const loop = async (name, interval, action, initialDelayMs = 0) => {
@@ -53,6 +55,7 @@ export async function runWorker(config = loadConfig()) {
         if (!config.paymentsEnabled) return null;
         return { delivered: await deliverPayments(db, config, provider), checked: await reconcilePayments(db, config, provider) };
       }),
+      loop('changelly_fiat_reconciled', config.workerIntervalMs, async () => fiat ? fiat.reconcile() : null),
       loop('ramp_reconciled', config.workerIntervalMs, async () => ramp ? { updated: await ramp.reconcile() } : null),
     ]);
   } finally { await db.close(); await flushSentry(); }

@@ -1,3 +1,4 @@
+import { bitcoinAddress } from './bitcoin.js';
 import { randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
 import { getAddress, parseUnits } from 'ethers';
@@ -8,7 +9,7 @@ import { transakClient } from './transak.js';
 
 const fail = (code, message, status = 409) => new ApiError(status, code, message);
 const terminal = ['completed', 'failed', 'refunded', 'expired'];
-const decimal = (value, max) => typeof value === 'string' && /^[0-9]{1,16}(\.[0-9]{1,6})?$/.test(value) && value.length <= max && Number(value) > 0;
+const decimal = (value, max) => typeof value === 'string' && /^[0-9]{1,16}(\.[0-9]{1,8})?$/.test(value) && value.length <= max && Number(value) > 0;
 // Numeric comparison, not string equality: Postgres round-trips "100" as
 // numeric text "100.0000", which must still match the idempotency key.
 const sameAmount = (stored, requested) => (stored == null && requested === undefined) || (stored != null && requested !== undefined && parseUnits(String(stored), 18) === parseUnits(requested, 18));
@@ -26,7 +27,7 @@ const mapStatus = value => Object.hasOwn(STATUS, value) ? STATUS[value] : undefi
 export function publicOrder(row) {
   return {
     id: row.id, environment: row.environment, accountId: row.account_id, provider: row.provider, kind: row.kind, status: row.status,
-    fiatCurrency: row.fiat_currency, cryptoCurrency: row.crypto_currency, network: row.network, walletAddress: getAddress(row.wallet_address),
+    fiatCurrency: row.fiat_currency, cryptoCurrency: row.crypto_currency, network: row.network, walletAddress: row.network === 'bitcoin' ? row.wallet_address : getAddress(row.wallet_address),
     fiatAmount: row.fiat_amount == null ? null : String(row.fiat_amount), cryptoAmount: row.crypto_amount == null ? null : String(row.crypto_amount),
     paymentMethod: row.payment_method, transactionHash: row.transaction_hash, failureReason: row.failure_reason,
     createdAt: row.created_at, updatedAt: row.updated_at,
@@ -48,7 +49,7 @@ export function rampService(db, config, client = transakClient(config, fetch, db
       const row = result.rows[0];
       if (row.environment !== config.transakEnvironment) return { applied: false };
       const status = mapStatus(data.status);
-      if (!status || (data.isBuyOrSell && data.isBuyOrSell !== row.kind.toUpperCase()) || (data.network && data.network !== row.network)
+      if (!status || (data.isBuyOrSell && data.isBuyOrSell !== row.kind.toUpperCase()) || (data.network && data.network !== (row.network === 'bitcoin' ? 'mainnet' : row.network))
         || (data.cryptoCurrency && data.cryptoCurrency !== row.crypto_currency) || (data.fiatCurrency && data.fiatCurrency !== row.fiat_currency)
         || (row.kind === 'buy' && data.walletAddress && data.walletAddress.toLowerCase() !== row.wallet_address.toLowerCase())
         || (row.provider_order_id && (data.id || data._id) && row.provider_order_id !== (data.id || data._id))) return { applied: false };
@@ -68,7 +69,7 @@ export function rampService(db, config, client = transakClient(config, fetch, db
       exactKeys(body, ['idempotencyKey', 'kind', 'cryptoCurrency', 'fiatCurrency'], ['fiatAmount', 'cryptoAmount', 'paymentMethod']);
       requireValue(uuidPattern.test(accountId) && uuidPattern.test(body.idempotencyKey), 'Invalid order ID');
       requireValue(['buy', 'sell'].includes(body.kind), 'Invalid order kind');
-      requireValue(['USDC', 'USDT'].includes(body.cryptoCurrency), 'Unsupported crypto currency');
+      requireValue(['USDC', 'USDT', 'BTC'].includes(body.cryptoCurrency), 'Unsupported crypto currency');
       requireValue(/^[A-Z]{3}$/.test(body.fiatCurrency), 'Invalid fiat currency');
       requireValue((body.fiatAmount !== undefined) !== (body.cryptoAmount !== undefined), 'Provide exactly one amount');
       if (body.fiatAmount !== undefined) requireValue(decimal(body.fiatAmount, 18), 'Invalid fiat amount');
@@ -82,11 +83,14 @@ export function rampService(db, config, client = transakClient(config, fetch, db
       const fiat = options.fiatCurrencies.find(item => item.code === body.fiatCurrency && item[body.kind]);
       requireValue(asset && fiat, 'This buy/sell pair is unavailable');
       if (body.cryptoAmount !== undefined) {
-        try { parseUnits(body.cryptoAmount, Math.min(6, asset.roundOff ?? 6)); } catch { throw fail('INVALID_REQUEST', 'Invalid crypto precision', 400); }
+        try { parseUnits(body.cryptoAmount, Math.min(body.cryptoCurrency === 'BTC' ? 8 : 6, asset.roundOff ?? 6)); } catch { throw fail('INVALID_REQUEST', 'Invalid crypto precision', 400); }
       }
       if (body.fiatAmount !== undefined) {
         try { parseUnits(body.fiatAmount, fiat.decimals); } catch { throw fail('INVALID_REQUEST', 'Invalid fiat precision', 400); }
       }
+      const network = body.cryptoCurrency === 'BTC' ? 'bitcoin' : 'base';
+      const address = network === 'bitcoin' ? await bitcoinAddress(db, principal.wallet_id, accountId) : saved.address.toLowerCase();
+      requireValue(address && (!asset.network || asset.network === network), 'Unsupported wallet network');
       const row = await db.transaction(async client_ => {
         const previous = await client_.query('SELECT *,fiat_amount::text,crypto_amount::text FROM fiat_orders WHERE wallet_id=$1 AND idempotency_key=$2', [principal.wallet_id, body.idempotencyKey]);
         if (previous.rows.length) {
@@ -96,14 +100,14 @@ export function rampService(db, config, client = transakClient(config, fetch, db
           return existing;
         }
         const id = randomUUID();
-        const inserted = await client_.query(`INSERT INTO fiat_orders(id,wallet_id,account_id,idempotency_key,kind,fiat_currency,crypto_currency,wallet_address,fiat_amount,crypto_amount,payment_method,environment)
-          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT(wallet_id,idempotency_key) DO NOTHING RETURNING *,fiat_amount::text,crypto_amount::text`,
-          [id, principal.wallet_id, accountId, body.idempotencyKey, body.kind, body.fiatCurrency, body.cryptoCurrency, saved.address.toLowerCase(), body.fiatAmount ?? null, body.cryptoAmount ?? null, body.paymentMethod ?? null, config.transakEnvironment]);
+        const inserted = await client_.query(`INSERT INTO fiat_orders(id,wallet_id,account_id,idempotency_key,kind,fiat_currency,crypto_currency,wallet_address,fiat_amount,crypto_amount,payment_method,environment,network)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT(wallet_id,idempotency_key) DO NOTHING RETURNING *,fiat_amount::text,crypto_amount::text`,
+          [id, principal.wallet_id, accountId, body.idempotencyKey, body.kind, body.fiatCurrency, body.cryptoCurrency, address, body.fiatAmount ?? null, body.cryptoAmount ?? null, body.paymentMethod ?? null, config.transakEnvironment, network]);
         if (inserted.rows.length) return inserted.rows[0];
         throw fail('IDEMPOTENCY_CONFLICT', 'This order key is already in use; check the order before trying again');
       });
       if (terminal.includes(row.status)) throw fail('IDEMPOTENCY_CONFLICT', 'This order has already finished');
-      const widgetUrl = await client.createWidget({ ...row, wallet_address: getAddress(row.wallet_address) }, userIp);
+      const widgetUrl = await client.createWidget({ ...row, wallet_address: row.network === 'bitcoin' ? row.wallet_address : getAddress(row.wallet_address) }, userIp);
       return { ...publicOrder(row), widgetUrl };
     },
     async list(walletId, accountId) {

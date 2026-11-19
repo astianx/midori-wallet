@@ -10239,26 +10239,6 @@
         ],
         "additionalProperties": false
       },
-      "SparkAccount": {
-        "type": "object",
-        "properties": {
-          "address": {
-            "type": "string"
-          },
-          "depositAddress": {
-            "type": "string"
-          },
-          "network": {
-            "const": "spark"
-          }
-        },
-        "required": [
-          "address",
-          "depositAddress",
-          "network"
-        ],
-        "additionalProperties": false
-      },
       "SparkProof": {
         "type": "object",
         "properties": {
@@ -10280,6 +10260,26 @@
           "depositAddress",
           "signature",
           "ownerSignature"
+        ],
+        "additionalProperties": false
+      },
+      "SparkAccount": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "depositAddress": {
+            "type": "string"
+          },
+          "network": {
+            "const": "spark"
+          }
+        },
+        "required": [
+          "address",
+          "depositAddress",
+          "network"
         ],
         "additionalProperties": false
       },
@@ -10326,6 +10326,84 @@
           "fiatCurrency",
           "country",
           "amount"
+        ],
+        "additionalProperties": false
+      },
+      "ChangellyFiatOptions": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "const": "changelly"
+          },
+          "environment": {
+            "enum": [
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "states": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "name"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "code",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "currencies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "decimals": {
+                  "const": 2
+                }
+              },
+              "required": [
+                "code",
+                "decimals"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "provider",
+          "environment",
+          "countries",
+          "currencies"
         ],
         "additionalProperties": false
       },
@@ -10484,84 +10562,6 @@
           "fee",
           "id",
           "expiresAt"
-        ],
-        "additionalProperties": false
-      },
-      "ChangellyFiatOptions": {
-        "type": "object",
-        "properties": {
-          "provider": {
-            "const": "changelly"
-          },
-          "environment": {
-            "enum": [
-              "STAGING",
-              "PRODUCTION"
-            ]
-          },
-          "countries": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "states": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "code": {
-                        "type": "string"
-                      },
-                      "name": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "code",
-                      "name"
-                    ],
-                    "additionalProperties": false
-                  }
-                }
-              },
-              "required": [
-                "code",
-                "name"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "currencies": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "code": {
-                  "type": "string"
-                },
-                "decimals": {
-                  "const": 2
-                }
-              },
-              "required": [
-                "code",
-                "decimals"
-              ],
-              "additionalProperties": false
-            }
-          }
-        },
-        "required": [
-          "provider",
-          "environment",
-          "countries",
-          "currencies"
         ],
         "additionalProperties": false
       },

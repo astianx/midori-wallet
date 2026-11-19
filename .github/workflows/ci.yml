@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022, macos-15]
+        os: [ubuntu-24.04, windows-2022, macos-15-intel]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
     steps:
@@ -104,6 +104,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
       - run: npm run build:electron
         env:
+          MIDORI_DESKTOP_ARCH: ${{ runner.os == 'macOS' && 'arm64' || '' }}
           SENTRY_AUTH_TOKEN: ${{ github.event_name != 'pull_request' && secrets.SENTRY_AUTH_TOKEN || '' }}
       - name: Collect desktop artifacts and manifest
         if: ${{ !cancelled() }}
@@ -179,7 +180,7 @@ jobs:
           if-no-files-found: error
   ios:
     needs: checks
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5

@@ -2,13 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
-import { loadBuildEnvironment, resolveBuildUrls } from '../config/environment.js';
+import { loadBuildEnvironment, resolveBuildUrls, desktopArchitecture } from '../config/environment.js';
 import { createDmg } from './create-dmg.mjs';
 
 const directory = fileURLToPath(new URL('.', import.meta.url));
 const root = path.resolve(directory, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(directory, 'package.json')));
 const configured = loadBuildEnvironment(directory);
+const targetArchitecture = desktopArchitecture(process.platform, process.arch, configured.MIDORI_DESKTOP_ARCH || process.arch);
 const profile = configured.MIDORI_BUILD_PROFILE || 'debug';
 if (!['debug', 'release'].includes(profile)) throw new Error('Invalid build profile');
 const { siteUrl, apiOrigin } = resolveBuildUrls(configured, { native: true, release: profile === 'release' });
@@ -18,9 +19,9 @@ run(path.join(root,'web/node_modules/vite/bin/vite.js'), ['build'], path.join(ro
 fs.copyFileSync(path.join(root,'packages/telemetry/index.js'), path.join(directory,'dist/telemetry.js'));
 fs.copyFileSync(path.join(root,'packages/update-core/index.js'), path.join(directory,'dist/update-core.js'));
 if (process.platform === 'win32') run(path.join(directory,'node_modules/electron-winstaller/script/select-7z-arch.js'), [], path.join(directory,'node_modules/electron-winstaller'));
-run(path.join(directory,'node_modules/@electron-forge/cli/dist/electron-forge.js'), ['make',`--platform=${process.platform}`,`--arch=${process.arch}`], directory);
+run(path.join(directory,'node_modules/@electron-forge/cli/dist/electron-forge.js'), ['make',`--platform=${process.platform}`,`--arch=${targetArchitecture}`], directory);
 if (process.platform === 'darwin') {
   const name = profile === 'release' ? 'Midori Wallet' : 'Midori Wallet Beta';
-  const folder = path.join(directory,'out',`${name}-darwin-${process.arch}`);
-  await createDmg({ name, folder, destination: path.join(directory,'out/make',`Midori-Wallet-${pkg.version}-${process.arch}.dmg`) });
+  const folder = path.join(directory,'out',`${name}-darwin-${targetArchitecture}`);
+  await createDmg({ name, folder, destination: path.join(directory,'out/make',`Midori-Wallet-${pkg.version}-${targetArchitecture}.dmg`) });
 }

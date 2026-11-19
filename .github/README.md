@@ -44,6 +44,8 @@ The preflight validates the secrets and alias before compilation. The build requ
 
 Each uploaded artifact contains `manifest.json`: target, profile, version, commit, workflow run and attempt, completeness, file sizes and SHA-256 hashes. The Android release manifest also records the verified signing certificate. APK/AAB hashes must still match their signature-verification result when collected.
 
+macOS builds use `macos-15-intel` to avoid the unavailable ARM runner pool. Desktop packaging sets `MIDORI_DESKTOP_ARCH=arm64` explicitly, preserving the Apple Silicon ZIP and DMG target regardless of the build host. iOS validation produces a simulator bundle on the Intel host. Runner labels: [GitHub reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners); target architecture: [Electron Forge CLI](https://www.electronforge.io/cli).
+
 macOS produces ZIP and DMG. DMGs use APFS, are verified with `hdiutil verify`, and retry only `Resource busy`, at most three attempts. Invalid partial images are removed. If DMG creation still fails, the job remains failed and its completed ZIP is preserved with an incomplete manifest. A partial artifact set is not a successful release.
 
 Linux produces ZIP and DEB; Windows produces its Squirrel installer and update files. `MIDORI_DESKTOP_FORMAT=zip` supports local ZIP-only Linux builds. iOS Simulator apps remain inside a tarball to preserve executable permissions. None of these jobs publishes a GitHub release or deploys the website.

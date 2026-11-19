@@ -25,6 +25,8 @@ The workflow and manual input must first be present on the default branch. Re-ru
 
 Both native Android jobs use `.github/actions/setup-android`: JDK 17, Android SDK 36, Build Tools 36.0.0, and Gradle 8.14.2. Every build uses `.github/actions/setup-build`, Node from `.nvmrc`, the committed npm lockfiles, and an empty user npm configuration. Install scripts are disabled; Electron's binary installation is explicit.
 
+Generate and validate dependency lockfiles with the CI toolchain: Node 22.22.2 and its bundled npm 10.9.7. Run `npm ci --ignore-scripts --no-audit --no-fund` in `packages/wallet-core` from an empty `node_modules` directory before committing dependency changes. A development installation can hide missing optional peer dependencies; `npm ci` checks the complete lockfile even when those peers are not used at runtime.
+
 New pushes cancel obsolete validation runs on feature branches. A running workflow on `main` is not automatically cancelled by a newer push, so signing and cleanup can finish.
 
 ## Signing checks

@@ -1,5 +1,5 @@
 <script>
-import { stablecoinFamily, canonicalStablecoin } from '../../../lib/account/stablecoin-accounts.js';
+import { stablecoinFamily, canonicalStablecoin, bitcoinFamily } from '../../../lib/account/stablecoin-accounts.js';
 import MwNetworkSelector from '../../../components/MwNetworkSelector.vue';
 import Fuse from 'fuse.js/dist/fuse.basic.esm.js';
 import { SeedRequiredError } from '../../../lib/account/Account.js';
@@ -37,7 +37,7 @@ export default {
     let selected = undefined;
     const alreadyAdded = this.$account.wallets().map((item) => item.crypto._id);
     const cryptos = this.$account.cryptoDB.all
-      .filter((item) => item.supported && item.addable !== false && !item.deprecated)
+      .filter((item) => item.supported && item.addable !== false && !item.deprecated && item.platform !== 'spark')
       .filter((item) => !item.chainId || item.platform === 'base' || this.$account.capabilities.evm?.includes(item.platform))
       .filter((item) => !stablecoinFamily(item) || canonicalStablecoin(this.$account.cryptoDB.all, stablecoinFamily(item))?._id === item._id)
       .filter((item) => !alreadyAdded.includes(item._id))
@@ -63,7 +63,8 @@ export default {
       threshold: 0.5,
     });
     if (this.$route.query.cryptoId && !alreadyAdded.includes(this.$route.query.cryptoId)) {
-      const crypto = this.$account.cryptoDB.get(this.$route.query.cryptoId);
+      const requested = this.$account.cryptoDB.get(this.$route.query.cryptoId);
+      const crypto = bitcoinFamily(requested) ? this.$account.cryptoDB.get('bitcoin@bitcoin') : requested;
       if (crypto?.addable !== false && crypto?.supported) {
         const platform = this.$account.cryptoDB.platform(crypto.platform);
         showModal = true;

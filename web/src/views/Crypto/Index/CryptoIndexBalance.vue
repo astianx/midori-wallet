@@ -1,5 +1,5 @@
 <script>
-import { groupStablecoins, stablecoinFamily } from '../../../lib/account/stablecoin-accounts.js';
+import { groupAssets, assetFamily } from '../../../lib/account/stablecoin-accounts.js';
 import MwStablecoinBalances from '../../../components/MwStablecoinBalances.vue';
 import { cryptoToFiat } from '../../../lib/helpers.js';
 
@@ -12,8 +12,8 @@ export default {
     },
   },
   computed: {
-    family() { return stablecoinFamily(this.$wallet.crypto); },
-    account() { return groupStablecoins(this.$cryptos, this.$wallet.crypto._id).find(item => item.family === this.family); },
+    family() { return assetFamily(this.$wallet.crypto); },
+    account() { return groupAssets(this.$cryptos, this.$wallet.crypto._id).find(item => item.family === this.family); },
     amount() {
       if (this.family) return this.account?.balance ? `${this.account.balance} ${this.family}` : this.$t('Balance unavailable');
       if (this.$walletState === this.$STATE_LOADING) return '...';

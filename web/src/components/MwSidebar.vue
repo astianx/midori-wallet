@@ -1,5 +1,5 @@
 <script>
-import { groupStablecoins } from '../lib/account/stablecoin-accounts.js';
+import { groupAssets } from '../lib/account/stablecoin-accounts.js';
 import MwNetworkSelector from './MwNetworkSelector.vue';
 import { portfolioReferenceValue } from '../lib/account/portfolio.js';
 import { measureText } from '../lib/helpers.js';
@@ -33,7 +33,7 @@ export default {
     };
   },
   computed: {
-    assets() { return groupStablecoins(this.$cryptos, this.$route.params.cryptoId); },
+    assets() { return groupAssets(this.$cryptos, this.$route.params.cryptoId); },
     portfolioTotal() {
       const total = portfolioReferenceValue(this.$cryptos);
       if (total === null) return '—';

@@ -58,7 +58,7 @@ export default {
 <template>
   <MainLayout class="&" :title="$t('Receive {symbol}', { symbol: midori ? $wallet.crypto.symbol : accepted })" wide allowReadFailure>
     <div v-if="base && !legacy" class="&__origin" role="group" :aria-label="$t('Receive')"><button type="button" :aria-pressed="midori" @click="choose('midori')"><MwAppIcon name="user" /><span>{{ $t('From Midori Wallet') }}</span></button><button type="button" :aria-pressed="!midori" @click="choose('external')"><MwAppIcon name="receive" /><span>{{ $t('From another wallet or service') }}</span></button></div>
-    <MwNetworkSelector v-if="!bitcoin" :symbol="$wallet.crypto.symbol" :network="$wallet.crypto.platform" destination="crypto.receive" />
+    <MwNetworkSelector :symbol="$wallet.crypto.symbol" :network="$wallet.crypto.platform" destination="crypto.receive" />
     <p v-if="legacy" class="&__notice" role="alert">{{ $t('This is bridged USDT on Base, not native Tether USDT. Choose a supported network to receive USDT.') }}</p>
     <div class="&__grid">
       <section class="&__instructions"><div class="&__asset"><MwCryptoLogo :crypto="$wallet.crypto" :platform="$wallet.platform" /><div><h1>{{ midori ? $wallet.crypto.symbol : accepted }}</h1><span>{{ network }}</span></div></div>

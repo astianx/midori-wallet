@@ -1,31 +1,37 @@
 <script>
+import { BITCOIN_NETWORKS } from '../../../config/bitcoin-networks.js';
+import MwCryptoLogo from './MwCryptoLogo.vue';
 import { STABLECOIN_NETWORKS } from '../../../config/stablecoin-networks.js';
 import MwModal from './MwModal.vue';
 import MwNetworkLogo from './MwNetworkLogo.vue';
 import MwAppIcon from './MwAppIcon.vue';
 export default {
-  components: { MwModal, MwNetworkLogo, MwAppIcon },
+  components: { MwModal, MwNetworkLogo, MwAppIcon, MwCryptoLogo },
   props: { symbol: { type: String, default: 'USDC' }, network: { type: String, default: '' }, destination: { type: String, default: 'crypto' }, compact: Boolean },
   data() { return { open: false, filter: this.symbol === 'USDC' ? 'USDC' : 'USDT', busy: false, error: '' }; },
   computed: {
+    bitcoin() { return this.symbol === 'BTC'; },
+    networks() { return this.bitcoin ? BITCOIN_NETWORKS : STABLECOIN_NETWORKS; },
+    bitcoinAsset() { return this.$account.cryptoDB.get('bitcoin@bitcoin'); },
     receiving() { return this.destination === 'crypto.receive'; },
     sending() { return this.destination === 'crypto.send'; },
-    current() { return STABLECOIN_NETWORKS.find(network => network.id === this.network); },
-    rows() { return STABLECOIN_NETWORKS.filter(network => this.available(network) && network.assets.some(asset => this.matches(asset))); },
+    current() { return this.networks.find(network => network.id === this.network); },
+    rows() { return this.networks.filter(network => this.available(network) && network.assets.some(asset => this.matches(asset))); },
   },
   methods: {
-    matches(asset) { if (this.receiving) return true; if (this.sending) return asset.symbol === 'USDC'; return this.filter === 'USDC' ? asset.symbol === 'USDC' : ['USDT', 'USDT0'].includes(asset.symbol); },
-    available(network) { return network.enabled && (network.id === 'base' && (!this.sending || this.$account.capabilities.payments) || this.$account.capabilities.evm?.includes(network.id)); },
-    assets(network) { return network.assets.filter(asset => !this.sending || asset.symbol === 'USDC').map(asset => asset.symbol).join(' · '); },
+    matches(asset) { if (this.bitcoin) return true; if (this.receiving) return true; if (this.sending) return asset.symbol === 'USDC'; return this.filter === 'USDC' ? asset.symbol === 'USDC' : ['USDT', 'USDT0'].includes(asset.symbol); },
+    available(network) { if (this.bitcoin) return true; return network.enabled && (network.id === 'base' && (!this.sending || this.$account.capabilities.payments) || this.$account.capabilities.evm?.includes(network.id)); },
+    assets(network) { return network.assets.filter(asset => this.bitcoin || !this.sending || asset.symbol === 'USDC').map(asset => asset.symbol).join(' · '); },
     show() { this.filter = this.symbol === 'USDC' ? 'USDC' : 'USDT'; this.error = ''; this.open = true; },
     async choose(network) {
       if (!this.available(network) || this.busy) return;
       const asset = network.assets.find(asset => this.matches(asset) && (this.sending || !this.receiving || asset.symbol === this.symbol)) || network.assets[0];
-      const id = `${asset.contract}@${network.id}`, crypto = this.$account.cryptoDB.get(id);
+      const id = network.walletId || `${asset.contract}@${network.id}`, crypto = this.$account.cryptoDB.get(id);
       if (!crypto) return;
       this.busy = true; this.error = '';
       try {
-        if (!this.$account.wallet(id)) await this.$account.addWallet(crypto);
+        if (this.bitcoin) await this.$account.ensureBitcoinNetwork(network.id);
+        else if (!this.$account.wallet(id)) await this.$account.addWallet(crypto);
         this.open = false;
         await this.$router.push({ name: this.destination, params: { cryptoId: id }, ...(this.destination === 'crypto.receive' ? { query: { source: 'external' } } : {}) });
       } catch { this.error = this.$t('Could not select this network. Please try again.'); }
@@ -37,20 +43,20 @@ export default {
 <template>
   <div class="&" :class="{ '&--compact': compact }">
     <button type="button" class="&__trigger" aria-haspopup="dialog" :aria-expanded="open" @click="show">
-      <MwNetworkLogo v-if="current && !compact" :network="current" />
+      <MwCryptoLogo v-if="bitcoin && !compact" class="&__bitcoin-logo" :crypto="bitcoinAsset" /><MwNetworkLogo v-else-if="current && !compact" :network="current" />
       <span><small v-if="!compact">{{ $t('Network') }}</small><strong>{{ current ? current.name : $t('Stablecoin networks') }}</strong><small v-if="current && !compact">{{ $t('Accepts') }}: {{ assets(current) }}</small></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
     </button>
     <MwModal :show="open" :title="$t('Choose the network')" sheet @close="!busy && (open = false)">
       <div class="&__picker" :aria-busy="busy">
         <p class="&__intro">{{ $t('Choose the same network in the wallet or exchange you send from.') }}</p>
-        <div v-if="!sending && !receiving" class="&__tabs" role="group" :aria-label="$t('Crypto assets')"><button v-for="token in ['USDC', 'USDT']" :key="token" type="button" :aria-pressed="filter === token" :disabled="busy" @click="filter = token">{{ token }}</button></div>
+        <div v-if="!bitcoin && !sending && !receiving" class="&__tabs" role="group" :aria-label="$t('Crypto assets')"><button v-for="token in ['USDC', 'USDT']" :key="token" type="button" :aria-pressed="filter === token" :disabled="busy" @click="filter = token">{{ token }}</button></div>
         <p v-if="error" role="alert" class="&__error">{{ error }}</p>
         <ul class="&__list">
           <li v-for="item in rows" :key="item.id">
-            <button type="button" class="&__option" :disabled="busy" :aria-pressed="item.id === network && (receiving || sending || filter === (symbol === 'USDC' ? 'USDC' : 'USDT'))" @click="choose(item)">
-              <MwNetworkLogo :network="item" /><span class="&__name"><strong>{{ item.name }}</strong><small>{{ assets(item) }}</small></span>
-              <span class="&__availability"><MwAppIcon v-if="item.id === network && (receiving || sending || filter === (symbol === 'USDC' ? 'USDC' : 'USDT'))" name="check" /></span>
+            <button type="button" class="&__option" :disabled="busy" :aria-pressed="item.id === network && (bitcoin || receiving || sending || filter === (symbol === 'USDC' ? 'USDC' : 'USDT'))" @click="choose(item)">
+              <MwCryptoLogo v-if="bitcoin" class="&__bitcoin-logo" :crypto="bitcoinAsset" /><MwNetworkLogo v-else :network="item" /><span class="&__name"><strong>{{ item.name }}</strong><small>{{ assets(item) }}</small></span>
+              <span class="&__availability"><MwAppIcon v-if="item.id === network && (bitcoin || receiving || sending || filter === (symbol === 'USDC' ? 'USDC' : 'USDT'))" name="check" /></span>
             </button>
           </li>
         </ul>
@@ -61,6 +67,7 @@ export default {
 </template>
 <style lang="scss">
 .#{ $filename } {
+  &__bitcoin-logo { width: 2.75rem; height: 2.75rem; flex: none; }
   &__trigger { display: flex; align-items: center; width: 100%; min-height: 4.5rem; padding: var(--spacing-md); gap: var(--spacing-md); border: 1px solid var(--color-divider); border-radius: var(--radius-control); text-align: start; }
   &__trigger > span:not(.mw-network-logo) { flex: 1; min-width: 0; }
   &__trigger strong, &__trigger small { display: block; }

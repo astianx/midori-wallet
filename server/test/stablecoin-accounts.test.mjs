@@ -37,5 +37,22 @@ test('missing balances stay unknown and stale readings are not shown as current'
   const cached = groupStablecoins(rows).find(row => row.family === 'USDC');
   assert.equal(cached.balance.toString(), '5'); assert.equal(cached.readState, 'stale');
   const bitcoin = item(catalog.get('bitcoin@bitcoin'), '0.00000001');
-  assert.equal(groupStablecoins([...rows, bitcoin]).at(-1), bitcoin);
+  const groupedBitcoin = groupStablecoins([...rows, bitcoin]).at(-1);
+  assert.equal(groupedBitcoin.family, 'BTC'); assert.equal(groupedBitcoin.balance.value, bitcoin.balance.value);
+});
+
+test('Bitcoin and Spark share one visible Bitcoin without combining their addresses or spending balances', () => {
+  const bitcoin = item(catalog.get('bitcoin@bitcoin'), '0.12345678');
+  const spark = item(catalog.get('bitcoin@spark'), '0.00000001');
+  bitcoin.market = spark.market = { usdPrice: 80000 };
+  for (const selected of [bitcoin, spark]) {
+    const groups = groupStablecoins([bitcoin, spark], selected.crypto._id);
+    assert.equal(groups.length, 1); assert.equal(groups[0].title, 'Bitcoin');
+    assert.equal(groups[0].family, 'BTC'); assert.equal(groups[0].crypto._id, selected.crypto._id);
+    assert.equal(groups[0].balance.toString(), '0.12345679');
+    assert.equal(groups[0].positions.length, 2);
+    assert.equal(portfolioReferenceValue(groups), portfolioReferenceValue([bitcoin, spark]));
+  }
+  spark.balance = undefined;
+  assert.equal(groupStablecoins([bitcoin, spark])[0].balance, undefined);
 });

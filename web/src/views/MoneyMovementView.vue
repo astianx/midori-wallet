@@ -1,5 +1,5 @@
 <script>
-import { groupStablecoins, stablecoinFamily } from '../lib/account/stablecoin-accounts.js';
+import { groupAssets, stablecoinFamily } from '../lib/account/stablecoin-accounts.js';
 import MainLayout from '../layouts/MainLayout.vue';
 import MwAppIcon from '../components/MwAppIcon.vue';
 import MwCryptoLogo from '../components/MwCryptoLogo.vue';
@@ -13,7 +13,7 @@ export default {
   props: { direction: { type: String, required: true, validator: value => ['add', 'withdraw'].includes(value) } },
   data() { return { options: null, loading: false, error: '', disposed: false }; },
   computed: {
-    groupedAssets() { return groupStablecoins(this.$cryptos); },
+    groupedAssets() { return groupAssets(this.$cryptos); },
     sendAssets() { return this.groupedAssets.filter(item => stablecoinFamily(item.crypto) === 'USDC' || ['bitcoin','spark'].includes(item.crypto.platform)).map(item => { const position = item.positions?.find(position => position.crypto.platform !== 'base' && this.$account.capabilities.evm?.includes(position.crypto.platform)) || item; return { ...position, title: item.title, subtitle: item.subtitle }; }).filter(item => item.crypto.platform !== 'base' || this.$account.capabilities.payments); },
     adding() { return this.direction === 'add'; },
     title() { return this.$t(this.adding ? 'Add money' : 'Withdraw'); },
@@ -29,9 +29,9 @@ export default {
       if (!this.selected?.enabled) return [];
       if (!this.isRamp) return this.selected.id === 'send' ? this.sendAssets : this.groupedAssets;
       const kind = this.selected.id;
-      if (this.$account.capabilities.rampProvider === 'changelly') return this.$cryptos;
+      if (this.$account.capabilities.rampProvider === 'changelly') return groupAssets(this.$cryptos);
       if (!this.options?.products.includes(kind.toUpperCase()) || !this.options.fiatCurrencies.some(item => item[kind])) return [];
-      return this.$cryptos.filter(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && rampAssetSupported(this.options, asset, kind)));
+      return groupAssets(this.$cryptos.filter(item => this.options.assets.some(asset => asset.symbol === item.crypto.symbol && rampAssetSupported(this.options, asset, kind))));
     },
   },
   mounted() { if (this.$account.capabilities.ramp) this.loadOptions(); },
@@ -86,7 +86,7 @@ export default {
           <template v-else>
             <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Test mode. Do not use real money.') }}</p>
             <p v-if="!assets.length" class="&__notice" role="status">{{ $t(isRamp ? 'The selected asset or currency is unavailable.' : 'Balance unavailable') }}</p>
-            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.subtitle || item.crypto.name }}{{ isRamp && options?.environment === 'STAGING' ? ' · Base Sepolia' : '' }}</small></span><MwAppIcon name="arrow" /></RouterLink>
+            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.title || item.crypto.symbol }}<small>{{ item.subtitle || item.crypto.name }}{{ isRamp && options?.environment === 'STAGING' ? ' · Base Sepolia' : '' }}</small></span><MwAppIcon name="arrow" /></RouterLink>
           </template>
         </template>
       </section>

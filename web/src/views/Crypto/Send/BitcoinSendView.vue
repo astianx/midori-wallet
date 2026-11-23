@@ -1,4 +1,5 @@
 <script>
+import MwNetworkSelector from '../../../components/MwNetworkSelector.vue';
 import MainLayout from '../../../layouts/MainLayout.vue';
 import MwButton from '../../../components/MwButton.vue';
 import MwFormInput from '../../../components/MwForm/MwFormInput.vue';
@@ -7,7 +8,7 @@ import MwPin from '../../../components/MwPin.vue';
 import { Amount } from '../../../lib/account/domain.js';
 import { paymentError } from '../../../lib/account/payment-errors.js';
 export default {
-  components: { MainLayout, MwButton, MwFormInput, MwFormAmountInput, MwPin },
+  components: { MwNetworkSelector, MainLayout, MwButton, MwFormInput, MwFormAmountInput, MwPin },
   data() { return { address: this.$route.query.address || '', amount: undefined, quote: null, approved: '', pin: false, busy: false, error: '', result: null, disposed: false, revision: 0, exchange: null, now: Date.now(), timer: null }; },
   computed: {
     expired() { return !this.quote || this.now >= Date.parse(this.quote.expiresAt); },
@@ -55,6 +56,7 @@ export default {
 <template>
   <MainLayout class="&" :title="$t('Send {symbol}', { symbol: 'BTC' })" allowReadFailure>
     <h1>{{ $t(result ? 'Check payment status' : pin ? 'Enter your PIN' : 'Send {symbol}', { symbol: 'BTC' }) }}</h1>
+    <MwNetworkSelector v-if="!quote && !result && !$route.query.exchange && !$route.query.claim" symbol="BTC" network="bitcoin" destination="crypto.send" />
     <p>{{ $t('Network') }} · Bitcoin</p>
     <p v-if="error" role="alert" class="&__error">{{ error }}</p>
     <section v-if="result" role="status"><p>{{ $t('We are checking this payment. Do not send it again.') }}</p><a :href="`https://mempool.space/tx/${result.hash}`" target="_blank" rel="noopener noreferrer">{{ result.hash }}</a><MwButton type="primary" @click="$router.push({ name: 'crypto.history', params: { cryptoId: $wallet.crypto._id } })">{{ $t('History') }}</MwButton></section>

@@ -49,7 +49,7 @@ router.navigateExternal = async path => {
   return router.push({ path, force: true });
 };
 
-router.beforeEach((to, from) => {
+router.beforeEach(async (to, from) => {
   if (import.meta.env.DEV && to.meta.dev) return;
   const { $account, $app } = router;
   if (to.meta.requiresAuth && !$account.isCreated) {
@@ -62,7 +62,11 @@ router.beforeEach((to, from) => {
   }
   if (router.closeRampCheckout?.(to, from)) return false;
   if (to.meta.crypto) {
-    const wallet = $account.wallet(to.params.cryptoId);
+    let wallet = $account.wallet(to.params.cryptoId);
+    if (!wallet && ['bitcoin@bitcoin', 'bitcoin@spark'].includes(to.params.cryptoId) && $account.wallets().some(wallet => ['bitcoin@bitcoin', 'bitcoin@spark'].includes(wallet.crypto._id))) {
+      try { wallet = await $account.ensureBitcoinNetwork(to.params.cryptoId === 'bitcoin@spark' ? 'spark' : 'bitcoin'); }
+      catch { return { name: 'home', replace: true }; }
+    }
     if (wallet) {
       if ($app.config.globalProperties.$wallet !== wallet) setWalletProps($app, wallet);
       registerProtocolHandler(wallet.crypto, $account);

@@ -105,7 +105,7 @@ export default {
       />
       <p class="&__note">{{ $t('Choose carefully. Your tag can only be registered once and cannot be changed.') }}</p>
       <p v-if="errors.username && !canCreateTag" role="alert">{{ errors.username }}</p>
-      <div class="&__note">{{ $t('Your username is your Midori tag. Share it to receive USDT and USDC on Base.') }}</div>
+      <div class="&__note">{{ $t('Your Midori tag receives USDC on Base. Use an address for other networks.') }}</div>
       <MwFormInput
         v-model="email"
         :error="errors.email"

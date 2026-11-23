@@ -1,3 +1,4 @@
+import { signEvmTransfer, evmTransaction, evmTransactionHash } from '@midori/wallet-core';
 import SparkController from './SparkController.js';
 import { normalizeTagAlias, formatMidoriTag, isTagRecipient } from '../tags.js';
 import { captureWalletError } from '../sentry.js';
@@ -465,6 +466,65 @@ export default class MidoriSession {
       try { const result = await this.bitcoinRequest('tx', raw, quote.exchangeOrderId); if (result !== hash) throw new Error('Unconfirmed broadcast'); return { hash, status: 'submitted' }; }
       catch { return { hash, status: 'ambiguous' }; }
     } finally { seed.fill(0); }
+  }
+
+  async evmRequest(network, action, data = {}) {
+    if (!this.#payload || !this.account?.id || !this.config.capabilities.evm?.includes(network)) throw Object.assign(new Error(), { code: 'CAPABILITY_UNAVAILABLE' });
+    return this.client.request('POST', `/api/v1/accounts/${this.account.id}/evm/${network}/${action}`, data);
+  }
+  evmRecord(network) {
+    if (!this.#detailsKey) throw Object.assign(new Error(), { code: 'ACCOUNT_LOCKED' });
+    const value = this.storage.getItem(`_midori_evm_${this.descriptor.ownerAddress}_${network}`);
+    return value ? JSON.parse(decrypt(value, hex.encode(this.#detailsKey))) : null;
+  }
+  saveEvm(network, value) {
+    if (!this.#detailsKey) throw Object.assign(new Error(), { code: 'ACCOUNT_LOCKED' });
+    this.storage.setItem(`_midori_evm_${this.descriptor.ownerAddress}_${network}`, encrypt(JSON.stringify(value), hex.encode(this.#detailsKey)));
+  }
+  async pendingEvm(network) {
+    const remote = await this.evmRequest(network, 'pending');
+    if (remote.transfer) return remote.transfer;
+    const record = this.evmRecord(network);
+    if (!record || ['confirmed','reverted'].includes(record.status)) return null;
+    let result;
+    try { result = await this.evmRequest(network, 'status', { hash: record.hash }); } catch { return record; }
+    if (!this.#detailsKey) throw new Error('Account is locked');
+    this.saveEvm(network, { ...record, status: result.status });
+    return ['confirmed','reverted'].includes(result.status) ? null : { ...record, status: result.status };
+  }
+  async retryEvm(network, hash) {
+    const local = this.evmRecord(network);
+    const result = local?.hash === hash && local.raw ? await this.evmRequest(network, 'broadcast', { raw: local.raw }) : await this.evmRequest(network, 'retry', { hash });
+    if (local?.hash === hash) this.saveEvm(network, { ...local, status: result.status });
+    return result;
+  }
+  async authorizeEvm(quote, pinHash, asset, stillApproved = () => true) {
+    const generation = this.#generation, expected = JSON.stringify(quote);
+    const check = () => {
+      if (generation !== this.#generation || !stillApproved() || expected !== JSON.stringify(quote)) throw Object.assign(new Error(), { code: 'PAYMENT_CHANGED' });
+      evmTransaction(quote, this.descriptor, asset);
+    };
+    check();
+    if (this.evmSigning) throw Object.assign(new Error(), { code: 'PAYMENT_ALREADY_PENDING' });
+    this.evmSigning = true;
+    try {
+      if (await this.pendingEvm(quote.network)) throw Object.assign(new Error(), { code: 'PAYMENT_ALREADY_PENDING' });
+      const payload = await this.vault.open(pinHash), seed = decode(payload.walletSeed);
+      try {
+        check();
+        if (payload.descriptor.ownerAddress !== this.descriptor.ownerAddress) throw new Error('Recovery mismatch');
+        const raw = await signEvmTransfer(seed, payload.descriptor, quote, asset);
+        check();
+        const record = { hash: evmTransactionHash(raw), quote: structuredClone(quote), createdAt: new Date().toISOString(), raw, status: 'ambiguous' };
+        this.saveEvm(quote.network, record);
+        try {
+          const result = await this.evmRequest(quote.network, 'broadcast', { raw });
+          if (result.hash.toLowerCase() !== record.hash) throw new Error('Unconfirmed broadcast');
+          if (generation === this.#generation) this.saveEvm(quote.network, { ...record, status: result.status });
+          return { ...record, status: result.status };
+        } catch { return record; }
+      } finally { seed.fill(0); }
+    } finally { this.evmSigning = false; }
   }
 
   async request(config) {

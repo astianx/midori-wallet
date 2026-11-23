@@ -6,8 +6,8 @@ export default { components: { MainLayout, MwCryptoLogo, MwAppIcon } };
 </script>
 <template>
   <MainLayout :title="$t('Receive')" allowReadFailure>
-    <div class="&__intro"><span><MwAppIcon name="receive" /></span><h1>{{ $t('Receive with Midori Wallet') }}</h1><p>{{ $t('USDT and USDC on Base share your account address.') }}</p></div>
-    <div class="&__assets"><RouterLink v-for="item in $cryptos" :key="item.crypto._id" :to="{ name: 'crypto.receive', params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span>{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · Base</small></span><MwAppIcon name="arrow" /></RouterLink></div>
+    <div class="&__intro"><span><MwAppIcon name="receive" /></span><h1>{{ $t('Receive with Midori Wallet') }}</h1><p>{{ $t('Choose the asset and network before sharing your address.') }}</p></div>
+    <div class="&__assets"><RouterLink v-for="item in $cryptos" :key="item.crypto._id" :to="{ name: 'crypto.receive', params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span>{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · {{ item.platform.name }}</small></span><MwAppIcon name="arrow" /></RouterLink></div>
     <RouterLink v-if="!$account.tag && $cryptos.length" :to="{ name: 'crypto.receive', params: { cryptoId: $cryptos[0].crypto._id }, query: { source: 'midori' } }" class="&__tag">{{ $t('Choose your tag') }}<MwAppIcon name="arrow" /></RouterLink>
   </MainLayout>
 </template>

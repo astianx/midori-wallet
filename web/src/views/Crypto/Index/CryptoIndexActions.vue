@@ -36,7 +36,7 @@ export default {
     >
       <MwButton
         type="circle"
-        :disabled="!['bitcoin','spark'].includes($wallet.crypto.platform) && !$account.capabilities.payments"
+        :disabled="!$wallet.isEvm && !['bitcoin','spark'].includes($wallet.crypto.platform) && !$account.capabilities.payments"
         @click="$router.push({ name: 'crypto.send', params: { cryptoId: $wallet.crypto._id }})"
       >
         <template #circle>
@@ -55,7 +55,7 @@ export default {
         {{ $t('Receive') }}
       </MwButton>
       <MwButton
-        v-if="$account.capabilities.exchange"
+        v-if="$account.capabilities.exchange && !$wallet.isEvm"
         type="circle"
         :disabled="disabled"
         @click="$router.push({ name: 'crypto.swap', params: { cryptoId: $wallet.crypto._id }})"

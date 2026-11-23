@@ -148,6 +148,7 @@ export function reconcileTransferEvents(existing, incoming, { canonicalBlockHash
   return [...events.values()].map(event => ({ ...event, canonical: event.canonical && (!canonicalBlockHashes[event.blockNumber] || canonicalBlockHashes[event.blockNumber].toLowerCase() === event.blockHash.toLowerCase()) })).sort((a, b) => a.blockNumber - b.blockNumber || a.logIndex - b.logIndex);
 }
 
+export * from './evm.js';
 export * from './payment.js';
 export * from './bitcoin.js';
 

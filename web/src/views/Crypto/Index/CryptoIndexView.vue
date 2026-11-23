@@ -1,4 +1,5 @@
 <script>
+import MwNetworkSelector from '../../../components/MwNetworkSelector.vue';
 import { cryptoSubtitleWithSymbol } from '../../../lib/helpers.js';
 
 import MwNavbar from '../../../components/MwNavbar.vue';
@@ -18,7 +19,7 @@ import CryptoIndexTools from './CryptoIndexTools.vue';
 import ArrowLeftIcon from '../../../assets/svg/arrowLeft.svg';
 
 export default {
-  components: {
+  components: { MwNetworkSelector,
     CryptoIndexActions,
     CryptoIndexBalance,
     CryptoIndexBuySell,
@@ -163,6 +164,8 @@ export default {
       </MwNavbar>
     </template>
 
+    <MwNetworkSelector v-if="['USDC', 'USDT', 'USDT0'].includes($wallet.crypto.symbol)" :symbol="$wallet.crypto.symbol" :network="$wallet.crypto.platform" compact />
+    <p v-if="$wallet.crypto.platform === 'base' && $wallet.crypto.symbol === 'USDT'" class="&__network-note">{{ $t('This is bridged USDT on Base, not native Tether USDT. Choose a supported network to receive USDT.') }}</p>
     <section v-if="$wallet.crypto.marketId" class="&__header-container" :aria-label="$t('Price history')">
       <div class="&__header">
         <CryptoIndexPrice

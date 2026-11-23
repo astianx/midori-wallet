@@ -1,4 +1,4 @@
-import { bitcoinAsset, sparkAsset } from './AssetCatalog.js';
+import { bitcoinAsset, sparkAsset, evmAssets } from './AssetCatalog.js';
 import { CHART_PERIODS, MARKET_CURRENCIES } from '../../../../config/market.js';
 
 export default class AccountMarket {
@@ -19,9 +19,10 @@ export default class AccountMarket {
   }
   async getPrice(id, currency) { return (await this.getMarket(id, currency))?.price; }
   async getChartData(id, period, currency) {
-    const asset = [...(this.session.assets || []), bitcoinAsset, sparkAsset].find(asset => asset._id === id && asset.marketId);
+    const asset = [...(this.session.assets || []), ...evmAssets, bitcoinAsset, sparkAsset].find(asset => asset._id === id && asset.marketId);
     if (!asset || !Object.hasOwn(CHART_PERIODS, period) || !MARKET_CURRENCIES.includes(currency)) throw new Error('Unsupported price history');
     const query = new URLSearchParams({ period, currency });
-    return this.session.publicClient.request('GET', `/api/v1/market/${asset.symbol}/chart?${query}`);
+    const result = await this.session.publicClient.request('GET', `/api/v1/market/${asset.symbol === 'USDT0' ? 'USDT' : asset.symbol}/chart?${query}`);
+    return { ...result, symbol: asset.symbol };
   }
 }

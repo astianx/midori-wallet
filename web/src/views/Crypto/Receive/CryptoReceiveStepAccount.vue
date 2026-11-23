@@ -28,7 +28,7 @@ export default {
 </script>
 <template>
   <MainLayout class="&" :title="$t('Choose your tag')" allowReadFailure :onBack="() => back()">
-    <p class="&__context">{{ $t('Receive {symbol}', { symbol: $wallet.crypto.symbol }) }} · Base</p><p>{{ $t('Your username is your Midori tag. Share it to receive USDT and USDC on Base.') }}</p>
+    <p class="&__context">{{ $t('Receive {symbol}', { symbol: $wallet.crypto.symbol }) }} · Base</p><p>{{ $t('Your Midori tag receives USDC on Base. Use an address for other networks.') }}</p>
     <p>{{ $t('Choose carefully. Your tag can only be registered once and cannot be changed.') }}</p>
     <MwFormTextareaReadonly v-if="locked" :value="registeredTag || '—'" :label="$t('Your Midori tag')" :copy="!!registeredTag" />
     <p v-if="locked && error" role="alert">{{ error }}</p>

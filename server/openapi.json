@@ -7774,6 +7774,1324 @@
           }
         }
       }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/balance": {
+      "post": {
+        "operationId": "EVMbalance",
+        "summary": "EVM balance",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "network": {
+                      "type": "string"
+                    },
+                    "chainId": {
+                      "type": "integer"
+                    },
+                    "contract": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{40}$"
+                    },
+                    "address": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]{40}$"
+                    },
+                    "readAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "balanceAtomic": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,77})$",
+                      "description": "Exact uint256 in base units; never a JSON number"
+                    },
+                    "nativeBalanceAtomic": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,77})$",
+                      "description": "Exact uint256 in base units; never a JSON number"
+                    },
+                    "blockNumber": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,77})$",
+                      "description": "Exact uint256 in base units; never a JSON number"
+                    }
+                  },
+                  "required": [
+                    "network",
+                    "chainId",
+                    "contract",
+                    "address",
+                    "readAt",
+                    "balanceAtomic",
+                    "nativeBalanceAtomic",
+                    "blockNumber"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contract": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  }
+                },
+                "required": [
+                  "contract"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/quote": {
+      "post": {
+        "operationId": "EVMquote",
+        "summary": "EVM quote",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvmQuote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contract": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "to": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "amountAtomic": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,77})$",
+                    "description": "Exact uint256 in base units; never a JSON number"
+                  }
+                },
+                "required": [
+                  "contract",
+                  "to",
+                  "amountAtomic"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/broadcast": {
+      "post": {
+        "operationId": "EVMbroadcast",
+        "summary": "EVM broadcast",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvmStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "raw": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]+$",
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "raw"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/retry": {
+      "post": {
+        "operationId": "EVMretry",
+        "summary": "EVM retry",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvmStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hash": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{64}$"
+                  }
+                },
+                "required": [
+                  "hash"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/status": {
+      "post": {
+        "operationId": "EVMstatus",
+        "summary": "EVM status",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvmStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hash": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{64}$"
+                  }
+                },
+                "required": [
+                  "hash"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/pending": {
+      "post": {
+        "operationId": "EVMpending",
+        "summary": "EVM pending",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transfer": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/EvmTransfer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "transfer"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/transaction": {
+      "post": {
+        "operationId": "EVMtransaction",
+        "summary": "EVM transaction",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvmEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contract": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{64}:0x[0-9a-fA-F]+$"
+                  }
+                },
+                "required": [
+                  "contract",
+                  "reference"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/accounts/{id}/evm/{network}/history": {
+      "post": {
+        "operationId": "EVMhistory",
+        "summary": "EVM history",
+        "security": [
+          {
+            "Session": [],
+            "Timestamp": [],
+            "Nonce": [],
+            "Signature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "network",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "ethereum",
+                "arbitrum",
+                "polygon",
+                "avalanche"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transactions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/EvmEntry"
+                      }
+                    },
+                    "cursor": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,77})$",
+                      "description": "Exact uint256 in base units; never a JSON number"
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    },
+                    "indexing": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "const": true
+                        },
+                        "status": {
+                          "enum": [
+                            "backfilling",
+                            "caught_up"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "enabled",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "transactions",
+                    "hasMore",
+                    "indexing"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Expired, consumed or invalid authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Missing or foreign resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate, replay or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Chain unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contract": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "cursor": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,77})$",
+                    "description": "Exact uint256 in base units; never a JSON number"
+                  }
+                },
+                "required": [
+                  "contract"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -8593,6 +9911,17 @@
                   "changelly",
                   "transak"
                 ]
+              },
+              "evm": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "ethereum",
+                    "arbitrum",
+                    "polygon",
+                    "avalanche"
+                  ]
+                }
               }
             },
             "required": [
@@ -8607,7 +9936,9 @@
               "tags",
               "history",
               "signing",
-              "optionalProviders"
+              "optionalProviders",
+              "rampProvider",
+              "evm"
             ],
             "additionalProperties": false
           },
@@ -10681,6 +12012,288 @@
           "updatedAt",
           "providerOrderId",
           "quote"
+        ],
+        "additionalProperties": false
+      },
+      "EvmPayment": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "enum": [
+              "ethereum",
+              "arbitrum",
+              "polygon",
+              "avalanche"
+            ]
+          },
+          "chainId": {
+            "enum": [
+              1,
+              137,
+              42161,
+              43114
+            ]
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "contract": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "symbol": {
+            "enum": [
+              "USDC",
+              "USDT",
+              "USDT0"
+            ]
+          },
+          "decimals": {
+            "const": 6
+          },
+          "amountAtomic": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "nativeSymbol": {
+            "enum": [
+              "ETH",
+              "POL",
+              "AVAX"
+            ]
+          }
+        },
+        "required": [
+          "network",
+          "chainId",
+          "from",
+          "to",
+          "contract",
+          "symbol",
+          "decimals",
+          "amountAtomic",
+          "nativeSymbol"
+        ],
+        "additionalProperties": false
+      },
+      "EvmQuote": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "enum": [
+              "ethereum",
+              "arbitrum",
+              "polygon",
+              "avalanche"
+            ]
+          },
+          "chainId": {
+            "enum": [
+              1,
+              137,
+              42161,
+              43114
+            ]
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "contract": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "symbol": {
+            "enum": [
+              "USDC",
+              "USDT",
+              "USDT0"
+            ]
+          },
+          "decimals": {
+            "const": 6
+          },
+          "amountAtomic": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "nativeSymbol": {
+            "enum": [
+              "ETH",
+              "POL",
+              "AVAX"
+            ]
+          },
+          "nonce": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "gasLimit": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "gasPrice": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "maxFeeAtomic": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "network",
+          "chainId",
+          "from",
+          "to",
+          "contract",
+          "symbol",
+          "decimals",
+          "amountAtomic",
+          "nativeSymbol",
+          "nonce",
+          "gasLimit",
+          "gasPrice",
+          "maxFeeAtomic",
+          "expiresAt"
+        ],
+        "additionalProperties": false
+      },
+      "EvmStatus": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          },
+          "status": {
+            "enum": [
+              "ambiguous",
+              "submitted",
+              "pending",
+              "confirmed",
+              "reverted"
+            ]
+          },
+          "confirmations": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          }
+        },
+        "required": [
+          "hash",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "EvmTransfer": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          },
+          "quote": {
+            "$ref": "#/components/schemas/EvmPayment"
+          },
+          "status": {
+            "enum": [
+              "ambiguous",
+              "submitted",
+              "pending",
+              "confirmed",
+              "reverted"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "hash",
+          "quote",
+          "status",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "EvmEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}:0x[0-9a-fA-F]+$"
+          },
+          "transactionHash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          },
+          "contract": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "amountAtomic": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "enum": [
+              "confirmed",
+              "pending"
+            ]
+          },
+          "incoming": {
+            "type": "boolean"
+          },
+          "blockNumber": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "transactionHash",
+          "contract",
+          "from",
+          "to",
+          "amountAtomic",
+          "timestamp",
+          "status",
+          "incoming"
         ],
         "additionalProperties": false
       }

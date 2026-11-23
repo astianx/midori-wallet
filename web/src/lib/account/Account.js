@@ -23,6 +23,8 @@ import Settings from './Settings.js';
 import MidoriSession from './MidoriSession.js';
 import { consumeRecovery } from './recovery.js';
 import MidoriWallet from './MidoriWallet.js';
+import EvmWallet from './EvmWallet.js';
+import { evmNetworks } from '../../../../config/stablecoin-networks.js';
 import BitcoinWallet from './BitcoinWallet.js';
 import SparkWallet from './SparkWallet.js';
 import WalletStorage from '../storage/WalletStorage.js';
@@ -349,7 +351,7 @@ export default class Account extends EventEmitter {
       cryptoDB: this.#cryptoDB,
     });
     await this.#details.init();
-    if (this.#details.get('cryptos') === undefined) this.#details.setCryptos(this.#cryptoDB.all.filter(crypto => crypto.supported && crypto.platform === 'base'));
+    if (this.#details.get('cryptos') === undefined) this.#details.setCryptos(this.#cryptoDB.all.filter(crypto => crypto.supported && crypto.platform === 'base' && crypto.addable !== false));
     this.emit('update', 'user');
     this.emit('update', 'language');
     this.emit('update', 'currency');
@@ -422,6 +424,7 @@ export default class Account extends EventEmitter {
   }
 
   async #createWallet({ crypto, walletStorage, settings }, walletSeed) {
+    if (evmNetworks.some(network => network.id === crypto.platform)) return new EvmWallet({ crypto, platform: this.#cryptoDB.platform(crypto.platform), session: this.#midori });
     if (crypto.platform === 'spark') return new SparkWallet({ crypto, platform: this.#cryptoDB.platform('spark'), session: this.#midori }, await this.#midori.spark.descriptor());
     if (crypto.platform === 'bitcoin') return new BitcoinWallet({ crypto, platform: this.#cryptoDB.platform('bitcoin'), session: this.#midori }, await this.#midori.bitcoinDescriptor());
     if (crypto.platform === 'base') return new MidoriWallet({ crypto, platform: this.#cryptoDB.platform('base'), session: this.#midori });
@@ -608,7 +611,7 @@ export default class Account extends EventEmitter {
    * If there is a public key, then unlocking the private seed is not requested.
    */
   async #addWallet(crypto, walletSeed) {
-    if (['bitcoin','spark'].includes(crypto.platform)) {
+    if (['bitcoin','spark', ...evmNetworks.map(network => network.id)].includes(crypto.platform)) {
       const wallet = await this.#createWallet({ crypto });
       this.#wallets.set(wallet); this.#details.addCrypto(crypto);
       this.#clientStorage.setPublicKey(crypto.platform, wallet.getPublicKey(), this.#deviceSeed);
@@ -720,6 +723,7 @@ export default class Account extends EventEmitter {
   }
 
   authorizeSpark(quote, pin, stillApproved) { return this.#midori.spark.authorize(quote, this.pinHash(pin), stillApproved); }
+  authorizeEvm(quote, pin, asset, stillApproved) { return this.#midori.authorizeEvm(quote, this.pinHash(pin), asset, stillApproved); }
   authorizeBitcoin(quote, pin, stillApproved) { return this.#midori.authorizeBitcoin(quote, this.pinHash(pin), stillApproved); }
 
   authorizePayment(intent, pin, expectedContract, stillApproved) { return this.#midori.authorizePayment(intent, this.pinHash(pin), expectedContract, stillApproved); }

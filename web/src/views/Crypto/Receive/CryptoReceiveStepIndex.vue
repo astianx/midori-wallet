@@ -1,4 +1,5 @@
 <script>
+import MwNetworkSelector from '../../../components/MwNetworkSelector.vue';
 import { formatMidoriTag } from '../../../lib/tags.js';
 import { selectReceivingText, shareReceivingText } from '../../../lib/receive-actions.js';
 import { onShowOnHide } from '../../../lib/mixins.js';
@@ -12,14 +13,16 @@ import MwModal from '../../../components/MwModal.vue';
 import MwStep from '../../../components/MwStep.vue';
 import MainLayout from '../../../layouts/MainLayout.vue';
 export default {
-  components: { CopyIcon, MainLayout, MwButton, MwFormTextareaReadonly, MwCryptoLogo, MwAppIcon, MwModal },
+  components: { MwNetworkSelector, CopyIcon, MainLayout, MwButton, MwFormTextareaReadonly, MwCryptoLogo, MwAppIcon, MwModal },
   extends: MwStep, mixins: [onShowOnHide],
   data() { return { tag: '', tagKnown: false, tagsEnabled: false, paymentsEnabled: false, online: true, active: false, generation: 0, isCopying: false, isCopied: false, copyError: false, selected: false, isSharing: false, shareError: false, showShare: false, shareText: '', timer: null }; },
   computed: {
     bitcoin() { return this.$wallet.crypto.platform === 'bitcoin'; },
-    network() { return this.bitcoin ? 'Bitcoin' : 'Base'; },
-    midori() { return !this.bitcoin && this.$route.query.source === 'midori'; },
-    receiveValue() { return this.midori ? this.tag : this.$wallet.address || ''; },
+    network() { return this.$wallet.platform.name; },
+    legacy() { return this.$wallet.crypto.platform === 'base' && this.$wallet.crypto.symbol === 'USDT'; },
+    base() { return this.$wallet.crypto.platform === 'base'; },
+    midori() { return this.base && !this.legacy && this.$route.query.source === 'midori'; },
+    receiveValue() { if (this.legacy) return ''; return this.midori ? this.tag : this.$wallet.address || ''; },
     qr() { return this.receiveValue ? new QRCode({ content: this.receiveValue, join: true, padding: 4, container: 'svg-viewbox' }).svg() : ''; },
     balanceFailed() { return ['unavailable','stale'].includes(this.$cryptos.find(item => item.crypto._id === this.$wallet.crypto._id)?.readState); },
     valueLabel() { return this.$t(this.midori ? 'Your Midori tag' : 'Your wallet address'); },
@@ -52,11 +55,14 @@ export default {
 </script>
 <template>
   <MainLayout class="&" :title="$t('Receive {symbol}', { symbol: $wallet.crypto.symbol })" wide allowReadFailure>
-    <div v-if="!bitcoin" class="&__origin" role="group" :aria-label="$t('Receive')"><button type="button" :aria-pressed="midori" @click="choose('midori')"><MwAppIcon name="user" /><span>{{ $t('From Midori Wallet') }}</span></button><button type="button" :aria-pressed="!midori" @click="choose('external')"><MwAppIcon name="receive" /><span>{{ $t('From another wallet or service') }}</span></button></div>
+    <div v-if="base && !legacy" class="&__origin" role="group" :aria-label="$t('Receive')"><button type="button" :aria-pressed="midori" @click="choose('midori')"><MwAppIcon name="user" /><span>{{ $t('From Midori Wallet') }}</span></button><button type="button" :aria-pressed="!midori" @click="choose('external')"><MwAppIcon name="receive" /><span>{{ $t('From another wallet or service') }}</span></button></div>
+    <MwNetworkSelector v-if="!bitcoin" :symbol="$wallet.crypto.symbol" :network="$wallet.crypto.platform" destination="crypto.receive" />
+    <p v-if="legacy" class="&__notice" role="alert">{{ $t('This is bridged USDT on Base, not native Tether USDT. Choose a supported network to receive USDT.') }}</p>
     <div class="&__grid">
       <section class="&__instructions"><div class="&__asset"><MwCryptoLogo :crypto="$wallet.crypto" :platform="$wallet.platform" /><div><h1>{{ $wallet.crypto.symbol }}</h1><span>{{ $wallet.crypto.name }} · {{ network }}</span></div></div>
-        <p class="&__lead">{{ $t(midori ? tag ? 'Share your tag with the person sending you money.' : 'Choose a tag to receive from another Midori user.' : bitcoin ? 'Send only {symbol} using the Bitcoin network.' : 'Send only {symbol} using the Base network.', { symbol: $wallet.crypto.symbol }) }}</p>
-        <p v-if="!midori && !bitcoin" class="&__note">{{ $t('USDT and USDC on Base share your account address.') }}</p>
+        <p class="&__lead">{{ $t(midori ? tag ? 'Share your tag with the person sending you money.' : 'Choose a tag to receive from another Midori user.' : 'Send only {symbol} using the {network} network.', { symbol: $wallet.crypto.symbol, network }) }}</p>
+        <p v-if="!midori && base && !legacy" class="&__note">{{ $t('Base accepts native USDC only.') }}</p>
+        <p v-if="$wallet.isEvm" class="&__note">{{ $t('Use the address shown for this network. Your Base address is different.') }}</p>
         <p v-if="!online || balanceFailed" class="&__notice" role="status">{{ $t('Receiving details remain available. Check Activity when connected.') }}</p>
         <p v-if="midori && online && !tagsEnabled" class="&__notice" role="status">{{ $t('Tags are unavailable. Use your Base address.') }}</p>
         <p v-else-if="midori && !paymentsEnabled && tagsEnabled" class="&__notice" role="status">{{ $t('Tag payments will be available when sending is enabled. You can receive now using your Base address.') }}</p>

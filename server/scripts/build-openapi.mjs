@@ -153,15 +153,19 @@ endpoint("get", "/api/v1/changelly-fiat/orders/{id}", "Get Changelly Fiat order"
 
 const evmHash = { type: 'string', pattern: '^0x[0-9a-fA-F]{64}$' };
 const evmPayment = { network: { enum: ['ethereum','arbitrum','polygon','avalanche'] }, chainId: { enum: [1,137,42161,43114] }, from: address, to: address, contract: address, symbol: { enum: ['USDC','USDT','USDT0'] }, decimals: { const: 6 }, amountAtomic: atomic, nativeSymbol: { enum: ['ETH','POL','AVAX'] } };
+const opQuantity = { type: 'string', pattern: '^0x[0-9a-fA-F]+$' };
+const opAddress = { anyOf: [address, { type: 'null' }] };
+const opData = { type: 'string', pattern: '^0x[0-9a-fA-F]*$' };
+schemas.EvmOperation = object({ sender: address, nonce: opQuantity, callGasLimit: opQuantity, verificationGasLimit: opQuantity, preVerificationGas: opQuantity, maxFeePerGas: opQuantity, maxPriorityFeePerGas: opQuantity, factory: opAddress, factoryData: { anyOf: [opData, { type: 'null' }] }, callData: opData, paymaster: { type: 'null' }, paymasterData: { type: 'null' }, signature: opData });
 schemas.EvmPayment = object(evmPayment);
-schemas.EvmQuote = object({ ...evmPayment, nonce: { type: 'integer',minimum: 0,maximum: 4294967295 }, gasLimit: atomic,gasPrice: atomic,maxFeeAtomic: atomic,expiresAt: { type: 'string',format: 'date-time' } });
-schemas.EvmStatus = object({ hash: evmHash,status: { enum: ['ambiguous','submitted','pending','confirmed','reverted'] },confirmations: atomic },['hash','status']);
-schemas.EvmTransfer = object({ hash: evmHash,quote: ref('EvmPayment'),status: { enum: ['ambiguous','submitted','pending','confirmed','reverted'] },createdAt: { type: 'string',format: 'date-time' } });
+schemas.EvmQuote = object({ ...evmPayment, nonce: atomic,operation: ref('EvmOperation'),maxFeeAtomic: atomic,expiresAt: { type: 'string',format: 'date-time' } });
+schemas.EvmStatus = object({ hash: evmHash,transactionHash: evmHash,status: { enum: ['ambiguous','submitted','pending','confirmed','reverted'] },confirmations: atomic },['hash','status']);
+schemas.EvmTransfer = object({ hash: evmHash,quote: ref('EvmQuote'),transactionHash: evmHash,confirmations: atomic,status: { enum: ['ambiguous','submitted','pending','confirmed','reverted'] },createdAt: { type: 'string',format: 'date-time' } },['hash','quote','status','createdAt']);
 schemas.EvmEntry = object({ id: { type: 'string',pattern: '^0x[0-9a-fA-F]{64}:0x[0-9a-fA-F]+$' },transactionHash: evmHash,contract: address,from: address,to: address,amountAtomic: atomic,timestamp: { type: 'string',format: 'date-time' },status: { enum: ['confirmed','pending'] },incoming: { type: 'boolean' },blockNumber: { type: 'integer',minimum: 0 } },['id','transactionHash','contract','from','to','amountAtomic','timestamp','status','incoming']);
 const evmContract = [
  ['balance',object({contract: address}),object({network: string,chainId: {type:'integer'},contract: address,address,readAt:{type:'string',format:'date-time'},balanceAtomic:atomic,nativeBalanceAtomic:atomic,blockNumber:atomic})],
  ['quote',object({contract:address,to:address,amountAtomic:atomic}),ref('EvmQuote')],
- ['broadcast',object({raw:{type:'string',pattern:'^0x[0-9a-fA-F]+$',maxLength:4096}}),ref('EvmStatus')],
+ ['broadcast',object({raw:{type:'string',pattern:'^0x[0-9a-fA-F]+$',maxLength:16384}}),ref('EvmStatus')],
  ['retry',object({hash:evmHash}),ref('EvmStatus')],
  ['status',object({hash:evmHash}),ref('EvmStatus')],
  ['pending',object({}),object({transfer:{anyOf:[ref('EvmTransfer'),{type:'null'}]}})],

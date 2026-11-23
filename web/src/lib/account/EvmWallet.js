@@ -9,7 +9,7 @@ export default class EvmWallet extends MidoriWallet {
     this.network = stablecoinNetwork(this.crypto.platform);
     Object.assign(this, { chainId: this.network.chainId, isEvm: true, isWalletConnectSupported: false, isExportSupported: false, isSettingsSupported: false });
   }
-  get address() { return this.#session.descriptor?.ownerAddress; }
+  get address() { return this.#session.descriptor?.address; }
   getPublicKey() { return { address: this.address, chainId: this.chainId }; }
   request(action, data) { return this.#session.evmRequest(this.network.id, action, data); }
   quoteEvm(request) { return this.request('quote', { ...request, contract: this.crypto.address }); }

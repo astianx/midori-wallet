@@ -1,4 +1,4 @@
-import { signEvmTransfer, evmTransaction, evmTransactionHash } from '@midori/wallet-core';
+import { signEvmTransfer, validateEvmPayment, evmTransactionHash } from '@midori/wallet-core';
 import SparkController from './SparkController.js';
 import { normalizeTagAlias, formatMidoriTag, isTagRecipient } from '../tags.js';
 import { captureWalletError } from '../sentry.js';
@@ -474,12 +474,12 @@ export default class MidoriSession {
   }
   evmRecord(network) {
     if (!this.#detailsKey) throw Object.assign(new Error(), { code: 'ACCOUNT_LOCKED' });
-    const value = this.storage.getItem(`_midori_evm_${this.descriptor.ownerAddress}_${network}`);
+    const value = this.storage.getItem(`_midori_evm_${this.descriptor.address}_${network}`);
     return value ? JSON.parse(decrypt(value, hex.encode(this.#detailsKey))) : null;
   }
   saveEvm(network, value) {
     if (!this.#detailsKey) throw Object.assign(new Error(), { code: 'ACCOUNT_LOCKED' });
-    this.storage.setItem(`_midori_evm_${this.descriptor.ownerAddress}_${network}`, encrypt(JSON.stringify(value), hex.encode(this.#detailsKey)));
+    this.storage.setItem(`_midori_evm_${this.descriptor.address}_${network}`, encrypt(JSON.stringify(value), hex.encode(this.#detailsKey)));
   }
   async pendingEvm(network) {
     const remote = await this.evmRequest(network, 'pending');
@@ -502,7 +502,7 @@ export default class MidoriSession {
     const generation = this.#generation, expected = JSON.stringify(quote);
     const check = () => {
       if (generation !== this.#generation || !stillApproved() || expected !== JSON.stringify(quote)) throw Object.assign(new Error(), { code: 'PAYMENT_CHANGED' });
-      evmTransaction(quote, this.descriptor, asset);
+      validateEvmPayment(quote, this.descriptor, asset);
     };
     check();
     if (this.evmSigning) throw Object.assign(new Error(), { code: 'PAYMENT_ALREADY_PENDING' });
@@ -512,7 +512,7 @@ export default class MidoriSession {
       const payload = await this.vault.open(pinHash), seed = decode(payload.walletSeed);
       try {
         check();
-        if (payload.descriptor.ownerAddress !== this.descriptor.ownerAddress) throw new Error('Recovery mismatch');
+        if (payload.descriptor.address !== this.descriptor.address || payload.descriptor.ownerAddress !== this.descriptor.ownerAddress) throw new Error('Recovery mismatch');
         const raw = await signEvmTransfer(seed, payload.descriptor, quote, asset);
         check();
         const record = { hash: evmTransactionHash(raw), quote: structuredClone(quote), createdAt: new Date().toISOString(), raw, status: 'ambiguous' };

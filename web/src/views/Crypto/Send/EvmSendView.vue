@@ -68,7 +68,7 @@ export default {
     <section v-if="result" role="status">
       <p>{{ $t(result.status === 'confirmed' ? 'Payment confirmed' : result.status === 'reverted' ? 'Payment failed' : 'We are checking this payment. Do not send it again.') }}</p>
       <p v-if="result.quote">{{ format(result.quote.amountAtomic, result.quote.decimals) }} {{ result.quote.symbol }}</p>
-      <a :href="`${network.explorer}/tx/${result.hash}`" target="_blank" rel="noopener noreferrer">{{ $t('View in Block Explorer') }}</a>
+      <a v-if="result.transactionHash" :href="`${network.explorer}/tx/${result.transactionHash}`" target="_blank" rel="noopener noreferrer">{{ $t('View in Block Explorer') }}</a>
       <MwButton v-if="tracking" type="primary" :isLoading="busy" @click="check">{{ $t('Check payment status') }}</MwButton>
       <MwButton v-if="result.status === 'ambiguous'" type="secondary" :isLoading="busy" @click="retry">{{ $t('Retry the same transaction') }}</MwButton>
       <MwButton v-if="!tracking" type="primary" @click="result = null; edited()">{{ $t('Back') }}</MwButton>

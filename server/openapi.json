@@ -8270,7 +8270,7 @@
                   "raw": {
                     "type": "string",
                     "pattern": "^0x[0-9a-fA-F]+$",
-                    "maxLength": 4096
+                    "maxLength": 16384
                   }
                 },
                 "required": [
@@ -12015,6 +12015,91 @@
         ],
         "additionalProperties": false
       },
+      "EvmOperation": {
+        "type": "object",
+        "properties": {
+          "sender": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$"
+          },
+          "nonce": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]+$"
+          },
+          "callGasLimit": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]+$"
+          },
+          "verificationGasLimit": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]+$"
+          },
+          "preVerificationGas": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]+$"
+          },
+          "maxFeePerGas": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]+$"
+          },
+          "maxPriorityFeePerGas": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]+$"
+          },
+          "factory": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]{40}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "factoryData": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^0x[0-9a-fA-F]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "callData": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]*$"
+          },
+          "paymaster": {
+            "type": "null"
+          },
+          "paymasterData": {
+            "type": "null"
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]*$"
+          }
+        },
+        "required": [
+          "sender",
+          "nonce",
+          "callGasLimit",
+          "verificationGasLimit",
+          "preVerificationGas",
+          "maxFeePerGas",
+          "maxPriorityFeePerGas",
+          "factory",
+          "factoryData",
+          "callData",
+          "paymaster",
+          "paymasterData",
+          "signature"
+        ],
+        "additionalProperties": false
+      },
       "EvmPayment": {
         "type": "object",
         "properties": {
@@ -12136,19 +12221,12 @@
             ]
           },
           "nonce": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 4294967295
-          },
-          "gasLimit": {
             "type": "string",
             "pattern": "^(0|[1-9][0-9]{0,77})$",
             "description": "Exact uint256 in base units; never a JSON number"
           },
-          "gasPrice": {
-            "type": "string",
-            "pattern": "^(0|[1-9][0-9]{0,77})$",
-            "description": "Exact uint256 in base units; never a JSON number"
+          "operation": {
+            "$ref": "#/components/schemas/EvmOperation"
           },
           "maxFeeAtomic": {
             "type": "string",
@@ -12171,8 +12249,7 @@
           "amountAtomic",
           "nativeSymbol",
           "nonce",
-          "gasLimit",
-          "gasPrice",
+          "operation",
           "maxFeeAtomic",
           "expiresAt"
         ],
@@ -12182,6 +12259,10 @@
         "type": "object",
         "properties": {
           "hash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          },
+          "transactionHash": {
             "type": "string",
             "pattern": "^0x[0-9a-fA-F]{64}$"
           },
@@ -12214,7 +12295,16 @@
             "pattern": "^0x[0-9a-fA-F]{64}$"
           },
           "quote": {
-            "$ref": "#/components/schemas/EvmPayment"
+            "$ref": "#/components/schemas/EvmQuote"
+          },
+          "transactionHash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{64}$"
+          },
+          "confirmations": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,77})$",
+            "description": "Exact uint256 in base units; never a JSON number"
           },
           "status": {
             "enum": [

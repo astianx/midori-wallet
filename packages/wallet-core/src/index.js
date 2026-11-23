@@ -4,14 +4,11 @@ import WDK from '@tetherto/wdk';
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm';
 import WalletManagerEvmErc4337, { WalletAccountReadOnlyEvmErc4337 } from '@tetherto/wdk-wallet-evm-erc-4337';
 import { HDNodeWallet, Interface, getAddress, verifyMessage, verifyTypedData } from 'ethers';
-import { ENTRYPOINT_V7, SafeAccountV0_3_0 } from 'abstractionkit';
+import { SafeAccountV0_3_0 } from 'abstractionkit';
 
 export const SDK_VERSIONS = Object.freeze({ core: '1.0.0-beta.22', evm: '1.0.0-beta.19', erc4337: '1.0.0-beta.22', abstractionkit: '0.4.0', ethers: '6.17.0' });
-export const SAFE_CONFIG = Object.freeze({
-  safeModulesVersion: '0.3.0', entryPoint: ENTRYPOINT_V7,
-  saltNonce: '0x69b348339eea4ed93f9d11931c3b894c8f9d8c7663a053024b11cb7eb4e5a1f6',
-  module: '0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226', setup: '0x2dd68b007B46fBe91B9A7c3EDa5A7a1063cB5b47',
-});
+export { SAFE_CONFIG } from './safe-config.js';
+import { SAFE_CONFIG } from './safe-config.js';
 const tokenInterface = new Interface(['event Transfer(address indexed from,address indexed to,uint256 value)', 'function balanceOf(address) view returns (uint256)']);
 
 export function parseTokenAmount(value, decimals = 6) {

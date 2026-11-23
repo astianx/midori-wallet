@@ -117,16 +117,16 @@ export function createApp({ db, config, webApp, provider, rampProvider, exchange
     await activePrincipal(client, principal);
     await limitAttempts(client, `evm:${principal.wallet_id}`, 120);
     const saved = await account(client, principal.wallet_id, req.params.id);
-    const owner = saved.descriptor.ownerAddress, { network, action } = req.params;
+    const descriptor = saved.descriptor, owner = descriptor.address, { network, action } = req.params;
     requireValue(evmNetworks.some(item => item.id === network), 'Unsupported network');
     if (action === 'balance') { exactKeys(req.body, ['contract']); return evm.balance(network, owner, req.body.contract); }
     if (action === 'transaction') { exactKeys(req.body, ['contract', 'reference']); return evm.transaction(network, owner, req.body.contract, req.body.reference); }
     if (action === 'history') { exactKeys(req.body, ['contract'], ['cursor']); return evm.history(network, owner, req.body.contract, req.body.cursor); }
-    if (action === 'status') { exactKeys(req.body, ['hash']); return evmPayments.status(req.params.id, network, owner, req.body.hash); }
-    if (action === 'pending') { exactKeys(req.body, []); return evmPayments.pending(req.params.id, network, owner); }
-    if (action === 'quote') return evmPayments.quote(req.params.id, network, owner, req.body);
-    if (action === 'retry') return evmPayments.retry(req.params.id, network, owner, req.body);
-    if (action === 'broadcast') return evmPayments.broadcast(req.params.id, network, owner, req.body);
+    if (action === 'status') { exactKeys(req.body, ['hash']); return evmPayments.status(req.params.id, network, descriptor, req.body.hash); }
+    if (action === 'pending') { exactKeys(req.body, []); return evmPayments.pending(req.params.id, network, descriptor); }
+    if (action === 'quote') return evmPayments.quote(req.params.id, network, descriptor, req.body);
+    if (action === 'retry') return evmPayments.retry(req.params.id, network, descriptor, req.body);
+    if (action === 'broadcast') return evmPayments.broadcast(req.params.id, network, descriptor, req.body);
     throw new ApiError(400, 'INVALID_REQUEST', 'Unsupported EVM action');
   }, 200, false);
   protectedRoute('get', '/api/v1/me', async (req, client, principal) => {

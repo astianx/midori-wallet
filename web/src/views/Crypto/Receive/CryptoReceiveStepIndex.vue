@@ -62,7 +62,6 @@ export default {
       <section class="&__instructions"><div class="&__asset"><MwCryptoLogo :crypto="$wallet.crypto" :platform="$wallet.platform" /><div><h1>{{ $wallet.crypto.symbol }}</h1><span>{{ $wallet.crypto.name }} · {{ network }}</span></div></div>
         <p class="&__lead">{{ $t(midori ? tag ? 'Share your tag with the person sending you money.' : 'Choose a tag to receive from another Midori user.' : 'Send only {symbol} using the {network} network.', { symbol: $wallet.crypto.symbol, network }) }}</p>
         <p v-if="!midori && base && !legacy" class="&__note">{{ $t('Base accepts native USDC only.') }}</p>
-        <p v-if="$wallet.isEvm" class="&__note">{{ $t('Use the address shown for this network. Your Base address is different.') }}</p>
         <p v-if="!online || balanceFailed" class="&__notice" role="status">{{ $t('Receiving details remain available. Check Activity when connected.') }}</p>
         <p v-if="midori && online && !tagsEnabled" class="&__notice" role="status">{{ $t('Tags are unavailable. Use your Base address.') }}</p>
         <p v-else-if="midori && !paymentsEnabled && tagsEnabled" class="&__notice" role="status">{{ $t('Tag payments will be available when sending is enabled. You can receive now using your Base address.') }}</p>

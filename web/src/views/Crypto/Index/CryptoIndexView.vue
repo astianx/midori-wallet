@@ -43,10 +43,10 @@ export default {
       chartError: false,
       chartRequest: 0,
       showConfirmRemove: false,
-      subtitleWithSymbol: cryptoSubtitleWithSymbol(this.$wallet),
     };
   },
   computed: {
+    subtitleWithSymbol() { return cryptoSubtitleWithSymbol(this.$wallet); },
     isLoading() {
       return this.$walletState === this.$STATE_LOADING;
     },

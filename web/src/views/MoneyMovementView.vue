@@ -1,4 +1,5 @@
 <script>
+import { groupStablecoins, stablecoinFamily } from '../lib/account/stablecoin-accounts.js';
 import MainLayout from '../layouts/MainLayout.vue';
 import MwAppIcon from '../components/MwAppIcon.vue';
 import MwCryptoLogo from '../components/MwCryptoLogo.vue';
@@ -12,19 +13,21 @@ export default {
   props: { direction: { type: String, required: true, validator: value => ['add', 'withdraw'].includes(value) } },
   data() { return { options: null, loading: false, error: '', disposed: false }; },
   computed: {
+    groupedAssets() { return groupStablecoins(this.$cryptos); },
+    sendAssets() { return this.groupedAssets.filter(item => stablecoinFamily(item.crypto) === 'USDC' || ['bitcoin','spark'].includes(item.crypto.platform)).map(item => { const position = item.positions?.find(position => position.crypto.platform !== 'base' && this.$account.capabilities.evm?.includes(position.crypto.platform)) || item; return { ...position, title: item.title, subtitle: item.subtitle }; }).filter(item => item.crypto.platform !== 'base' || this.$account.capabilities.payments); },
     adding() { return this.direction === 'add'; },
     title() { return this.$t(this.adding ? 'Add money' : 'Withdraw'); },
     methods() {
       return this.adding
         ? [{ id: 'receive', label: this.$t('From another wallet'), description: this.$t('Crypto assets'), icon: 'receive', enabled: this.$cryptos.length > 0 }, { id: 'buy', label: this.$t('Local currency'), description: this.$t('Buy with local currency'), icon: 'plus', enabled: this.canUseRamp('buy') }]
-        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Crypto assets'), icon: 'send', enabled: this.$cryptos.some(item => ['bitcoin','spark'].includes(item.crypto.platform) || this.$account.capabilities.payments) }, { id: 'sell', label: this.$t('Local currency'), description: this.$t('Convert to local currency'), icon: 'refresh', enabled: this.canUseRamp('sell') }];
+        : [{ id: 'send', label: this.$t('To another wallet'), description: this.$t('Crypto assets'), icon: 'send', enabled: this.sendAssets.length > 0 }, { id: 'sell', label: this.$t('Local currency'), description: this.$t('Convert to local currency'), icon: 'refresh', enabled: this.canUseRamp('sell') }];
     },
     selected() { return this.methods.find(method => method.id === this.$route.query.method); },
     assetNetwork() { return this.isRamp && this.options?.environment === 'STAGING' ? this.$t('Test mode. Do not use real money.') : this.$t('Crypto assets'); },
     isRamp() { return ['buy', 'sell'].includes(this.selected?.id); },
     assets() {
       if (!this.selected?.enabled) return [];
-      if (!this.isRamp) return this.selected.id === 'send' ? this.$cryptos.filter(item => ['bitcoin','spark'].includes(item.crypto.platform) || this.$account.capabilities.payments) : this.$cryptos;
+      if (!this.isRamp) return this.selected.id === 'send' ? this.sendAssets : this.groupedAssets;
       const kind = this.selected.id;
       if (this.$account.capabilities.rampProvider === 'changelly') return this.$cryptos;
       if (!this.options?.products.includes(kind.toUpperCase()) || !this.options.fiatCurrencies.some(item => item[kind])) return [];
@@ -83,7 +86,7 @@ export default {
           <template v-else>
             <p v-if="isRamp && options?.environment === 'STAGING'" class="&__notice" role="status">{{ $t('Test mode. Do not use real money.') }}</p>
             <p v-if="!assets.length" class="&__notice" role="status">{{ $t(isRamp ? 'The selected asset or currency is unavailable.' : 'Balance unavailable') }}</p>
-            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.crypto.name }} · {{ item.crypto.platform === 'bitcoin' ? 'Bitcoin' : item.crypto.platform === 'spark' ? 'Spark / Lightning' : isRamp && options?.environment === 'STAGING' ? 'Base Sepolia' : 'Base' }}</small></span><MwAppIcon name="arrow" /></RouterLink>
+            <RouterLink v-for="item in assets" :key="item.crypto._id" class="&__row" :to="{ name: `crypto.${selected.id}`, params: { cryptoId: item.crypto._id } }"><MwCryptoLogo :crypto="item.crypto" :platform="item.platform" /><span class="&__label">{{ item.crypto.symbol }}<small>{{ item.subtitle || item.crypto.name }}{{ isRamp && options?.environment === 'STAGING' ? ' · Base Sepolia' : '' }}</small></span><MwAppIcon name="arrow" /></RouterLink>
           </template>
         </template>
       </section>

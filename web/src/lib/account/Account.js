@@ -1,3 +1,4 @@
+import { stablecoinFamily, stablecoinPositions, canonicalStablecoin } from './stablecoin-accounts.js';
 import { captureWalletError } from '../sentry.js';
 import { EventEmitter } from 'events';
 import { ed25519 } from '@noble/curves/ed25519';
@@ -351,7 +352,7 @@ export default class Account extends EventEmitter {
       cryptoDB: this.#cryptoDB,
     });
     await this.#details.init();
-    if (this.#details.get('cryptos') === undefined) this.#details.setCryptos(this.#cryptoDB.all.filter(crypto => crypto.supported && crypto.platform === 'base' && crypto.addable !== false));
+    if (this.#details.get('cryptos') === undefined) this.#details.setCryptos(['USDC', 'USDT'].map(family => canonicalStablecoin(this.#cryptoDB.all, family)));
     this.emit('update', 'user');
     this.emit('update', 'language');
     this.emit('update', 'currency');
@@ -388,7 +389,7 @@ export default class Account extends EventEmitter {
   }
 
   async #initWalletsFromDetails(walletSeed = undefined) {
-    const cryptos = this.#details.getSupportedCryptos();
+    const cryptos = stablecoinPositions(this.#details.getSupportedCryptos(), this.#cryptoDB.all);
     const walletStorages = {};
     const wallets = await Promise.all(cryptos.map(async (crypto) => {
       const wallet = await this.#createWallet({
@@ -586,11 +587,20 @@ export default class Account extends EventEmitter {
     this.logout();
   }
 
+  async #addStablecoin(crypto) {
+    const family = stablecoinFamily(crypto);
+    const positions = this.#cryptoDB.all.filter(item => item.addable !== false && stablecoinFamily(item) === family);
+    const wallets = await Promise.all(positions.map(item => this.#createWallet({ crypto: item })));
+    this.#wallets.setMany(wallets);
+    this.#details.addCrypto(canonicalStablecoin(this.#cryptoDB.all, family));
+    await Promise.allSettled(wallets.map(wallet => wallet.load()));
+  }
+
   async addWallet(crypto, walletSeed) {
-    if (this.#details.hasCrypto(crypto)) {
-      throw new CryptoAlreadyAddedError(crypto._id);
-    }
-    await this.#addWallet(crypto, walletSeed);
+    const family = stablecoinFamily(crypto);
+    if (this.#wallets.has(crypto._id) || this.#details.hasCrypto(crypto)) throw new CryptoAlreadyAddedError(crypto._id);
+    if (family) await this.#addStablecoin(crypto);
+    else await this.#addWallet(crypto, walletSeed);
     await this.#initMarket();
     await this.#details.save();
     this.emit('update');
@@ -598,8 +608,9 @@ export default class Account extends EventEmitter {
 
   async addWallets(cryptos, walletSeed) {
     for (const crypto of cryptos) {
-      if (this.#details.hasCrypto(crypto)) continue;
-      await this.#addWallet(crypto, walletSeed);
+      if (this.#wallets.has(crypto._id) || this.#details.hasCrypto(crypto)) continue;
+      if (stablecoinFamily(crypto)) await this.#addStablecoin(crypto);
+      else await this.#addWallet(crypto, walletSeed);
     }
     await this.#initMarket();
     await this.#details.save();
@@ -663,7 +674,12 @@ export default class Account extends EventEmitter {
   }
 
   async removeWallet(crypto) {
-    if (crypto.type === 'coin') {
+    const family = stablecoinFamily(crypto);
+    if (family) {
+      for (const wallet of this.wallets().filter(wallet => stablecoinFamily(wallet.crypto) === family)) {
+        this.#wallets.delete(wallet.crypto._id); this.#details.removeCrypto(wallet.crypto);
+      }
+    } else if (crypto.type === 'coin') {
       const wallets = this.#wallets.filterByPlatform(crypto.platform);
       for (const wallet of wallets) {
         this.#wallets.delete(wallet.crypto._id);

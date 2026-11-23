@@ -1,5 +1,6 @@
 export function paymentError(error,t,{ symbol = 'USDT' } = {}) {
   const messages={
+    USDC_ONLY:'Only USDC can be sent.',
     INVALID_INVOICE:'Check the payment details.',INVOICE_EXPIRED:'This quote expired. Review the payment again.',
     PAYMENT_TRACKING_REQUIRED:'This payment is already authorized. Keep checking its status.',
     TAG_ACCOUNT_CONTROL_FAILED:'This tag must be verified again by its owner.',

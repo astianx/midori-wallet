@@ -137,3 +137,5 @@ export const evmNetworks = STABLECOIN_NETWORKS.filter(network => network.enabled
 export function stablecoinNetwork(id) { return STABLECOIN_NETWORKS.find(network => network.id === id); }
 export function networkAsset(network, contract) { return network?.assets.find(asset => asset.contract.toLowerCase() === contract?.toLowerCase()); }
 export function isStablecoin(symbol) { return ['USDC', 'USDT', 'USDT0'].includes(symbol); }
+
+export function canSendStablecoin(symbol) { return symbol === 'USDC'; }

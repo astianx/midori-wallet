@@ -36,9 +36,12 @@ export default {
 
 <template>
   <MwDropdownMenu class="&">
-    <template #button>
+    <template #button="{ expanded, panelId }">
       <MwNavbarButton
         :title="$t('Menu')"
+                aria-haspopup="dialog"
+                :aria-expanded="expanded"
+                :aria-controls="panelId"
         :aria-label="$t('Menu')"
       >
         <KebabIcon />

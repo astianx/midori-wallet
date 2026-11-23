@@ -8,17 +8,19 @@ export default {
   props: { symbol: { type: String, default: 'USDC' }, network: { type: String, default: '' }, destination: { type: String, default: 'crypto' }, compact: Boolean },
   data() { return { open: false, filter: this.symbol === 'USDC' ? 'USDC' : 'USDT', busy: false, error: '' }; },
   computed: {
+    receiving() { return this.destination === 'crypto.receive'; },
+    sending() { return this.destination === 'crypto.send'; },
     current() { return STABLECOIN_NETWORKS.find(network => network.id === this.network); },
     rows() { return STABLECOIN_NETWORKS.filter(network => this.available(network) && network.assets.some(asset => this.matches(asset))); },
   },
   methods: {
-    matches(asset) { return this.filter === 'USDC' ? asset.symbol === 'USDC' : ['USDT', 'USDT0'].includes(asset.symbol); },
-    available(network) { return network.enabled && (network.id === 'base' || this.$account.capabilities.evm?.includes(network.id)); },
-    assets(network) { return network.assets.map(asset => asset.symbol).join(' · '); },
+    matches(asset) { if (this.receiving) return true; if (this.sending) return asset.symbol === 'USDC'; return this.filter === 'USDC' ? asset.symbol === 'USDC' : ['USDT', 'USDT0'].includes(asset.symbol); },
+    available(network) { return network.enabled && (network.id === 'base' && (!this.sending || this.$account.capabilities.payments) || this.$account.capabilities.evm?.includes(network.id)); },
+    assets(network) { return network.assets.filter(asset => !this.sending || asset.symbol === 'USDC').map(asset => asset.symbol).join(' · '); },
     show() { this.filter = this.symbol === 'USDC' ? 'USDC' : 'USDT'; this.error = ''; this.open = true; },
     async choose(network) {
       if (!this.available(network) || this.busy) return;
-      const asset = network.assets.find(asset => this.matches(asset));
+      const asset = network.assets.find(asset => this.matches(asset) && (this.sending || !this.receiving || asset.symbol === this.symbol)) || network.assets[0];
       const id = `${asset.contract}@${network.id}`, crypto = this.$account.cryptoDB.get(id);
       if (!crypto) return;
       this.busy = true; this.error = '';
@@ -42,13 +44,13 @@ export default {
     <MwModal :show="open" :title="$t('Choose the network')" sheet @close="!busy && (open = false)">
       <div class="&__picker" :aria-busy="busy">
         <p class="&__intro">{{ $t('Choose the same network in the wallet or exchange you send from.') }}</p>
-        <div class="&__tabs" role="group" :aria-label="$t('Crypto assets')"><button v-for="token in ['USDC', 'USDT']" :key="token" type="button" :aria-pressed="filter === token" :disabled="busy" @click="filter = token">{{ token }}</button></div>
+        <div v-if="!sending && !receiving" class="&__tabs" role="group" :aria-label="$t('Crypto assets')"><button v-for="token in ['USDC', 'USDT']" :key="token" type="button" :aria-pressed="filter === token" :disabled="busy" @click="filter = token">{{ token }}</button></div>
         <p v-if="error" role="alert" class="&__error">{{ error }}</p>
         <ul class="&__list">
           <li v-for="item in rows" :key="item.id">
-            <button type="button" class="&__option" :disabled="busy" :aria-pressed="item.id === network && filter === (symbol === 'USDC' ? 'USDC' : 'USDT')" @click="choose(item)">
+            <button type="button" class="&__option" :disabled="busy" :aria-pressed="item.id === network && (receiving || sending || filter === (symbol === 'USDC' ? 'USDC' : 'USDT'))" @click="choose(item)">
               <MwNetworkLogo :network="item" /><span class="&__name"><strong>{{ item.name }}</strong><small>{{ assets(item) }}</small></span>
-              <span class="&__availability"><MwAppIcon v-if="item.id === network && filter === (symbol === 'USDC' ? 'USDC' : 'USDT')" name="check" /></span>
+              <span class="&__availability"><MwAppIcon v-if="item.id === network && (receiving || sending || filter === (symbol === 'USDC' ? 'USDC' : 'USDT'))" name="check" /></span>
             </button>
           </li>
         </ul>

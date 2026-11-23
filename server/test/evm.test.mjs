@@ -14,7 +14,7 @@ const seed = new Uint8Array(64).fill(1);
 const session = await createWalletSession(seed, { chainId: 8453 });
 const descriptor = session.descriptor;
 session.dispose();
-const network = stablecoinNetwork('ethereum'), asset = network.assets.find(asset => asset.symbol === 'USDT');
+const network = stablecoinNetwork('ethereum'), asset = network.assets.find(asset => asset.symbol === 'USDC');
 const target = '0x' + '12'.repeat(20);
 const operation = (chain = network, token = asset) => ({ sender: descriptor.address, nonce: '0x7', factory: descriptor.factoryAddress, factoryData: descriptor.factoryData, callData: SafeAccountV0_3_0.createAccountCallDataSingleTransaction({ to: token.contract, value: 0n, data: evmToken.encodeFunctionData('transfer', [target, 12345678901234567890n]) }), callGasLimit: '0x13880', verificationGasLimit: '0x493e0', preVerificationGas: '0xc350', maxFeePerGas: '0x3b9aca00', maxPriorityFeePerGas: '0x3b9aca00', paymaster: null, paymasterData: null, signature: '0x' });
 const quote = (chain = network, token = asset) => ({ network: chain.id, chainId: chain.chainId, from: descriptor.address, to: target, contract: token.contract, symbol: token.symbol, decimals: token.decimals, amountAtomic: '12345678901234567890', nonce: '7', operation: operation(chain, token), maxFeeAtomic: '430000000000000', nativeSymbol: chain.nativeSymbol, expiresAt: new Date(Date.now() + 120000).toISOString() });
@@ -37,9 +37,9 @@ test('catalog contains only operational networks and never offers Base USDT', ()
   const catalog = new AssetCatalog(), bridge = catalog.all.find(item => item.platform === 'base' && item.symbol === 'USDT');
   assert.equal(bridge.addable, false); assert.equal(bridge.supported, true);
 });
-test('every token on every network signs for the original Base Safe, with replay protection', async () => {
+test('USDC on every network signs for the original Base Safe, with replay protection', async () => {
   const hashes = new Set();
-  for (const chain of evmNetworks) for (const token of chain.assets) {
+  for (const chain of evmNetworks) for (const token of chain.assets.filter(token => token.symbol === 'USDC')) {
     assert.equal(evmAccount(descriptor).accountAddress.toLowerCase(), descriptor.address.toLowerCase());
     const raw = await signEvmTransfer(seed, descriptor, quote(chain, token), { ...token, chainId: chain.chainId });
     const parsed = inspectEvmTransfer(raw, chain, descriptor);
@@ -48,7 +48,7 @@ test('every token on every network signs for the original Base Safe, with replay
     assert.equal(parsed.hash, evmTransactionHash(raw));
     assert.ok(!hashes.has(parsed.hash)); hashes.add(parsed.hash);
   }
-  assert.equal(hashes.size, 8);
+  assert.equal(hashes.size, 4);
   assert.notEqual(descriptor.address, descriptor.ownerAddress);
 });
 test('local approval rejects changed account, chain, token, recipient, amount, deployment and maximum fee', async () => {
@@ -130,4 +130,18 @@ test('journal reserves Safe nonce before network I/O and blocks a second authori
   const changed = quote(); changed.to = '0x' + '34'.repeat(20); changed.operation.callData = SafeAccountV0_3_0.createAccountCallDataSingleTransaction({ to: asset.contract, value: 0n, data: evmToken.encodeFunctionData('transfer', [changed.to, BigInt(changed.amountAtomic)]) });
   const other = await signEvmTransfer(seed, descriptor, changed, { ...asset, chainId: 1 });
   await assert.rejects(service.broadcast('account', 'ethereum', descriptor, { raw: other }), { code: 'PAYMENT_ALREADY_PENDING' }); assert.equal(sent, 1);
+});
+
+test('USDT remains receivable but cannot be quoted, authorized or signed for a new payment', async () => {
+  for (const chain of evmNetworks) for (const token of chain.assets.filter(token => token.symbol !== 'USDC')) {
+    assert.throws(() => validateEvmPayment(quote(chain, token), descriptor, { ...token, chainId: chain.chainId }), /Only USDC/);
+    await assert.rejects(signEvmTransfer(seed, descriptor, quote(chain, token), { ...token, chainId: chain.chainId }), /Only USDC/);
+  }
+  const tether = network.assets.find(token => token.symbol === 'USDT'), { gateway, calls } = provider();
+  await assert.rejects(gateway.quote('ethereum', descriptor, { contract: tether.contract, to: target, amountAtomic: '1' }), { code: 'USDC_ONLY' });
+  assert.ok(!calls.some(call => /estimate|send/.test(call.method)));
+  const { paymentService } = await import('../lib/payments.js');
+  const db = { query() { throw Error('Unsupported token must not touch the database'); } };
+  const service = paymentService(db, { paymentsEnabled: true }, {});
+  await assert.rejects(service.create({}, '11111111-1111-4111-8111-111111111111', { idempotencyKey: '22222222-2222-4222-8222-222222222222', contract: '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2', amountAtomic: '1', recipient: { kind: 'address', address: target }, feeMode: 'token', feeToken: '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2', maxFeeAtomic: '1' }), { code: 'USDC_ONLY' });
 });

@@ -1,4 +1,5 @@
 <script>
+import { stablecoinFamily, canonicalStablecoin } from '../../../lib/account/stablecoin-accounts.js';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
 
@@ -17,6 +18,12 @@ export default {
     SwapIcon,
   },
   computed: {
+    stablecoinFamily() { return stablecoinFamily(this.$wallet.crypto); },
+    sendAsset() {
+      if (!stablecoinFamily(this.$wallet.crypto)) return this.$wallet.crypto;
+      return this.$account.cryptoDB.all.find(crypto => crypto.symbol === 'USDC' && crypto.platform === this.$wallet.crypto.platform) || canonicalStablecoin(this.$account.cryptoDB.all, 'USDC');
+    },
+    sendEnabled() { return this.$account.wallet(this.sendAsset._id) && (this.sendAsset.platform !== 'base' || this.$account.capabilities.payments); },
     disabled() {
       if (this.$wallet.crypto._id === 'eos@eos') return true;
       return this.$walletState === this.$STATE_LOADING;
@@ -36,13 +43,13 @@ export default {
     >
       <MwButton
         type="circle"
-        :disabled="!$wallet.isEvm && !['bitcoin','spark'].includes($wallet.crypto.platform) && !$account.capabilities.payments"
-        @click="$router.push({ name: 'crypto.send', params: { cryptoId: $wallet.crypto._id }})"
+        :disabled="!sendEnabled"
+        @click="$router.push({ name: 'crypto.send', params: { cryptoId: sendAsset._id }})"
       >
         <template #circle>
           <SendIcon />
         </template>
-        {{ $t('Send') }}
+        {{ stablecoinFamily ? $t('Send {symbol}', { symbol: 'USDC' }) : $t('Send') }}
       </MwButton>
       <MwButton
         type="circle"

@@ -63,6 +63,7 @@ export default {
   <MainLayout class="&" :title="$t('Send {symbol}', { symbol: $wallet.crypto.symbol })" allowReadFailure>
     <h1>{{ $t(result ? 'Check payment status' : pin ? 'Enter your PIN' : 'Send {symbol}', { symbol: $wallet.crypto.symbol }) }}</h1>
     <MwNetworkSelector v-if="!quote && !result" :symbol="$wallet.crypto.symbol" :network="network.id" destination="crypto.send" />
+    <p v-if="!quote && !result">{{ $t('Balance') }} · {{ $wallet.balance?.toString() ?? '—' }} USDC · {{ network.name }}</p>
     <p v-else>{{ $t('Network') }} · {{ network.name }}</p>
     <p v-if="error" role="alert" class="&__error">{{ error }}</p>
     <section v-if="result" role="status">

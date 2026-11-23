@@ -1,6 +1,6 @@
 import { HDNodeWallet, Interface, getAddress, hexlify, toUtf8Bytes, toUtf8String, verifyTypedData } from 'ethers';
 import { SafeAccountV0_3_0, calculateUserOperationMaxGasCost, createUserOperationHash } from 'abstractionkit';
-import { stablecoinNetwork, networkAsset } from '../../../config/stablecoin-networks.js';
+import { stablecoinNetwork, networkAsset, canSendStablecoin } from '../../../config/stablecoin-networks.js';
 import { paymentOperation } from './payment.js';
 import { SAFE_CONFIG } from './safe-config.js';
 
@@ -26,6 +26,7 @@ export function evmAccount(descriptor) {
 export function validateEvmPayment(quote, descriptor, expectedAsset, { allowExpired = false } = {}) {
   const network = stablecoinNetwork(quote?.network), asset = networkAsset(network, quote?.contract);
   check(network?.enabled && network.id !== 'base' && asset && quote.chainId === network.chainId && evmSame(quote.from, descriptor.address) && evmSame(asset.contract, expectedAsset.address || expectedAsset.contract) && quote.chainId === expectedAsset.chainId && quote.symbol === asset.symbol && quote.decimals === asset.decimals && quote.nativeSymbol === network.nativeSymbol);
+  check(canSendStablecoin(asset.symbol), 'Only USDC can be sent.');
   evmAccount(descriptor);
   const expiry = Date.parse(quote.expiresAt);
   check(Number.isFinite(expiry) && (allowExpired || (expiry > Date.now() && expiry <= Date.now() + 300000)), 'Quote expired');

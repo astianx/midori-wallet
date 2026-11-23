@@ -1,5 +1,5 @@
 import { getAddress, Interface } from 'ethers';
-import { evmNetworks, stablecoinNetwork, networkAsset } from '../../config/stablecoin-networks.js';
+import { evmNetworks, stablecoinNetwork, networkAsset, canSendStablecoin } from '../../config/stablecoin-networks.js';
 import { evmToken, evmRecipient, evmAccount, validateEvmPayment, inspectEvmTransfer, evmSame } from '../../packages/wallet-core/src/evm.js';
 import { paymentOperation } from '../../packages/wallet-core/src/payment.js';
 import { SAFE_CONFIG } from '../../packages/wallet-core/src/safe-config.js';
@@ -52,6 +52,7 @@ export function evmGateway({ fetchImpl = fetch, rpcUrls = {}, bundlerUrls = {} }
       exactKeys(body, ['contract', 'to', 'amountAtomic']);
       const chain = await connect(id, true), asset = networkAsset(chain, body.contract), smart = evmAccount(descriptor), owner = descriptor.address;
       requireValue(asset && typeof body.amountAtomic === 'string' && /^[1-9][0-9]{0,77}$/.test(body.amountAtomic) && BigInt(body.amountAtomic) < 2n ** 256n);
+      if (!canSendStablecoin(asset.symbol)) throw new ApiError(400, 'USDC_ONLY', 'Only USDC can be sent.');
       let to;
       try { to = evmRecipient(body.to, owner, asset.contract); } catch { throw new ApiError(400, 'INVALID_RECIPIENT', 'Invalid recipient'); }
       const balance = await balances(chain, owner, asset);

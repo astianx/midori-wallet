@@ -746,5 +746,6 @@
   "WalletConnect supports USDC and bridged USDT on Base only.": "WalletConnect supports USDC and bridged USDT on Base only.",
   "Request USDC or bridged USDT transfers on Base": "Request USDC or bridged USDT transfers on Base",
   "Your Midori tag receives USDC on Base. Use an address for other networks.": "Your Midori tag receives USDC on Base. Use an address for other networks.",
-  "Select a network to view its receiving address.": "Select a network to view its receiving address."
+  "Select a network to view its receiving address.": "Select a network to view its receiving address.",
+  "Only USDC can be sent.": "只能发送 USDC。"
 }

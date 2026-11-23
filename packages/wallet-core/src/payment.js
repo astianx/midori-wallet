@@ -1,3 +1,4 @@
+import { stablecoinNetwork, networkAsset, canSendStablecoin } from '../../../config/stablecoin-networks.js';
 import { Interface, getAddress, verifyTypedData } from 'ethers';
 import { SafeAccountV0_3_0, createUserOperationHash } from 'abstractionkit';
 
@@ -41,6 +42,7 @@ function flattenCall(call, depth = 0) {
 }
 
 export function validatePaymentOperation(value, descriptor, payment) {
+  check(canSendStablecoin(networkAsset(stablecoinNetwork('base'), payment.contract)?.symbol), 'Only USDC can be sent.');
   const op=paymentOperation(value);check(descriptor.chainId===8453 && equalAddress(op.sender,descriptor.address),'Unexpected sender or network');
   check(!op.factory || (equalAddress(op.factory,descriptor.factoryAddress) && op.factoryData===descriptor.factoryData),'Unexpected account deployment');
   check((!op.factory) === (!op.factoryData),'Incomplete factory');

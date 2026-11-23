@@ -1,4 +1,5 @@
 <script>
+import { stablecoinFamily, canonicalStablecoin } from '../../../lib/account/stablecoin-accounts.js';
 import EvmSendView from './EvmSendView.vue';
 import SparkSendView from './SparkSendView.vue';
 import BitcoinSendView from './BitcoinSendView.vue';
@@ -27,6 +28,7 @@ export default {
   components: {
     EvmSendView, MwSteps, MainLayout, MwButton, MwLoader, BitcoinSendView, SparkSendView,
   },
+  computed: { usdcOnly() { return stablecoinFamily(this.$wallet.crypto) === 'USDT'; }, usdc() { return this.$account.cryptoDB.all.find(crypto => crypto.symbol === 'USDC' && crypto.platform === this.$wallet.crypto.platform) || canonicalStablecoin(this.$account.cryptoDB.all, 'USDC'); } },
   data() {
     const owner = this.$wallet.address;
     const path = this.$route.fullPath;
@@ -100,7 +102,8 @@ export default {
 </script>
 
 <template>
-  <EvmSendView v-if="$wallet.isEvm" />
+  <MainLayout v-if="usdcOnly" :title="$t('Send {symbol}', { symbol: 'USDC' })" allowReadFailure><p>{{ $t('Only USDC can be sent.') }}</p><MwButton type="primary" @click="$router.replace({ name: 'crypto.send', params: { cryptoId: usdc._id } })">{{ $t('Send {symbol}', { symbol: 'USDC' }) }}</MwButton><MwButton type="secondary" @click="$router.replace({ name: 'crypto.history', params: $route.params })">{{ $t('History') }}</MwButton></MainLayout>
+  <EvmSendView v-else-if="$wallet.isEvm" />
   <SparkSendView v-else-if="$wallet.crypto.platform === 'spark'" />
   <BitcoinSendView v-else-if="$wallet.crypto.platform === 'bitcoin'" />
   <MwSteps

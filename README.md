@@ -65,6 +65,8 @@ After a desktop build, run `npm run dev:electron` to launch the built client. Na
 
 [GitHub Actions](.github/workflows/ci.yml) builds the web app, desktop packages for Linux, macOS, and Windows, an Android debug APK, and an iOS Simulator bundle. Signed Android APK/AAB builds run automatically on pushes to `main`, or manually on `main` with the `android_release` option, using the `release-signing` environment. Other branches and pull requests only produce validation builds. Artifacts include version, commit and SHA-256 manifests. See the [CI/CD process and troubleshooting guide](.github/README.md) for shared toolchains, signing requirements and manual execution.
 
+Pushing a version tag (`vX.Y.Z`, or `vX.Y.Z-beta.N` for the beta channel) additionally builds release-profile desktop installers, signs the Android APK/AAB, and publishes a **draft** GitHub release with every installer plus an Ed25519-signed update manifest (`midori-updates-<channel>.json` + `.sig`). A human must review and publish the draft; `createGitHubUpdates` in `packages/update-core` ignores draft releases, so nothing auto-updates until then.
+
 Clients can check for updates on the stable or beta channel when the release repository, channel, and Ed25519 public key are configured. Downloads are manual.
 
 ## Repository layout

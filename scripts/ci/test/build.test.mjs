@@ -10,6 +10,7 @@ import { androidSigningConfig } from '../../../config/android-signing.js';
 import { buildPlan } from '../plan.mjs';
 import { collectArtifacts } from '../artifacts.mjs';
 import { decodeKeystore, prepareSigning } from '../android-signing.mjs';
+import { planReleaseAssets } from '../release.mjs';
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'midori-build-test-'));
@@ -38,6 +39,24 @@ test('signing runs only for main pushes or an explicit manual request on main', 
     }
   }
   assert.equal(buildPlan({ event: 'workflow_dispatch', ref: 'refs/heads/main', requested: 'true' }).signedAndroid, true);
+});
+
+test('pushing a version tag signs Android and marks a release build regardless of requested/manual inputs', () => {
+  for (const ref of ['refs/tags/v1.2.3', 'refs/tags/v1.2.3-beta.1', 'refs/tags/v0.0.1']) {
+    const plan = buildPlan({ event: 'push', ref });
+    assert.equal(plan.signedAndroid, true);
+    assert.equal(plan.releaseTag, true);
+  }
+});
+
+test('tag refs only trigger a release on push, and only when they look like a release version', () => {
+  assert.equal(buildPlan({ event: 'workflow_dispatch', ref: 'refs/tags/v1.2.3' }).releaseTag, false);
+  assert.equal(buildPlan({ event: 'pull_request', ref: 'refs/tags/v1.2.3' }).releaseTag, false);
+  for (const ref of ['refs/tags/1.2.3', 'refs/tags/v1.2', 'refs/tags/vfoo', 'refs/tags/v1.2.3-rc.1', 'refs/heads/v1.2.3']) {
+    const plan = buildPlan({ event: 'push', ref });
+    assert.equal(plan.releaseTag, false);
+    assert.equal(plan.signedAndroid, false);
+  }
 });
 
 test('DMG creation retries transient resource contention, uses APFS and verifies the result', async t => {
@@ -140,4 +159,41 @@ test('desktop target architecture preserves Apple Silicon artifacts on Intel mac
   assert.equal(desktopArchitecture('win32', 'x64'), 'x64');
   assert.throws(() => desktopArchitecture('darwin', 'x64', 'invalid'), /Unsupported desktop architecture/);
   assert.throws(() => desktopArchitecture('linux', 'x64', 'arm64'), /requires macOS/);
+});
+
+test('release asset planning picks one installer per platform/arch and skips CI provenance files', () => {
+  const plan = planReleaseAssets([
+    'android-release/midori-wallet-android-v1.0.6.apk',
+    'android-release/midori-wallet-android-v1.0.6.aab',
+    'android-release/manifest.json',
+    'desktop-win/squirrel.windows/x64/midori_wallet-1.0.4-full.nupkg',
+    'desktop-win/squirrel.windows/x64/RELEASES',
+    'desktop-win/squirrel.windows/x64/Midori Wallet Setup.exe',
+    'desktop-win/zip/win32/x64/Midori Wallet-win32-x64-1.0.4.zip',
+    'desktop-win/manifest.json',
+    'desktop-mac/zip/darwin/arm64/Midori Wallet-darwin-arm64-1.0.4.zip',
+    'desktop-mac/Midori-Wallet-1.0.4-arm64.dmg',
+    'desktop-mac/manifest.json',
+    'desktop-linux/zip/linux/x64/Midori Wallet-linux-x64-1.0.4.zip',
+    'desktop-linux/deb/x64/midori-wallet_1.0.4_amd64.deb',
+    'desktop-linux/manifest.json',
+  ]);
+  assert.equal(plan.uploads.includes('android-release/manifest.json'), false);
+  assert.equal(plan.uploads.includes('desktop-win/manifest.json'), false);
+  assert.equal(plan.uploads.length, 10);
+  assert.deepEqual(new Set(plan.manifestAssets.map(asset => `${asset.platform}:${asset.arch}`)), new Set(['android:any', 'win32:x64', 'darwin:arm64', 'linux:x64']));
+  assert.equal(plan.manifestAssets.find(asset => asset.platform === 'android').file, 'android-release/midori-wallet-android-v1.0.6.apk');
+  assert.equal(plan.manifestAssets.find(asset => asset.platform === 'win32').file, 'desktop-win/squirrel.windows/x64/Midori Wallet Setup.exe');
+  assert.equal(plan.manifestAssets.find(asset => asset.platform === 'darwin').file, 'desktop-mac/Midori-Wallet-1.0.4-arm64.dmg');
+  assert.equal(plan.manifestAssets.find(asset => asset.platform === 'linux').file, 'desktop-linux/deb/x64/midori-wallet_1.0.4_amd64.deb');
+});
+
+test('release asset planning fails fast on a missing platform installer or a duplicate', () => {
+  assert.throws(() => planReleaseAssets(['android-release/midori-wallet-android-v1.0.6.apk']), /Missing release installer for: darwin:arm64, linux:x64, win32:x64/);
+  assert.throws(() => planReleaseAssets([
+    'a/Midori Wallet Setup.exe', 'b/Midori Wallet Setup.exe',
+    'android-release/midori-wallet-android-v1.0.6.apk',
+    'desktop-mac/Midori-Wallet-1.0.4-arm64.dmg',
+    'desktop-linux/midori-wallet_1.0.4_amd64.deb',
+  ]), /Duplicate primary asset for win32:x64/);
 });

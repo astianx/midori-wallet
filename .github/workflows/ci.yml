@@ -32,6 +32,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       android-release: ${{ steps.policy.outputs.android-release }}
+      release-tag: ${{ steps.policy.outputs.release-tag }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -113,6 +114,41 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: midori-desktop-${{ matrix.os }}-${{ github.sha }}
+          path: artifacts/desktop
+          if-no-files-found: error
+  desktop-release:
+    needs: [plan, checks]
+    if: needs.plan.outputs.release-tag == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-build
+        with:
+          target: desktop
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y dpkg fakeroot
+      - run: npm run build:electron
+        env:
+          MIDORI_BUILD_PROFILE: release
+          MIDORI_DESKTOP_ARCH: ${{ runner.os == 'macOS' && 'arm64' || '' }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      - name: Collect desktop artifacts and manifest
+        if: ${{ !cancelled() }}
+        run: node scripts/ci/artifacts.mjs desktop
+        env:
+          MIDORI_BUILD_PROFILE: release
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: midori-desktop-release-${{ matrix.os }}-${{ github.sha }}
           path: artifacts/desktop
           if-no-files-found: error
   android:
@@ -204,3 +240,55 @@ jobs:
           name: midori-ios-simulator-${{ github.sha }}
           path: artifacts/ios
           if-no-files-found: error
+  release:
+    needs: [plan, android-release, desktop-release]
+    if: needs.plan.outputs.release-tag == 'true'
+    environment: release-signing
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@v4
+        with:
+          name: midori-android-release-${{ github.sha }}
+          path: artifacts/release/android-release
+      - uses: actions/download-artifact@v4
+        with:
+          name: midori-desktop-release-ubuntu-24.04-${{ github.sha }}
+          path: artifacts/release/desktop-linux
+      - uses: actions/download-artifact@v4
+        with:
+          name: midori-desktop-release-windows-2022-${{ github.sha }}
+          path: artifacts/release/desktop-windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: midori-desktop-release-macos-15-intel-${{ github.sha }}
+          path: artifacts/release/desktop-macos
+      # Picks the single installer per platform/arch for the signed update
+      # manifest (see scripts/ci/release.mjs), signs it with the repo's
+      # Ed25519 release key (verified client-side by packages/update-core),
+      # then publishes everything as a draft GitHub release for manual
+      # review. Drafts are ignored by createGitHubUpdates (it filters
+      # `!item.draft`), so nothing auto-updates until a human publishes it.
+      - name: Sign update manifest and publish draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_SIGNING_PRIVATE_KEY: ${{ secrets.UPDATE_SIGNING_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.ref_name }}"
+          case "$TAG" in *-beta.*) CHANNEL=beta ;; *) CHANNEL=stable ;; esac
+          node scripts/ci/release.mjs artifacts/release > artifacts/release-plan.json
+          mkdir -p dist/release
+          mapfile -t ASSET_ARGS < <(jq -r '.manifestAssets[] | "--asset\nplatform=\(.platform),arch=\(.arch),file=\(.file)"' artifacts/release-plan.json)
+          node scripts/sign-update-manifest.mjs --tag "$TAG" --channel "$CHANNEL" --out dist/release "${ASSET_ARGS[@]}"
+          mapfile -t UPLOAD_FILES < <(jq -r '.uploads[]' artifacts/release-plan.json)
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --draft --title "Midori Wallet $TAG" --generate-notes
+          gh release upload "$TAG" "${UPLOAD_FILES[@]}" "dist/release/midori-updates-$CHANNEL.json" "dist/release/midori-updates-$CHANNEL.json.sig" --clobber

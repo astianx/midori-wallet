@@ -1,4 +1,5 @@
 <script>
+import MwNetworkSelector from '../../../components/MwNetworkSelector.vue';
 import { formatMidoriTag } from '../../../lib/tags.js';
 import MwButton from '../../../components/MwButton.vue';
 import MwButtonGroup from '../../../components/MwButtonGroup.vue';
@@ -12,7 +13,7 @@ import { onShowOnHide } from '../../../lib/mixins.js';
 import { paymentError } from '../../../lib/account/payment-errors.js';
 import { Amount } from '../../../lib/account/domain.js';
 export default {
-  components: { CryptoSendLayout, MwButton, MwButtonGroup, MwFormInput, PasteIcon, QrIcon },
+  components: { MwNetworkSelector, CryptoSendLayout, MwButton, MwButtonGroup, MwFormInput, PasteIcon, QrIcon },
   extends: MwStep, mixins: [onShowOnHide],
   data() { return { address: '', error: '', permissionError: '', recoveryError: '', isLoading: false, recovering: false, isPasteAvailable: !!navigator.clipboard?.readText, isQrScanAvailable: false, generation: 0, active: false }; },
   onShow() {
@@ -66,6 +67,7 @@ export default {
 </script>
 <template>
   <CryptoSendLayout class="&" :title="$t('Send {symbol}', { symbol: $wallet.crypto.symbol })" :current="0" :storage="storage" @back="back">
+    <MwNetworkSelector :symbol="$wallet.crypto.symbol" :network="$wallet.crypto.platform" destination="crypto.send" />
     <fieldset :disabled="isLoading" class="&__fields"><MwFormInput v-model="address" :label="$t('Wallet address or Midori tag')" placeholder="$usuario / 0x…" :error="error" :clear="true" @update:modelValue="error = ''" /><MwButtonGroup class="&__tools" type="circle"><MwButton v-if="isPasteAvailable" type="circle" @click="paste"><template #circle><PasteIcon /></template>{{ $t('Paste') }}</MwButton><MwButton v-if="isQrScanAvailable" type="circle" @click="next('qr')"><template #circle><QrIcon /></template>{{ $t('Scan QR') }}</MwButton></MwButtonGroup></fieldset>
     <p v-if="permissionError" role="status" class="&__notice">{{ permissionError }}</p>
     <div v-if="recoveryError" role="status" class="&__notice"><p>{{ recoveryError }}</p><MwButton type="primary-link" small :isLoading="recovering" @click="recover">{{ $t('Check payment status') }}</MwButton></div>

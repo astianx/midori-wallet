@@ -1,3 +1,4 @@
+import { stablecoinFamily, stablecoinPositions, canonicalStablecoin, bitcoinFamily } from './stablecoin-accounts.js';
 import { captureWalletError } from '../sentry.js';
 import { EventEmitter } from 'events';
 import { ed25519 } from '@noble/curves/ed25519';
@@ -23,6 +24,8 @@ import Settings from './Settings.js';
 import MidoriSession from './MidoriSession.js';
 import { consumeRecovery } from './recovery.js';
 import MidoriWallet from './MidoriWallet.js';
+import EvmWallet from './EvmWallet.js';
+import { evmNetworks } from '../../../../config/stablecoin-networks.js';
 import BitcoinWallet from './BitcoinWallet.js';
 import SparkWallet from './SparkWallet.js';
 import WalletStorage from '../storage/WalletStorage.js';
@@ -101,6 +104,7 @@ class WalletManager {
 }
 
 export default class Account extends EventEmitter {
+  #bitcoinNetworkTasks = new Map();
   #clientStorage;
   #midori;
   #seeds;
@@ -349,7 +353,7 @@ export default class Account extends EventEmitter {
       cryptoDB: this.#cryptoDB,
     });
     await this.#details.init();
-    if (this.#details.get('cryptos') === undefined) this.#details.setCryptos(this.#cryptoDB.all.filter(crypto => crypto.supported && crypto.platform === 'base'));
+    if (this.#details.get('cryptos') === undefined) this.#details.setCryptos(['USDC', 'USDT'].map(family => canonicalStablecoin(this.#cryptoDB.all, family)));
     this.emit('update', 'user');
     this.emit('update', 'language');
     this.emit('update', 'currency');
@@ -386,7 +390,13 @@ export default class Account extends EventEmitter {
   }
 
   async #initWalletsFromDetails(walletSeed = undefined) {
-    const cryptos = this.#details.getSupportedCryptos();
+    const cryptos = stablecoinPositions(this.#details.getSupportedCryptos(), this.#cryptoDB.all);
+    if (cryptos.some(bitcoinFamily)) {
+      for (const platform of ['bitcoin', ...(cryptos.some(crypto => crypto.platform === 'spark') || this.#details.get('bitcoinNetworks')?.includes('spark') ? ['spark'] : [])]) {
+        const crypto = this.#cryptoDB.get(`bitcoin@${platform}`);
+        if (!cryptos.some(item => item._id === crypto._id)) cryptos.push(crypto);
+      }
+    }
     const walletStorages = {};
     const wallets = await Promise.all(cryptos.map(async (crypto) => {
       const wallet = await this.#createWallet({
@@ -422,6 +432,7 @@ export default class Account extends EventEmitter {
   }
 
   async #createWallet({ crypto, walletStorage, settings }, walletSeed) {
+    if (evmNetworks.some(network => network.id === crypto.platform)) return new EvmWallet({ crypto, platform: this.#cryptoDB.platform(crypto.platform), session: this.#midori });
     if (crypto.platform === 'spark') return new SparkWallet({ crypto, platform: this.#cryptoDB.platform('spark'), session: this.#midori }, await this.#midori.spark.descriptor());
     if (crypto.platform === 'bitcoin') return new BitcoinWallet({ crypto, platform: this.#cryptoDB.platform('bitcoin'), session: this.#midori }, await this.#midori.bitcoinDescriptor());
     if (crypto.platform === 'base') return new MidoriWallet({ crypto, platform: this.#cryptoDB.platform('base'), session: this.#midori });
@@ -583,11 +594,58 @@ export default class Account extends EventEmitter {
     this.logout();
   }
 
-  async addWallet(crypto, walletSeed) {
-    if (this.#details.hasCrypto(crypto)) {
-      throw new CryptoAlreadyAddedError(crypto._id);
+  async #ensureBitcoinWallet(platform) {
+    const id = `bitcoin@${platform}`;
+    if (this.#wallets.has(id)) return this.#wallets.get(id);
+    if (!this.#bitcoinNetworkTasks.has(platform)) {
+      const generation = this.#generation;
+      const task = (async () => {
+        const wallet = await this.#createWallet({ crypto: this.#cryptoDB.get(id) });
+        if (generation !== this.#generation || this.isLocked) throw new Error('Wallet is locked');
+        this.#wallets.set(wallet);
+        this.#clientStorage.setPublicKey(platform, wallet.getPublicKey(), this.#deviceSeed);
+        await Promise.allSettled([wallet.load()]);
+        return wallet;
+      })();
+      this.#bitcoinNetworkTasks.set(platform, task);
+      task.finally(() => { if (this.#bitcoinNetworkTasks.get(platform) === task) this.#bitcoinNetworkTasks.delete(platform); }).catch(() => {});
     }
-    await this.#addWallet(crypto, walletSeed);
+    return this.#bitcoinNetworkTasks.get(platform);
+  }
+
+  async ensureBitcoinNetwork(platform) {
+    if (!['bitcoin', 'spark'].includes(platform) || this.isLocked) throw new Error('Unsupported Bitcoin network');
+    const generation = this.#generation;
+    await this.#ensureBitcoinWallet('bitcoin');
+    const wallet = await this.#ensureBitcoinWallet(platform);
+    if (generation !== this.#generation || this.isLocked) throw new Error('Wallet is locked');
+    const adding = !this.#details.getSupportedCryptos().some(bitcoinFamily);
+    if (adding) this.#details.addCrypto(this.#cryptoDB.get('bitcoin@bitcoin'));
+    const enabled = [...new Set([...(this.#details.get('bitcoinNetworks') || []), 'bitcoin', platform])];
+    if (adding || JSON.stringify(enabled) !== JSON.stringify(this.#details.get('bitcoinNetworks'))) {
+      this.#details.set('bitcoinNetworks', enabled);
+      await this.#initMarket();
+      await this.#details.save();
+    }
+    this.emit('update');
+    return wallet;
+  }
+
+  async #addStablecoin(crypto) {
+    const family = stablecoinFamily(crypto);
+    const positions = this.#cryptoDB.all.filter(item => item.addable !== false && stablecoinFamily(item) === family);
+    const wallets = await Promise.all(positions.map(item => this.#createWallet({ crypto: item })));
+    this.#wallets.setMany(wallets);
+    this.#details.addCrypto(canonicalStablecoin(this.#cryptoDB.all, family));
+    await Promise.allSettled(wallets.map(wallet => wallet.load()));
+  }
+
+  async addWallet(crypto, walletSeed) {
+    if (bitcoinFamily(crypto)) { await this.ensureBitcoinNetwork(crypto.platform); return; }
+    const family = stablecoinFamily(crypto);
+    if (this.#wallets.has(crypto._id) || this.#details.hasCrypto(crypto)) throw new CryptoAlreadyAddedError(crypto._id);
+    if (family) await this.#addStablecoin(crypto);
+    else await this.#addWallet(crypto, walletSeed);
     await this.#initMarket();
     await this.#details.save();
     this.emit('update');
@@ -595,8 +653,10 @@ export default class Account extends EventEmitter {
 
   async addWallets(cryptos, walletSeed) {
     for (const crypto of cryptos) {
-      if (this.#details.hasCrypto(crypto)) continue;
-      await this.#addWallet(crypto, walletSeed);
+      if (this.#wallets.has(crypto._id) || this.#details.hasCrypto(crypto)) continue;
+      if (bitcoinFamily(crypto)) await this.ensureBitcoinNetwork(crypto.platform);
+      else if (stablecoinFamily(crypto)) await this.#addStablecoin(crypto);
+      else await this.#addWallet(crypto, walletSeed);
     }
     await this.#initMarket();
     await this.#details.save();
@@ -608,7 +668,7 @@ export default class Account extends EventEmitter {
    * If there is a public key, then unlocking the private seed is not requested.
    */
   async #addWallet(crypto, walletSeed) {
-    if (['bitcoin','spark'].includes(crypto.platform)) {
+    if (['bitcoin','spark', ...evmNetworks.map(network => network.id)].includes(crypto.platform)) {
       const wallet = await this.#createWallet({ crypto });
       this.#wallets.set(wallet); this.#details.addCrypto(crypto);
       this.#clientStorage.setPublicKey(crypto.platform, wallet.getPublicKey(), this.#deviceSeed);
@@ -660,7 +720,13 @@ export default class Account extends EventEmitter {
   }
 
   async removeWallet(crypto) {
-    if (crypto.type === 'coin') {
+    const family = bitcoinFamily(crypto) || stablecoinFamily(crypto);
+    if (family) {
+      for (const wallet of this.wallets().filter(wallet => (bitcoinFamily(wallet.crypto) || stablecoinFamily(wallet.crypto)) === family)) {
+        this.#wallets.delete(wallet.crypto._id); this.#details.removeCrypto(wallet.crypto);
+      }
+      if (family === 'BTC') this.#details.delete('bitcoinNetworks');
+    } else if (crypto.type === 'coin') {
       const wallets = this.#wallets.filterByPlatform(crypto.platform);
       for (const wallet of wallets) {
         this.#wallets.delete(wallet.crypto._id);
@@ -720,6 +786,7 @@ export default class Account extends EventEmitter {
   }
 
   authorizeSpark(quote, pin, stillApproved) { return this.#midori.spark.authorize(quote, this.pinHash(pin), stillApproved); }
+  authorizeEvm(quote, pin, asset, stillApproved) { return this.#midori.authorizeEvm(quote, this.pinHash(pin), asset, stillApproved); }
   authorizeBitcoin(quote, pin, stillApproved) { return this.#midori.authorizeBitcoin(quote, this.pinHash(pin), stillApproved); }
 
   authorizePayment(intent, pin, expectedContract, stillApproved) { return this.#midori.authorizePayment(intent, this.pinHash(pin), expectedContract, stillApproved); }

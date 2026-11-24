@@ -75,7 +75,7 @@ export function activityReader(account) {
         const wallet = account.wallet(state.sources[0]?.id);
         if (!wallet) throw Error('Unavailable');
         record = orderRecord(await wallet.rampOrder(reference));
-      } else if (source === 'payment' && /^(?:e[1-9][0-9]*|p[0-9a-f-]{36}|[a-f0-9]{64}|[0-9a-f-]{36})$/.test(reference)) {
+      } else if (source === 'payment' && /^(?:e[1-9][0-9]*|p[0-9a-f-]{36}|[a-f0-9]{64}|[0-9a-f-]{36}|0x[a-f0-9]{64}:0x[a-f0-9]+)$/.test(reference)) {
         const wallet = account.wallet(walletId);
         if (!wallet) throw Error('Invalid asset');
         const transaction = await wallet.loadTransaction(reference);

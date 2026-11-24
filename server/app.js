@@ -1,3 +1,6 @@
+import { evmPaymentService } from './lib/evm-payments.js';
+import { evmGateway } from './lib/evm.js';
+import { evmNetworks } from '../config/stablecoin-networks.js';
 import express from 'express';
 import { captureServerError } from './lib/sentry.js';
 import githubUpdates from './lib/github.js';
@@ -31,6 +34,8 @@ export function createApp({ db, config, webApp, provider, rampProvider, exchange
   const app = express();
   const wallets = walletService(db, config);
   const bitcoin = bitcoinGateway();
+  const evm = evmGateway();
+  const evmPayments = evmPaymentService(db, evm);
   const webauthn = webauthnService(db, config);
   const payments = paymentService(db, config, provider);
   const fiat = changellyFiatService(db, config, fiatProvider);
@@ -58,7 +63,7 @@ export function createApp({ db, config, webApp, provider, rampProvider, exchange
     res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'unavailable', database: ready ? 'ready' : 'unavailable' });
   }));
   app.get('/api/v1/openapi.json', (req, res) => res.sendFile(new URL('./openapi.json', import.meta.url).pathname));
-  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, rampProvider: config.rampProvider || 'transak', ramp: config.rampProvider === 'changelly' ? config.changellyFiatEnabled : config.transakEnabled, exchange: config.changellyEnabled, tags: true, history: true, signing: 'client', optionalProviders: false }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
+  app.get('/api/v1/config', (req, res) => res.json({ apiVersion: 'v1', network: { name: 'base', chainId: 8453, testnet: false }, account: { schema: 'midori.safe-account', version: 1, type: 'safe-erc4337' }, capabilities: { registration: true, devices: true, webauthn: true, encryptedBlobs: true, payments: config.paymentsEnabled, sponsorship: config.sponsorshipEnabled, rampProvider: config.rampProvider || 'transak', ramp: config.rampProvider === 'changelly' ? config.changellyFiatEnabled : config.transakEnabled, exchange: config.changellyEnabled, tags: true, history: true, signing: 'client', optionalProviders: false, evm: evmNetworks.map(network => network.id) }, gas: { midoriFeeAtomic: '0', preferredMode: 'token', tokenPolicy: 'same_as_payment', paymaster: config.paymasterAddress, maxFeeAtomic: config.maxGasFeeAtomic, enabled: config.paymentsEnabled }, limits: { maxDevices: config.maxDevices, maxAuthenticators: config.maxAuthenticators, maxBlobBytes: config.maxBlobBytes }, authentication: { rpID: config.rpID, origin: config.publicOrigin, signedRequests: 'ed25519-v1', sessionLifetimeSeconds: config.sessionSeconds } }));
   app.get('/api/v1/updates/:platform/:arch', route(async (req, res) => {
     requireValue(['win32','darwin','linux','android','ios','web'].includes(req.params.platform) && ['x64','arm64','any'].includes(req.params.arch));
     try { res.json({ enabled: githubUpdates.enabled, update: await githubUpdates.getUpdate(req.params.platform, req.params.arch) || null }); }
@@ -107,6 +112,23 @@ export function createApp({ db, config, webApp, provider, rampProvider, exchange
   protectedRoute('post', '/api/v1/exchange/orders/:id/spark-deposit', (req, client, principal) => { uuid(req.params.id); return exchange.reserveSpark(principal.wallet_id, req.params.id, req.body); }, 200, false);
   protectedRoute('put', '/api/v1/accounts/:id/bitcoin', (req, client, principal) => { uuid(req.params.id); return registerBitcoin(client, principal, req.params.id, req.body); });
   protectedRoute('post', '/api/v1/bitcoin/tx', async (req, client, principal) => { await limitAttempts(client, `bitcoin:${principal.wallet_id}`, 10); return broadcastBitcoin(db, principal, req.body, bitcoin); }, 200, false);
+  protectedRoute('post', '/api/v1/accounts/:id/evm/:network/:action', async (req, client, principal) => {
+    uuid(req.params.id);
+    await activePrincipal(client, principal);
+    await limitAttempts(client, `evm:${principal.wallet_id}`, 120);
+    const saved = await account(client, principal.wallet_id, req.params.id);
+    const descriptor = saved.descriptor, owner = descriptor.address, { network, action } = req.params;
+    requireValue(evmNetworks.some(item => item.id === network), 'Unsupported network');
+    if (action === 'balance') { exactKeys(req.body, ['contract']); return evm.balance(network, owner, req.body.contract); }
+    if (action === 'transaction') { exactKeys(req.body, ['contract', 'reference']); return evm.transaction(network, owner, req.body.contract, req.body.reference); }
+    if (action === 'history') { exactKeys(req.body, ['contract'], ['cursor']); return evm.history(network, owner, req.body.contract, req.body.cursor); }
+    if (action === 'status') { exactKeys(req.body, ['hash']); return evmPayments.status(req.params.id, network, descriptor, req.body.hash); }
+    if (action === 'pending') { exactKeys(req.body, []); return evmPayments.pending(req.params.id, network, descriptor); }
+    if (action === 'quote') return evmPayments.quote(req.params.id, network, descriptor, req.body);
+    if (action === 'retry') return evmPayments.retry(req.params.id, network, descriptor, req.body);
+    if (action === 'broadcast') return evmPayments.broadcast(req.params.id, network, descriptor, req.body);
+    throw new ApiError(400, 'INVALID_REQUEST', 'Unsupported EVM action');
+  }, 200, false);
   protectedRoute('get', '/api/v1/me', async (req, client, principal) => {
     const { rows } = await client.query('SELECT id FROM chain_accounts WHERE wallet_id=$1 ORDER BY account_index', [principal.wallet_id]);
     return { walletId: principal.wallet_id, deviceId: principal.device_id, accounts: await Promise.all(rows.map(row => account(client, principal.wallet_id, row.id))) };

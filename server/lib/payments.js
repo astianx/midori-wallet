@@ -1,3 +1,4 @@
+import { stablecoinNetwork, networkAsset, canSendStablecoin } from '../../config/stablecoin-networks.js';
 import { captureServerError } from './sentry.js';
 import { randomUUID } from 'node:crypto';
 import { getAddress, ZeroAddress, parseUnits } from 'ethers';
@@ -82,6 +83,7 @@ export function paymentService(db,config,provider=paymentProvider(config)) {
       requireValue(['token','sponsored'].includes(body.feeMode),'Invalid gas mode');enabled(body.feeMode);
       requireValue(atomic(body.maxFeeAtomic),'Invalid network cost limit');
       const contract=parseAddress(body.contract);
+      if (!canSendStablecoin(networkAsset(stablecoinNetwork('base'), contract)?.symbol)) throw fail('USDC_ONLY','Only USDC can be sent.',400);
       const feeToken=body.feeToken==null?null:parseAddress(body.feeToken);
       // Network cost is always paid in the same token being sent (self-pay):
       // the sender already holds a balance in that token, so no separate
@@ -169,6 +171,7 @@ export function paymentService(db,config,provider=paymentProvider(config)) {
       const initial=await loadIntent(db,principal.wallet_id,id);enabled(initial.fee_mode);
       if(initial.quote_digest!==body.quoteDigest)throw fail('PAYMENT_CHANGED','The payment changed; confirm it again');
       if(initial.status!=='quoted') {if(['authorized','submitted','ambiguous','included','confirmed','reverted','reorganized'].includes(initial.status))return present(db,initial);throw fail('QUOTE_EXPIRED','Request and confirm a new quote');}
+      if (!canSendStablecoin(networkAsset(stablecoinNetwork('base'), initial.contract)?.symbol)) throw fail('USDC_ONLY','Only USDC can be sent.',400);
       if(new Date(initial.expires_at)<=new Date())throw fail('QUOTE_EXPIRED','Request and confirm a new quote');
       if(initial.resolution_id)await verifyTagSnapshot(db,initial.resolution_id,provider.chain);
       await ensureFunds(initial);

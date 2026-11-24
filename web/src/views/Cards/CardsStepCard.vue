@@ -134,9 +134,12 @@ export default {
             @click="refresh"
           />
           <MwDropdownMenu class="&__tools-dropdown">
-            <template #button>
+            <template #button="{ expanded, panelId }">
               <MwNavbarButton
                 :title="$t('Menu')"
+                aria-haspopup="dialog"
+                :aria-expanded="expanded"
+                :aria-controls="panelId"
                 :aria-label="$t('Menu')"
               >
                 <KebabIcon />

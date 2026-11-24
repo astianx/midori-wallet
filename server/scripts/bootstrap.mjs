@@ -69,7 +69,7 @@ export async function grantRuntime(db, runtime) {
   await db.query(`GRANT USAGE,SELECT ON SEQUENCE midori.chain_events_id_seq TO ${name}`);
   await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.tx_intents,midori.user_operations,midori.payment_outbox,midori.sponsor_budgets,midori.sponsor_reservations TO ${name}`);
   await db.query(`GRANT SELECT,INSERT ON midori.receipt_shares,midori.bitcoin_accounts,midori.spark_accounts TO ${name}`);
-  await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.fiat_orders,midori.transak_tokens,midori.exchange_quotes,midori.exchange_orders,midori.changelly_fiat_quotes,midori.changelly_fiat_orders TO ${name}`);
+  await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.evm_transfers,midori.fiat_orders,midori.transak_tokens,midori.exchange_quotes,midori.exchange_orders,midori.changelly_fiat_quotes,midori.changelly_fiat_orders TO ${name}`);
   await db.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON midori.devices,midori.authenticators,midori.auth_challenges,midori.auth_attempts,midori.sessions,midori.request_nonces,midori.encrypted_blobs TO ${name}`);
 }
 

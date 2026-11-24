@@ -8,7 +8,7 @@ const dismissTop = () => openDialogs.at(-1)?.requestClose();
 
 export default {
   components: { CloseIcon },
-  props: { show: Boolean, title: { type: String, required: true }, description: { type: String, default: '' } },
+  props: { show: Boolean, sheet: Boolean, title: { type: String, required: true }, description: { type: String, default: '' } },
   emits: ['close'],
   setup() { return { titleId: `dialog-${useId()}` }; },
   data() { return { previousFocus: null, registered: false }; },
@@ -57,12 +57,14 @@ export default {
 };
 </script>
 <template>
-  <Teleport to="body"><dialog ref="dialog" class="&__container" :aria-labelledby="titleId" :aria-describedby="description ? `${titleId}-description` : undefined" tabindex="-1" @keydown="containFocus" @cancel.prevent="requestClose" @click="outside" @close="show && !$refs.dialog.open && requestClose()"><header class="&__header"><h2 :id="titleId" class="&__title">{{ title }}</h2><button type="button" class="&__close" :aria-label="$t('Close')" @click="requestClose"><CloseIcon aria-hidden="true" /></button></header><p v-if="description" :id="`${titleId}-description`">{{ description }}</p><div ref="body" class="&__body"><slot v-if="show" /></div><footer v-if="$slots.footer && show" ref="footer" class="&__footer"><slot name="footer" /></footer></dialog></Teleport>
+  <Teleport to="body"><dialog ref="dialog" :class="{ '&__container--sheet': sheet, '&__container--native-sheet': sheet && env.VITE_BUILD_TYPE === 'phonegap' }" class="&__container" :aria-labelledby="titleId" :aria-describedby="description ? `${titleId}-description` : undefined" tabindex="-1" @keydown="containFocus" @cancel.prevent="requestClose" @click="outside" @close="show && !$refs.dialog.open && requestClose()"><header class="&__header"><h2 :id="titleId" class="&__title">{{ title }}</h2><button type="button" class="&__close" :aria-label="$t('Close')" @click="requestClose"><CloseIcon aria-hidden="true" /></button></header><p v-if="description" :id="`${titleId}-description`">{{ description }}</p><div ref="body" class="&__body"><slot v-if="show" /></div><footer v-if="$slots.footer && show" ref="footer" class="&__footer"><slot name="footer" /></footer></dialog></Teleport>
 </template>
 <style lang="scss">
 /* Hallmark · component-scope · design-system: design.md · pre-emit critique: P5 H5 E4 S4 R5 V4 */
 .#{ $filename } {
   &__container { position: fixed; inset: 0; width: calc(100% - 2rem); max-width: 30rem; height: fit-content; max-height: calc(100dvh - 2rem); overflow-y: auto; margin: auto; padding: var(--space-lg); border: 0; border-radius: var(--radius-hero); background: var(--color-surface-raised); color: var(--color-ink); box-shadow: var(--shadow-floating); }
+  &__container--native-sheet { inset: auto 0 0; width: 100%; max-width: 36rem; max-height: 88dvh; margin: 0 auto; border-radius: var(--radius-hero) var(--radius-hero) 0 0; padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom)); }
+  @media (max-width: 47.99rem) { &__container--sheet { inset: auto 0 0; width: 100%; max-height: 88dvh; margin: 0 auto; border-radius: var(--radius-hero) var(--radius-hero) 0 0; padding-bottom: max(var(--space-lg), env(safe-area-inset-bottom)); } }
   &__container::backdrop { background: var(--color-overlay); }
   &__container[open] { animation: mw-dialog-appear var(--dur-short) var(--ease-out); }
   &__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-lg); }

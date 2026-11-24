@@ -48,7 +48,7 @@ export default {
       <ul>
         <li>{{ $t('View your wallet address') }}</li>
         <li v-if="review.namespaces.eip155.methods.some(method => method.includes('sign'))">{{ $t('Request message signatures') }}</li>
-        <li v-if="review.namespaces.eip155.methods.includes('eth_sendTransaction')">{{ $t('Request USDT and USDC transfers on Base') }}</li>
+        <li v-if="review.namespaces.eip155.methods.includes('eth_sendTransaction')">{{ $t('Request USDC or bridged USDT transfers on Base') }}</li>
       </ul>
       <p>{{ $t('Every signature and payment requires your approval and PIN.') }}</p>
     </MwFormGroup>

@@ -1,4 +1,6 @@
 <script>
+import { groupAssets } from '../lib/account/stablecoin-accounts.js';
+import MwNetworkSelector from './MwNetworkSelector.vue';
 import { portfolioReferenceValue } from '../lib/account/portfolio.js';
 import { measureText } from '../lib/helpers.js';
 
@@ -13,7 +15,7 @@ const CHANGE_PERIODS = ['1D', '7D', '14D', '1M', '1Y'];
 
 export default {
   components: {
-    BankCardIcon,
+    MwNetworkSelector, BankCardIcon,
     MwAvatar,
     MwButton,
     MwCryptoList,
@@ -31,10 +33,11 @@ export default {
     };
   },
   computed: {
+    assets() { return groupAssets(this.$cryptos, this.$route.params.cryptoId); },
     portfolioTotal() {
       const total = portfolioReferenceValue(this.$cryptos);
       if (total === null) return '—';
-      return `≈ ${new Intl.NumberFormat(this.$i18n.locale, { style: 'currency', currency: 'USD', numberingSystem: 'latn' }).format(total)}`;
+      return `${new Intl.NumberFormat(this.$i18n.locale, { style: 'currency', currency: 'USD', numberingSystem: 'latn' }).format(total)}`;
     },
     readingState() {
       if (portfolioReferenceValue(this.$cryptos) === null) return this.$t('Balance unavailable');
@@ -107,10 +110,11 @@ export default {
     </div>
 
     <div class="&__content">
+      <MwNetworkSelector compact />
       <MwCryptoList
         class="&__content-list"
         :header="$t('Wallet')"
-        :items="$cryptos"
+        :items="assets"
         :selected="$route.params.cryptoId"
         :changePeriod="changePeriod"
         @select="(id) => $router.push({ name: 'crypto', params: { cryptoId: id }})"

@@ -4,7 +4,7 @@
   "productName": "Midori Wallet",
   "executableName": "midori-wallet",
   "version": "1.0.4",
-  "description": "Midori Wallet for USDT and USDC on Base",
+  "description": "Midori Wallet for USDC and USDT across supported networks",
   "license": "MIT",
   "type": "module",
   "main": "electron.js",

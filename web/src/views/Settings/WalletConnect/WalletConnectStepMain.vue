@@ -53,7 +53,7 @@ export default {
       <p>{{ $t('Connecting does not send money or sign a message.') }}</p>
       <details><summary>{{ $t('Connection permissions') }}</summary><ul><li v-for="method in storage.session?.namespaces?.eip155?.methods || []" :key="method">{{ method }}</li></ul></details>
       <p>{{ $t('Keep Midori open to review requests from this app.') }}</p>
-      <p>{{ $t('USDT and USDC transfers on Base are supported. Other contract calls are unavailable.') }}</p>
+      <p>{{ $t('WalletConnect supports USDC and bridged USDT on Base only.') }}</p>
     </MwFormGroup>
     <p v-if="error" role="alert">{{ error }}</p>
     <MwButton type="secondary" :isLoading="isLoading" @click="disconnect">{{ $t('Disconnect') }}</MwButton>

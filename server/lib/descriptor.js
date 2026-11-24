@@ -2,11 +2,8 @@ import { getAddress, ZeroAddress } from 'ethers';
 import { SafeAccountV0_3_0 } from 'abstractionkit';
 import { exactKeys, requireValue } from './errors.js';
 
-export const SAFE_CONFIG = Object.freeze({
-  safeModulesVersion: '0.3.0', entryPoint: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
-  saltNonce: '0x69b348339eea4ed93f9d11931c3b894c8f9d8c7663a053024b11cb7eb4e5a1f6',
-  module: '0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226', setup: '0x2dd68b007B46fBe91B9A7c3EDa5A7a1063cB5b47',
-});
+import { SAFE_CONFIG } from '../../packages/wallet-core/src/safe-config.js';
+export { SAFE_CONFIG } from '../../packages/wallet-core/src/safe-config.js';
 export const SDK_VERSIONS = Object.freeze({ core: '1.0.0-beta.22', evm: '1.0.0-beta.19', erc4337: '1.0.0-beta.22', abstractionkit: '0.4.0', ethers: '6.17.0' });
 
 export function validateDescriptor(value) {

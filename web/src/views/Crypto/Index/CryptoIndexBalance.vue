@@ -1,7 +1,10 @@
 <script>
+import { groupAssets, assetFamily } from '../../../lib/account/stablecoin-accounts.js';
+import MwStablecoinBalances from '../../../components/MwStablecoinBalances.vue';
 import { cryptoToFiat } from '../../../lib/helpers.js';
 
 export default {
+  components: { MwStablecoinBalances },
   props: {
     price: {
       type: Number,
@@ -9,7 +12,10 @@ export default {
     },
   },
   computed: {
+    family() { return assetFamily(this.$wallet.crypto); },
+    account() { return groupAssets(this.$cryptos, this.$wallet.crypto._id).find(item => item.family === this.family); },
     amount() {
+      if (this.family) return this.account?.balance ? `${this.account.balance} ${this.family}` : this.$t('Balance unavailable');
       if (this.$walletState === this.$STATE_LOADING) return '...';
       if (this.$walletState === this.$STATE_ERROR) return '⚠️';
       return this.$wallet.balance ? `${this.$wallet.balance} ${this.$wallet.crypto.symbol}` : this.$t('Balance unavailable');
@@ -58,6 +64,7 @@ export default {
         {{ $isHiddenBalance ? '••••' : fiat }}
       </div>
     </button>
+    <MwStablecoinBalances v-if="family" />
         <a
           v-if="$wallet.crypto._id === 'monero@monero' && $wallet.balance.value === 0n && !$isHiddenBalance"
           @click.stop="$safeOpen('https://github.com/astianx/midori-wallet/issues')"

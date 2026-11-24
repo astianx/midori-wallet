@@ -1,3 +1,4 @@
+import i18n from './i18n/i18n.js';
 import { clearNavigationDrafts } from './navigation.js';
 import eventBus from './eventBus.js';
 import * as state from './state.js';
@@ -78,7 +79,7 @@ export async function createAccount({ app, router }) {
             readAt: wallet.readAt,
             balanceFiat: wallet.balance && market?.price ? Number(cryptoToFiat(wallet.balance, market.price)) : undefined,
             rank: wallet.crypto.meta?.rank || Infinity,
-            title: wallet.crypto.symbol,
+            title: wallet.crypto.platform === 'base' && wallet.crypto.symbol === 'USDT' ? i18n.global.t('Bridged USDT') : wallet.crypto.symbol,
             subtitle: cryptoSubtitle(wallet),
             market,
           });

@@ -1,4 +1,5 @@
 <script>
+import MwNetworkSelector from '../../../components/MwNetworkSelector.vue';
 import MainLayout from '../../../layouts/MainLayout.vue';
 import MwButton from '../../../components/MwButton.vue';
 import MwFormAmountInput from '../../../components/MwForm/MwFormAmountInput.vue';
@@ -7,7 +8,7 @@ import MwFormTextareaReadonly from '../../../components/MwForm/MwFormTextareaRea
 import QRCode from 'qrcode-svg';
 import { paymentError } from '../../../lib/account/payment-errors.js';
 export default {
-  components: { MainLayout, MwButton, MwFormAmountInput, MwFormInput, MwFormTextareaReadonly },
+  components: { MwNetworkSelector, MainLayout, MwButton, MwFormAmountInput, MwFormInput, MwFormTextareaReadonly },
   data() { return { mode: 'spark', amount: undefined, memo: '', invoice: null, deposit: '', deposits: [], busy: false, error: '', copied: false, disposed: false, timer: null, now: Date.now(), revision: 0 }; },
   computed: {
     status() { return this.$t(this.invoice?.status === 'TRANSFER_COMPLETED' ? 'Completed' : this.expired ? 'Expired' : /FAILED/.test(this.invoice?.status || '') ? 'Not completed' : 'Pending'); },
@@ -40,7 +41,8 @@ export default {
 <template>
   <MainLayout class="&" :title="$t('Receive {symbol}', { symbol: 'BTC' })" allowReadFailure>
     <h1>{{ $t('Receive {symbol}', { symbol: 'BTC' }) }}</h1>
-    <label>{{ $t('Network') }}<select v-model="mode" :disabled="busy" @change="choose"><option value="spark">Spark</option><option value="lightning">Lightning</option><option value="bitcoin">Bitcoin → Spark</option></select></label>
+    <MwNetworkSelector symbol="BTC" network="spark" destination="crypto.receive" />
+    <label>{{ $t('Receive') }}<select v-model="mode" :disabled="busy" @change="choose"><option value="spark">Spark</option><option value="lightning">Lightning</option><option value="bitcoin">Bitcoin → Spark</option></select></label>
     <p v-if="error" role="alert">{{ error }}</p>
     <form v-if="mode === 'lightning'" @submit.prevent="create"><MwFormAmountInput v-model="amount" :label="$t('Amount')" symbol="BTC" :decimals="8" :disabled="busy" /><MwFormInput v-model="memo" :label="$t('Memo')" maxlength="140" :disabled="busy" /><MwButton type="primary" :disabled="!amount || amount.value <= 0n" :isLoading="busy" @click="create">{{ $t('Receive') }} · Lightning</MwButton></form>
     <template v-if="value"><p>{{ $t('Network') }} · {{ mode === 'spark' ? 'Spark' : mode === 'lightning' ? 'Lightning · BOLT11' : 'Bitcoin → Spark' }}</p><div v-if="qr" class="&__qr" role="img" :aria-label="mode"><!-- eslint-disable-next-line vue/no-v-html --><div v-html="qr" /></div><MwFormTextareaReadonly :value="value" :label="mode === 'lightning' ? 'Lightning · BOLT11' : $t('Your wallet address')" /><MwButton type="secondary" :disabled="mode === 'lightning' && expired" @click="copy">{{ $t(copied ? 'Copied!' : 'Copy') }}</MwButton></template>

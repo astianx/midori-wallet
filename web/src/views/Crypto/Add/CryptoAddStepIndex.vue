@@ -1,4 +1,6 @@
 <script>
+import { stablecoinFamily, canonicalStablecoin, bitcoinFamily } from '../../../lib/account/stablecoin-accounts.js';
+import MwNetworkSelector from '../../../components/MwNetworkSelector.vue';
 import Fuse from 'fuse.js/dist/fuse.basic.esm.js';
 import { SeedRequiredError } from '../../../lib/account/Account.js';
 import { cryptoSubtitleWithSymbol } from '../../../lib/helpers.js';
@@ -17,7 +19,7 @@ import PlusIcon from '../../../assets/svg/plus.svg';
 import SearchIcon from '../../../assets/svg/search.svg';
 
 export default {
-  components: {
+  components: { MwNetworkSelector,
     MainLayout,
     MwButton,
     MwButtonGroup,
@@ -35,7 +37,9 @@ export default {
     let selected = undefined;
     const alreadyAdded = this.$account.wallets().map((item) => item.crypto._id);
     const cryptos = this.$account.cryptoDB.all
-      .filter((item) => item.supported && !item.deprecated)
+      .filter((item) => item.supported && item.addable !== false && !item.deprecated && item.platform !== 'spark')
+      .filter((item) => !item.chainId || item.platform === 'base' || this.$account.capabilities.evm?.includes(item.platform))
+      .filter((item) => !stablecoinFamily(item) || canonicalStablecoin(this.$account.cryptoDB.all, stablecoinFamily(item))?._id === item._id)
       .filter((item) => !alreadyAdded.includes(item._id))
       .map((crypto) => {
         const platform = this.$account.cryptoDB.platform(crypto.platform);
@@ -59,8 +63,9 @@ export default {
       threshold: 0.5,
     });
     if (this.$route.query.cryptoId && !alreadyAdded.includes(this.$route.query.cryptoId)) {
-      const crypto = this.$account.cryptoDB.get(this.$route.query.cryptoId);
-      if (crypto) {
+      const requested = this.$account.cryptoDB.get(this.$route.query.cryptoId);
+      const crypto = bitcoinFamily(requested) ? this.$account.cryptoDB.get('bitcoin@bitcoin') : requested;
+      if (crypto?.addable !== false && crypto?.supported) {
         const platform = this.$account.cryptoDB.platform(crypto.platform);
         showModal = true;
         selected = {
@@ -110,6 +115,7 @@ export default {
   methods: {
     async select(id) {
       const crypto = this.$account.cryptoDB.get(id);
+      if (crypto.chainId && crypto.platform !== 'base') { await this.add(crypto); return; }
       if (crypto.type === 'coin') {
         await this.add(crypto);
       }
@@ -154,6 +160,7 @@ export default {
     :title="$t('Add crypto')"
     wide
   >
+    <MwNetworkSelector compact />
     <div class="&__actions">
       <div class="&__action-search">
         <MwFormInput

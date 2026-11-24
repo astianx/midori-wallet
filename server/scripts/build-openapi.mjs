@@ -34,7 +34,7 @@ const schemas = {
   DeviceEnrollment: object({ publicKey: key, signature }),
   Device: object({ id: uuid, publicKey: key, createdAt: { type: 'string', format: 'date-time' }, revokedAt: { type: ['string', 'null'], format: 'date-time' } }),
   Authenticator: object({ credentialId: b64, deviceId: uuid, deviceType: { enum: ['singleDevice', 'multiDevice'] }, backedUp: { type: 'boolean' }, createdAt: { type: 'string', format: 'date-time' }, revokedAt: { type: ['string', 'null'], format: 'date-time' } }),
-  Configuration: object({ apiVersion: { const: 'v1' }, network: object({ name: { const: 'base' }, chainId: { const: 8453 }, testnet: { const: false } }), account: object({ schema: { const: 'midori.safe-account' }, version: { const: 1 }, type: { const: 'safe-erc4337' } }), capabilities: object({ registration: { type: 'boolean' }, devices: { type: 'boolean' }, webauthn: { type: 'boolean' }, encryptedBlobs: { type: 'boolean' }, payments: { type: 'boolean' }, sponsorship: { type: 'boolean' }, ramp: { type: 'boolean' }, exchange: { type: 'boolean' }, tags: { const: true }, history: { const: true }, signing: { const: 'client' }, optionalProviders: { const: false } }), gas: object({ midoriFeeAtomic: atomic, preferredMode: { const: 'token' }, tokenPolicy: { const: 'same_as_payment' }, paymaster: { anyOf: [address, { type: 'null' }] }, maxFeeAtomic: atomic, enabled: { type: 'boolean' } }), limits: object({ maxDevices: { type: 'integer' }, maxAuthenticators: { type: 'integer' }, maxBlobBytes: { type: 'integer' } }), authentication: object({ rpID: string, origin: { type: 'string', format: 'uri' }, signedRequests: { const: 'ed25519-v1' }, sessionLifetimeSeconds: { type: 'integer' } }) }),
+  Configuration: object({ apiVersion: { const: 'v1' }, network: object({ name: { const: 'base' }, chainId: { const: 8453 }, testnet: { const: false } }), account: object({ schema: { const: 'midori.safe-account' }, version: { const: 1 }, type: { const: 'safe-erc4337' } }), capabilities: object({ registration: { type: 'boolean' }, devices: { type: 'boolean' }, webauthn: { type: 'boolean' }, encryptedBlobs: { type: 'boolean' }, payments: { type: 'boolean' }, sponsorship: { type: 'boolean' }, ramp: { type: 'boolean' }, exchange: { type: 'boolean' }, tags: { const: true }, history: { const: true }, signing: { const: 'client' }, optionalProviders: { const: false }, rampProvider: { enum: ['transak','changelly'] }, evm: array({ enum: ['ethereum','arbitrum','polygon','avalanche'] }) }), gas: object({ midoriFeeAtomic: atomic, preferredMode: { const: 'token' }, tokenPolicy: { const: 'same_as_payment' }, paymaster: { anyOf: [address, { type: 'null' }] }, maxFeeAtomic: atomic, enabled: { type: 'boolean' } }), limits: object({ maxDevices: { type: 'integer' }, maxAuthenticators: { type: 'integer' }, maxBlobBytes: { type: 'integer' } }), authentication: object({ rpID: string, origin: { type: 'string', format: 'uri' }, signedRequests: { const: 'ed25519-v1' }, sessionLifetimeSeconds: { type: 'integer' } }) }),
 };
 const spec = { openapi: '3.1.0', info: { title: 'Midori API', version: '1.0.0', description: 'PostgreSQL identity, devices and opaque encrypted storage on Base mainnet. Server authentication does not unlock funds or authorize chain transactions. Registration verifies the descriptor derivation and an owner message signature; it does not deploy a Safe.' }, servers: [{ url: '/' }], security: [], paths: {}, components: { securitySchemes: { Session: { type: 'http', scheme: 'bearer', description: 'Session token plus an Ed25519 signature over every request. Keys stay client-side.' }, Timestamp: { type: 'apiKey', in: 'header', name: 'X-Midori-Timestamp' }, Nonce: { type: 'apiKey', in: 'header', name: 'X-Midori-Nonce' }, Signature: { type: 'apiKey', in: 'header', name: 'X-Midori-Signature', description: 'Base64url Ed25519 signature over UTF-8: Midori request v1\\nMETHOD\\nexact path and query\\nUnix seconds\\nnonce\\nSHA256(token)\\nSHA256(raw body). A nonce can be used once per device. Clock tolerance 60 seconds.' } }, schemas } };
 function endpoint(method, path, summary, request, response, { auth = false, status = 200 } = {}) {
@@ -150,5 +150,32 @@ endpoint("post", "/api/v1/accounts/{id}/changelly-fiat/quotes", "Quote Changelly
 endpoint("post", "/api/v1/accounts/{id}/changelly-fiat/orders", "Create Changelly Fiat order", object({ quoteId: uuid, idempotencyKey: uuid }), ref('ChangellyFiatOrder'), auth);
 endpoint("get", "/api/v1/accounts/{id}/changelly-fiat/orders", "List Changelly Fiat orders", null, object({ orders: array(ref('ChangellyFiatOrder')) }), auth);
 endpoint("get", "/api/v1/changelly-fiat/orders/{id}", "Get Changelly Fiat order", null, ref('ChangellyFiatOrder'), auth);
+
+const evmHash = { type: 'string', pattern: '^0x[0-9a-fA-F]{64}$' };
+const evmPayment = { network: { enum: ['ethereum','arbitrum','polygon','avalanche'] }, chainId: { enum: [1,137,42161,43114] }, from: address, to: address, contract: address, symbol: { enum: ['USDC','USDT','USDT0'] }, decimals: { const: 6 }, amountAtomic: atomic, nativeSymbol: { enum: ['ETH','POL','AVAX'] } };
+const opQuantity = { type: 'string', pattern: '^0x[0-9a-fA-F]+$' };
+const opAddress = { anyOf: [address, { type: 'null' }] };
+const opData = { type: 'string', pattern: '^0x[0-9a-fA-F]*$' };
+schemas.EvmOperation = object({ sender: address, nonce: opQuantity, callGasLimit: opQuantity, verificationGasLimit: opQuantity, preVerificationGas: opQuantity, maxFeePerGas: opQuantity, maxPriorityFeePerGas: opQuantity, factory: opAddress, factoryData: { anyOf: [opData, { type: 'null' }] }, callData: opData, paymaster: { type: 'null' }, paymasterData: { type: 'null' }, signature: opData });
+schemas.EvmPayment = object(evmPayment);
+schemas.EvmQuote = object({ ...evmPayment, nonce: atomic,operation: ref('EvmOperation'),maxFeeAtomic: atomic,expiresAt: { type: 'string',format: 'date-time' } });
+schemas.EvmStatus = object({ hash: evmHash,transactionHash: evmHash,status: { enum: ['ambiguous','submitted','pending','confirmed','reverted'] },confirmations: atomic },['hash','status']);
+schemas.EvmTransfer = object({ hash: evmHash,quote: ref('EvmQuote'),transactionHash: evmHash,confirmations: atomic,status: { enum: ['ambiguous','submitted','pending','confirmed','reverted'] },createdAt: { type: 'string',format: 'date-time' } },['hash','quote','status','createdAt']);
+schemas.EvmEntry = object({ id: { type: 'string',pattern: '^0x[0-9a-fA-F]{64}:0x[0-9a-fA-F]+$' },transactionHash: evmHash,contract: address,from: address,to: address,amountAtomic: atomic,timestamp: { type: 'string',format: 'date-time' },status: { enum: ['confirmed','pending'] },incoming: { type: 'boolean' },blockNumber: { type: 'integer',minimum: 0 } },['id','transactionHash','contract','from','to','amountAtomic','timestamp','status','incoming']);
+const evmContract = [
+ ['balance',object({contract: address}),object({network: string,chainId: {type:'integer'},contract: address,address,readAt:{type:'string',format:'date-time'},balanceAtomic:atomic,nativeBalanceAtomic:atomic,blockNumber:atomic})],
+ ['quote',object({contract:address,to:address,amountAtomic:atomic}),ref('EvmQuote')],
+ ['broadcast',object({raw:{type:'string',pattern:'^0x[0-9a-fA-F]+$',maxLength:16384}}),ref('EvmStatus')],
+ ['retry',object({hash:evmHash}),ref('EvmStatus')],
+ ['status',object({hash:evmHash}),ref('EvmStatus')],
+ ['pending',object({}),object({transfer:{anyOf:[ref('EvmTransfer'),{type:'null'}]}})],
+ ['transaction',object({contract:address,reference:{type:'string',pattern:'^0x[0-9a-fA-F]{64}:0x[0-9a-fA-F]+$'}}),ref('EvmEntry')],
+ ['history',object({contract:address,cursor:atomic},['contract']),object({transactions:array(ref('EvmEntry')),cursor:atomic,hasMore:{type:'boolean'},indexing:object({enabled:{const:true},status:{enum:['backfilling','caught_up']}})},['transactions','hasMore','indexing'])],
+];
+for (const [action,request,response] of evmContract) {
+ const path = `/api/v1/accounts/{id}/evm/{network}/${action}`;
+ endpoint('post',path,`EVM ${action}`,request,response,auth);
+ spec.paths[path].post.parameters.find(parameter=>parameter.name==='network').schema=evmPayment.network;
+}
 
 await writeFile(new URL('../openapi.json', import.meta.url), JSON.stringify(spec, null, 2) + '\n');

@@ -63,9 +63,9 @@ test('account history uses the public Midori client and maps exact registry asse
   const calls = [];
   const client = new AccountMarket({ assets: validateAssets(BASE_ASSETS), publicClient: { request: async (...args) => { calls.push(args); return { prices }; } } });
   const assets = validateAssets(BASE_ASSETS);
-  for (const asset of assets) assert.deepEqual(await client.getChartData(asset._id, '7D', 'EUR'), { prices });
+  for (const asset of assets) assert.deepEqual(await client.getChartData(asset._id, '7D', 'EUR'), { prices, symbol: asset.symbol });
   assert.deepEqual(calls, assets.map(asset => ['GET', `/api/v1/market/${asset.symbol}/chart?period=7D&currency=EUR`]));
-  assert.deepEqual(await client.getChartData('bitcoin@bitcoin', '1D', 'USD'), { prices });
+  assert.deepEqual(await client.getChartData('bitcoin@bitcoin', '1D', 'USD'), { prices, symbol: 'BTC' });
   assert.equal(calls.at(-1)[1], '/api/v1/market/BTC/chart?period=1D&currency=USD');
   await assert.rejects(client.getChartData('ethereum@ethereum', '1D', 'USD'));
   assert.equal(await client.getMarket(assets[0]._id, 'USD'), undefined);

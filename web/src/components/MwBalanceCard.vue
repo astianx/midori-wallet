@@ -20,7 +20,7 @@ export default {
   <section class="&" :aria-label="$t('Balance')">
     <div class="&__top"><span>{{ $t(bitcoin ? 'Approximate USD value' : 'Balance') }}</span><button type="button" :aria-label="$t($isHiddenBalance ? 'Show balance' : 'Hide balance')" :aria-pressed="$isHiddenBalance" @click="$account.toggleHiddenBalance()"><MwAppIcon :name="$isHiddenBalance ? 'hide' : 'eye'" /></button></div>
     <div class="&__value" dir="ltr">{{ value }}<span v-if="available && !$isHiddenBalance">USD</span></div>
-    <div class="&__status"><span :class="{ '&__dot': fresh }" />{{ fresh ? (bitcoin ? 'BTC · USDC · USDT' : 'USDC + USDT · Base') : $t(available ? 'Last known balance' : 'Balance unavailable') }}</div>
+    <div class="&__status"><span :class="{ '&__dot': fresh }" />{{ fresh ? (bitcoin ? 'BTC · USDC · USDT' : 'USDC · Base') : $t(available ? 'Last known balance' : 'Balance unavailable') }}</div>
     <div class="&__actions"><RouterLink :to="{ name: 'add-money' }" class="&__action &__action--primary"><MwAppIcon name="plus" />{{ $t('Add') }}</RouterLink><RouterLink :to="{ name: 'withdraw' }" class="&__action"><MwAppIcon name="send" />{{ $t('Withdraw') }}</RouterLink></div>
     <p class="&__reference">{{ $t(bitcoin ? 'Market reference. Buy and sell quotes may differ.' : 'Reference: USD 1 per token. Live prices unavailable.') }}</p>
   </section>

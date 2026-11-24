@@ -22,13 +22,18 @@ assets
 # imports ../../../assets/brand/*.svg (added with the new-ui/ux redesign).
 !assets/brand/
 !assets/brand/**
-# Root config/ (environment.js, networks.json, targets.json) IS needed: web/vite.config.js
-# imports config/environment.js for the web build (see containerfile COPY config ./config).
+# Root config/ (environment.js, networks.json, targets.json, market.js,
+# bitcoin-networks.js, stablecoin-networks.js) IS needed: web/vite.config.js
+# imports config/environment.js for the web build; server/lib/{market,evm,evm-payments}.js
+# and several web/src/lib/account/* modules import the others at build/runtime
+# (see containerfile COPY config ./config, both stages).
 config
 !config/environment.js
 !config/networks.json
 !config/targets.json
 !config/market.js
+!config/bitcoin-networks.js
+!config/stablecoin-networks.js
 docs
 *.md
 LICENSE
